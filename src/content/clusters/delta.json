@@ -1,0 +1,16 @@
+{
+  "name": "Delta",
+  "institution": "National Center for Supercomputing Applications",
+  "institutionShort": "NCSA",
+  "gpu": "NVIDIA A100",
+  "order": 4,
+  "subtitle": "NCSA's general-purpose GPU cluster, allocated through ACCESS for academic and lab researchers across the U.S.",
+  "specs": {
+    "Architecture": "x86_64",
+    "GPU types": "NVIDIA A100 40GB; NVIDIA A40; some AMD MI100 nodes",
+    "Scheduler": "Slurm",
+    "Operating institution": "University of Illinois Urbana-Champaign",
+    "Allocation model": "ACCESS-allocated (formerly XSEDE); open to U.S. academic researchers",
+    "Documentation": "https://docs.ncsa.illinois.edu/systems/delta/"
+  }
+}

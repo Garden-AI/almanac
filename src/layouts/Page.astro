@@ -5,9 +5,10 @@ interface Props {
   title: string;
   section?: string;
   folioId?: string;
+  wide?: boolean;
 }
 
-const { title, section = "Garden's Almanac", folioId = '' } = Astro.props;
+const { title, section = "Garden's Almanac", folioId = '', wide = false } = Astro.props;
 ---
 <!doctype html>
 <html lang="en">
@@ -23,7 +24,7 @@ const { title, section = "Garden's Almanac", folioId = '' } = Astro.props;
     />
   </head>
   <body>
-    <article class="page">
+    <article class:list={['page', { 'page--wide': wide }]}>
       <header class="running-head">
         <span>Garden's Almanac of Matter Models</span>
         <span>{section}</span>

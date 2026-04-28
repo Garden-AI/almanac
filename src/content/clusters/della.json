@@ -1,6 +1,9 @@
 {
   "name": "Della",
   "institution": "Princeton University · Research Computing",
+  "institutionShort": "Princeton",
+  "gpu": "NVIDIA H100",
+  "order": 5,
   "subtitle": "Princeton's general-purpose research cluster, with a mix of CPU and NVIDIA H100 GPU nodes.",
   "specs": {
     "Architecture": "x86_64",

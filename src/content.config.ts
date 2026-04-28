@@ -64,6 +64,12 @@ const clusters = defineCollection({
     /** Slug must match `manifests[].cluster` from the Rootstock dump. */
     name: z.string(),
     institution: z.string(),
+    /** Short label (e.g. "ALCF") used in the compatibility-matrix column header. */
+    institutionShort: z.string().optional(),
+    /** Short GPU label (e.g. "NVIDIA A100") used in the matrix header. */
+    gpu: z.string().optional(),
+    /** Display order in the compatibility matrix, ascending. */
+    order: z.number().int().optional(),
     subtitle: z.string().optional(),
     specs: z.record(z.string(), z.string()),
     runningOn: z.string().optional(),

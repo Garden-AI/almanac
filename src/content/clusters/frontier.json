@@ -1,0 +1,16 @@
+{
+  "name": "Frontier",
+  "institution": "Oak Ridge Leadership Computing Facility",
+  "institutionShort": "OLCF",
+  "gpu": "AMD MI250X",
+  "order": 2,
+  "subtitle": "OLCF's exascale system. AMD GPUs mean Rootstock environments here use ROCm builds rather than CUDA, which restricts the supported model set.",
+  "specs": {
+    "Architecture": "x86_64",
+    "GPU types": "AMD Instinct MI250X (4 per node, 8 GCDs)",
+    "Scheduler": "Slurm",
+    "Operating institution": "Oak Ridge National Laboratory",
+    "Allocation model": "INCITE, ALCC, and Director's Discretionary",
+    "Documentation": "https://docs.olcf.ornl.gov/systems/frontier_user_guide.html"
+  }
+}

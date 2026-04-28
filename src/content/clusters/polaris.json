@@ -1,0 +1,16 @@
+{
+  "name": "Polaris",
+  "institution": "Argonne Leadership Computing Facility",
+  "institutionShort": "ALCF",
+  "gpu": "NVIDIA A100",
+  "order": 1,
+  "subtitle": "ALCF's flagship pre-exascale system, used here as a primary host for MLIP inference and small-batch fine-tuning.",
+  "specs": {
+    "Architecture": "x86_64",
+    "GPU types": "NVIDIA A100 40GB (4 per node)",
+    "Scheduler": "PBS Pro",
+    "Operating institution": "Argonne National Laboratory",
+    "Allocation model": "ALCC, INCITE, and Director's Discretionary",
+    "Documentation": "https://docs.alcf.anl.gov/polaris/"
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "name": "Perlmutter",
+  "institution": "National Energy Research Scientific Computing Center",
+  "institutionShort": "NERSC",
+  "gpu": "NVIDIA A100",
+  "order": 3,
+  "subtitle": "NERSC's flagship system, with GPU and CPU partitions. Garden's MLIP work uses the GPU partition exclusively.",
+  "specs": {
+    "Architecture": "x86_64",
+    "GPU types": "NVIDIA A100 40GB / 80GB (4 per node)",
+    "Scheduler": "Slurm",
+    "Operating institution": "Lawrence Berkeley National Laboratory",
+    "Allocation model": "ERCAP allocations open to DOE-affiliated science",
+    "Documentation": "https://docs.nersc.gov/systems/perlmutter/"
+  }
+}

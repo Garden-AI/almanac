@@ -40,6 +40,14 @@ html, body {
   position: relative;
   max-width: 880px;
   margin: 0 auto;
+}
+
+/* Landscape variant for the Compatibility Matrix and other reference pages
+   that need a wider canvas. */
+.page--wide {
+  max-width: 1320px;
+  padding-left: 36px;
+  padding-right: 36px;
   min-height: 100vh;
 }
 
@@ -110,6 +118,9 @@ table.almanac thead th {
 table.almanac tbody tr:last-child td { border-bottom: 1.5px solid var(--ink); }
 
 table.fam-table th, table.fam-table td { padding: 2.5px 8px; }
+
+/* Tighter rows for the Compatibility Matrix to leave room for the How-To block. */
+.cm-tight table.almanac th, .cm-tight table.almanac td { padding: 1.5px 6px; }
 
 .folio {
   display: flex; justify-content: space-between; align-items: center;

@@ -1,6 +1,9 @@
 {
   "name": "Sophia",
   "institution": "Argonne Leadership Computing Facility",
+  "institutionShort": "ALCF",
+  "gpu": "NVIDIA A100",
+  "order": 6,
   "subtitle": "ALCF's NVIDIA-accelerated machine for AI workloads, used here for MLIP inference and fine-tuning.",
   "specs": {
     "Architecture": "x86_64",
