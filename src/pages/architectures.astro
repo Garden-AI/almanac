@@ -3,6 +3,7 @@ import { getCollection } from 'astro:content';
 import Page from '../layouts/Page.astro';
 import OrnamentRule from '../components/OrnamentRule.astro';
 import LatticeCartouche from '../components/LatticeCartouche.astro';
+import { url } from '../lib/url';
 
 const FAMILY_ORDER = ['equivariant', 'ace', 'mpnn', 'vanilla', 'earlier'];
 const families = (await getCollection('architectures')).sort(
@@ -33,7 +34,7 @@ const modelsByFamily = Object.fromEntries(
 
   <p style="max-width: 640px; font-size: 13px; line-height: 1.5; margin-top: 10px;">
     A working vocabulary for reading the rest of the Almanac, not a tutorial. Representational similarity
-    tracks training data more reliably than architecture (per <a class="ink-link" href="/map">§02</a>), but
+    tracks training data more reliably than architecture (per <a class="ink-link" href={url('/map')}>§02</a>), but
     architecture still shapes what a model can learn. The five families below are the ones the catalog uses.
   </p>
 
@@ -63,7 +64,7 @@ const modelsByFamily = Object.fromEntries(
                   <tr><td class="it" style="color: var(--ink-2);">— no catalog entries yet —</td></tr>
                 ) : rows.map((m) => (
                   <tr>
-                    <td><a class="ink-link it" href={`/model/${m.id}`}>{m.data.name}</a></td>
+                    <td><a class="ink-link it" href={url(`/model/${m.id}`)}>{m.data.name}</a></td>
                     <td style="width: 46px; text-align: right; color: var(--ink-2);">{m.data.year}</td>
                     <td style="width: 54px; text-align: right;">{m.data.params}</td>
                   </tr>

@@ -2,6 +2,7 @@
 import { getCollection } from 'astro:content';
 import Page from '../../layouts/Page.astro';
 import { getClusterManifest } from '../../lib/rootstock';
+import { url } from '../../lib/url';
 
 export async function getStaticPaths() {
   const clusters = await getCollection('clusters');
@@ -66,7 +67,7 @@ const supported = manifest
               <tbody>
                 {supported.map(({ model, env }) => (
                   <tr>
-                    <td><a class="ink-link it" href={`/model/${model.id}`}>{model.data.name}</a></td>
+                    <td><a class="ink-link it" href={url(`/model/${model.id}`)}>{model.data.name}</a></td>
                     <td class="mono">{model.data.rootstockEnv}</td>
                     <td>
                       {env.status === 'ready'

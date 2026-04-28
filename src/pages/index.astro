@@ -1,14 +1,15 @@
 ---
 import Page from '../layouts/Page.astro';
 import OrnamentRule from '../components/OrnamentRule.astro';
+import { url } from '../lib/url';
 
 const toc = [
-  { num: '01', title: 'About this Almanac', href: '/about' },
-  { num: '02', title: 'The Map', href: '/map' },
-  { num: '03', title: 'Model Catalog', href: '/catalog', note: 'A–Z, all 22 entries' },
-  { num: '04', title: 'Where to Run on HPC', href: '/compatibility' },
-  { num: '05', title: 'Datasets', href: '/datasets' },
-  { num: '06', title: 'Architectures', href: '/architectures' },
+  { num: '01', title: 'About this Almanac', href: url('/about') },
+  { num: '02', title: 'The Map', href: url('/map') },
+  { num: '03', title: 'Model Catalog', href: url('/catalog'), note: 'A–Z, all 22 entries' },
+  { num: '04', title: 'Where to Run on HPC', href: url('/compatibility') },
+  { num: '05', title: 'Datasets', href: url('/datasets') },
+  { num: '06', title: 'Architectures', href: url('/architectures') },
 ];
 ---
 <Page title="Garden's Almanac of Matter Models — 2026 Edition" section="2026 Edition" folioId="Cover · i">
@@ -48,7 +49,7 @@ const toc = [
 
     <div style="display: flex; justify-content: center; margin-top: 16px;">
       <img
-        src="/adsorption.png"
+        src={url('/adsorption.png')}
         alt="Adsorbate on surface, set among flowers"
         style="width: 380px; height: auto; display: block; mix-blend-mode: multiply;"
       />
@@ -85,7 +86,7 @@ const toc = [
     </div>
     <div style="display: grid; grid-template-columns: auto 1fr; gap: 18px; align-items: center; margin: 10px auto 0; max-width: 620px;">
       <img
-        src="/proteins.png"
+        src={url('/proteins.png')}
         alt="Protein ribbon diagram, set among flowers"
         style="width: 230px; height: auto; display: block; mix-blend-mode: multiply;"
       />

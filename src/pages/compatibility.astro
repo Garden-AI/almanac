@@ -2,6 +2,7 @@
 import { getCollection } from 'astro:content';
 import Page from '../layouts/Page.astro';
 import { getRootstockDump } from '../lib/rootstock';
+import { url } from '../lib/url';
 
 const models = (await getCollection('models')).sort((a, b) => {
   // Sort by family, then by params descending.
@@ -85,7 +86,7 @@ const grid = models.map((m) => ({
         {clusters.map((c) => (
           <th class="cluster-h">
             <div style="font-family: var(--smallcaps); font-size: 12.5px; letter-spacing: 0.06em;">
-              <a class="ink-link" href={`/cluster/${c.id}`}>{c.data.name}</a>
+              <a class="ink-link" href={url(`/cluster/${c.id}`)}>{c.data.name}</a>
             </div>
             <div class="sc" style="font-size: 9.5px; letter-spacing: 0.10em; color: var(--ink-2); margin-top: 1px;">
               {c.data.institution.split('·')[0].trim()}
@@ -98,7 +99,7 @@ const grid = models.map((m) => ({
       {grid.map(({ model, cells }, i) => (
         <tr>
           <td style="font-variant-numeric: tabular-nums; color: var(--ink-2);">{String(i + 1).padStart(2, '0')}</td>
-          <td><a class="ink-link" href={`/model/${model.id}`} style="font-weight: 600;">{model.data.name}</a></td>
+          <td><a class="ink-link" href={url(`/model/${model.id}`)} style="font-weight: 600;">{model.data.name}</a></td>
           <td style="text-align: right; font-variant-numeric: tabular-nums;">{model.data.params}</td>
           {cells.map(({ state }) => (
             <td class="cell">

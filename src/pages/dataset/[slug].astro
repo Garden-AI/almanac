@@ -1,6 +1,7 @@
 ---
 import { getCollection } from 'astro:content';
 import Page from '../../layouts/Page.astro';
+import { url } from '../../lib/url';
 
 export async function getStaticPaths() {
   const datasets = await getCollection('datasets');
@@ -68,7 +69,7 @@ const d = dataset.data;
               {modelsTrainedOn.map(({ model, uses }) =>
                 uses.map((u) => (
                   <tr>
-                    <td><a class="ink-link it" href={`/model/${model.id}`}>{model.data.name}</a></td>
+                    <td><a class="ink-link it" href={url(`/model/${model.id}`)}>{model.data.name}</a></td>
                     <td class="it">{u.role}</td>
                   </tr>
                 ))

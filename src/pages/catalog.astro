@@ -1,6 +1,7 @@
 ---
 import { getCollection, getEntry } from 'astro:content';
 import Page from '../layouts/Page.astro';
+import { url } from '../lib/url';
 
 const models = (await getCollection('models')).sort((a, b) => a.data.name.localeCompare(b.data.name));
 const families = await getCollection('architectures');
@@ -29,7 +30,7 @@ const familyName = (id: string) => families.find((f) => f.id === id)?.data.name 
       <tbody>
         {models.map((m) => (
           <tr>
-            <td><a class="ink-link it" href={`/model/${m.id}`}>{m.data.name}</a></td>
+            <td><a class="ink-link it" href={url(`/model/${m.id}`)}>{m.data.name}</a></td>
             <td class="sc" style="font-size: 11px;">{familyName(m.data.family.id)}</td>
             <td style="text-align: right; font-variant-numeric: tabular-nums;">{m.data.params}</td>
             <td style="text-align: right; font-variant-numeric: tabular-nums;">{m.data.year}</td>
@@ -43,7 +44,7 @@ const familyName = (id: string) => families.find((f) => f.id === id)?.data.name 
       <div class="margin">
         <span class="label">On reading the map</span>
         <p class="it">
-          The <a class="ink-link" href="/map">map's</a> layout shifts with the reference dataset. A model's
+          The <a class="ink-link" href={url('/map')}>map's</a> layout shifts with the reference dataset. A model's
           neighbors on OMat24 may differ from its neighbors on QM9. The catalog entries note both, where it
           matters.
         </p>

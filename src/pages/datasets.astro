@@ -2,6 +2,7 @@
 import { getCollection } from 'astro:content';
 import Page from '../layouts/Page.astro';
 import OrnamentRule from '../components/OrnamentRule.astro';
+import { url } from '../lib/url';
 
 const datasets = (await getCollection('datasets')).sort((a, b) => a.data.year - b.data.year);
 ---
@@ -18,7 +19,7 @@ const datasets = (await getCollection('datasets')).sort((a, b) => a.data.year - 
       <p style="font-size: 13px; line-height: 1.5; margin: 0 0 10px;">
         The lineage of an MLIP is shaped at least as much by what it was trained on as by its architecture.
         Two equivariant transformers with nearly identical layer counts can produce wildly different relaxation
-        paths if one was raised on QM9 and the other on OMat24. The clusters in the <a class="ink-link" href="/map">Map</a>
+        paths if one was raised on QM9 and the other on OMat24. The clusters in the <a class="ink-link" href={url('/map')}>Map</a>
         track training dataset more reliably than they track model family — and on most days, more reliably
         than the architecture diagrams in the original papers.
       </p>
@@ -40,7 +41,7 @@ const datasets = (await getCollection('datasets')).sort((a, b) => a.data.year - 
         <tbody>
           {datasets.map((d) => (
             <tr>
-              <td><a class="ink-link it" href={`/dataset/${d.id}`}>{d.data.name}</a></td>
+              <td><a class="ink-link it" href={url(`/dataset/${d.id}`)}>{d.data.name}</a></td>
               <td class="sc" style="font-size: 11px;">{d.data.domain}</td>
               <td style="text-align: right;">{d.data.size.split(';')[0]}</td>
               <td class="sc" style="font-size: 11px;">{d.data.dftLevel}</td>

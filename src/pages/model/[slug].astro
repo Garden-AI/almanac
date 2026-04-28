@@ -2,6 +2,7 @@
 import { getCollection, getEntry } from 'astro:content';
 import Page from '../../layouts/Page.astro';
 import { getRootstockDump } from '../../lib/rootstock';
+import { url } from '../../lib/url';
 
 export async function getStaticPaths() {
   const models = await getCollection('models');
@@ -44,7 +45,7 @@ const availability = dump.manifests.map((m) => {
       <h2 class="sc" style="font-size: 13px;">Specifications</h2>
       <table class="almanac" style="margin-top: 6px;">
         <tbody>
-          <tr><td>Family</td><td><a class="ink-link it" href={`/architecture/${model.data.family.id}`}>{family?.data.name}</a></td></tr>
+          <tr><td>Family</td><td><a class="ink-link it" href={url(`/architecture/${model.data.family.id}`)}>{family?.data.name}</a></td></tr>
           <tr><td>Year</td><td>{model.data.year}</td></tr>
           <tr><td>Parameters</td><td>{model.data.params}</td></tr>
           <tr><td>Rootstock environment</td><td><span class="mono">{model.data.rootstockEnv}</span></td></tr>
@@ -57,7 +58,7 @@ const availability = dump.manifests.map((m) => {
         <tbody>
           {trainingData.map(({ dataset, role }) => (
             <tr>
-              <td><a class="ink-link it" href={`/dataset/${dataset?.id}`}>{dataset?.data.name}</a></td>
+              <td><a class="ink-link it" href={url(`/dataset/${dataset?.id}`)}>{dataset?.data.name}</a></td>
               <td class="it">{role}</td>
             </tr>
           ))}
@@ -70,7 +71,7 @@ const availability = dump.manifests.map((m) => {
         <tbody>
           {availability.map((a) => (
             <tr>
-              <td><a class="ink-link it" href={`/cluster/${a.cluster}`}>{a.cluster}</a></td>
+              <td><a class="ink-link it" href={url(`/cluster/${a.cluster}`)}>{a.cluster}</a></td>
               <td>
                 {a.status === 'ready'
                   ? <span class="status-verified">●</span>
