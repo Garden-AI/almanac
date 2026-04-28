@@ -1,0 +1,11 @@
+{
+  "name": "TorchMD-Net",
+  "family": "equivariant",
+  "year": 2022,
+  "params": "7.0M",
+  "rootstockEnv": "_legacy_env",
+  "trainingData": [
+    { "dataset": "md17", "role": "Training data" },
+    { "dataset": "qm9", "role": "Training data" }
+  ]
+}

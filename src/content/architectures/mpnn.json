@@ -1,0 +1,5 @@
+{
+  "name": "Message-Passing Neural Networks",
+  "descriptor": "The earlier and more general family — atoms exchange messages with neighbors over multiple rounds.",
+  "body": "Message-passing networks treat atoms as graph nodes and propagate information along bonds (or near-neighbor edges) over several rounds of aggregation. The earliest broadly-adopted example is Schütt et al., <i>SchNet</i>; later refinements added directional information (DimeNet, GemNet) and equivariant message channels (PaiNN, TorchMD-Net, GemNet-OC), yielding a continuum from this family to the equivariant successors above. The headline reference for the modern direction is Gasteiger et al., <i>GemNet</i>. Cheap, well-understood, and the workhorse for everything from QM9 to large-scale catalysis."
+}

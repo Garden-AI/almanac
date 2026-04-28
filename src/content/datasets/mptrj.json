@@ -1,0 +1,12 @@
+{
+  "name": "MPTrj",
+  "fullName": "Materials Project Trajectories",
+  "domain": "materials",
+  "curator": "Deng, Persson, et al. (CHGNet)",
+  "year": 2023,
+  "size": "~1.6M VASP relaxation frames extracted from Materials Project",
+  "dftLevel": "PBE; PBE+U for select TMs; VASP",
+  "license": "CC-BY 4.0",
+  "doi": "https://doi.org/10.1038/s42256-023-00716-3",
+  "primaryPaper": "Deng et al., CHGNet as a pretrained universal neural network potential for charge-informed atomistic modelling, Nat. Mach. Intell. 5:1031 (2023)."
+}

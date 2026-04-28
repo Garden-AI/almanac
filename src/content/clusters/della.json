@@ -1,0 +1,15 @@
+{
+  "name": "Della",
+  "institution": "Princeton University · Research Computing",
+  "subtitle": "Princeton's general-purpose research cluster, with a mix of CPU and NVIDIA H100 GPU nodes.",
+  "specs": {
+    "Architecture": "x86_64",
+    "GPU types": "NVIDIA H100 80GB; NVIDIA A100 80GB; some MIG-partitioned GPUs available",
+    "Scheduler": "Slurm 23.11",
+    "Operating institution": "Princeton University",
+    "Allocation model": "Open to Princeton-affiliated researchers; collaborators by sponsorship",
+    "Documentation": "https://researchcomputing.princeton.edu/systems/della"
+  },
+  "runningOn": "Rootstock is installed at the cluster level. Load it before anything else with `module load rootstock`; this puts the right Python, CUDA toolchain, and the rootstock CLI on your PATH. The default toolchain is CUDA 12.4 against PyTorch 2.5; pass `--toolchain cu118` at install time if you need an older combination.\n\nThe default queue is `gpu-h100`. For inference workloads on the smaller models, use `gpu-h100-shared` and request a fraction of a GPU with `--gres=gpu:1g.10gb` or `--gres=gpu:2g.20gb`.\n\nOutbound network from compute nodes is restricted to *.princeton.edu — Hugging Face downloads will fail at runtime. Fetch weights from the Garden cache at `/scratch/gpfs/garden-cache` instead; Rootstock picks this up automatically when `GARDEN_CACHE` is set, which the module file does for you.",
+  "notes": "Della's Garden contact is Jenna Park (jpark@princeton.edu), who handles new-user onboarding for the MLIP stack. Maintenance windows are announced on the rcc-announce list. One real gotcha: MACE on a MIG-partitioned GPU silently fails certain cuBLAS calls and returns NaN forces without crashing — ask for a non-MIG slice if you're running any MACE variant."
+}

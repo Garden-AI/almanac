@@ -1,0 +1,13 @@
+{
+  "name": "UMA Small",
+  "family": "equivariant",
+  "year": 2026,
+  "params": "420M",
+  "leadAuthor": "Meta FAIR-Chem (UMA collaboration)",
+  "rootstockEnv": "uma_env",
+  "trainingData": [
+    { "dataset": "omat24", "role": "Pretraining" },
+    { "dataset": "salex", "role": "Pretraining" },
+    { "dataset": "omol25", "role": "Joint training" }
+  ]
+}

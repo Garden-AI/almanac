@@ -1,0 +1,16 @@
+---
+interface Props { width?: number; }
+const { width = 280 } = Astro.props;
+const w = String(width);
+const half = width / 2;
+---
+<svg width={w} height="14" viewBox={`0 0 ${w} 14`} aria-hidden="true" style="display: block;">
+  <line x1="0" y1="7" x2={w} y2="7" stroke="var(--ink)" stroke-width="0.6" />
+  <circle cx="14" cy="7" r="1.6" fill="var(--ink)" />
+  <circle cx={String(width - 14)} cy="7" r="1.6" fill="var(--ink)" />
+  <g transform={`translate(${half},7) rotate(45)`}>
+    <rect x="-4" y="-4" width="8" height="8" fill="var(--ink)" />
+  </g>
+  <line x1={String(half - 22)} y1="7" x2={String(half - 8)} y2="7" stroke="var(--ink)" stroke-width="1.2" />
+  <line x1={String(half + 8)} y1="7" x2={String(half + 22)} y2="7" stroke="var(--ink)" stroke-width="1.2" />
+</svg>

@@ -1,0 +1,24 @@
+---
+const s = 64;
+const c = s / 2;
+const r = 22;
+const nodes = Array.from({ length: 6 }, (_, i) => {
+  const a = (Math.PI / 3) * i - Math.PI / 2;
+  return { x: c + r * Math.cos(a), y: c + r * Math.sin(a) };
+});
+---
+<svg width={s} height={s} viewBox={`0 0 ${s} ${s}`} aria-hidden="true">
+  <circle cx={c} cy={c} r={s * 0.46} fill="none" stroke="var(--ink)" stroke-width="0.5" />
+  <circle cx={c} cy={c} r={s * 0.40} fill="none" stroke="var(--ink)" stroke-width="0.4" />
+  {nodes.map((p) => (
+    <line x1={c} y1={c} x2={p.x} y2={p.y} stroke="var(--ink)" stroke-width="0.6" />
+  ))}
+  {nodes.map((p, i) => {
+    const q = nodes[(i + 1) % 6];
+    return <line x1={p.x} y1={p.y} x2={q.x} y2={q.y} stroke="var(--ink)" stroke-width="0.5" />;
+  })}
+  {nodes.map((p) => (
+    <circle cx={p.x} cy={p.y} r="2.4" fill="var(--paper)" stroke="var(--ink)" stroke-width="0.7" />
+  ))}
+  <circle cx={c} cy={c} r="3.0" fill="var(--oxblood)" stroke="var(--ink)" stroke-width="0.7" />
+</svg>

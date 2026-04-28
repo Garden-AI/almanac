@@ -1,0 +1,5 @@
+{
+  "name": "Atomic Cluster Expansion",
+  "descriptor": "A specific equivariant formalism, expanding atomic environments into a body-ordered basis.",
+  "body": "ACE-based models are technically equivariant but represent a distinct lineage with their own basis functions, body-order construction, and training conventions. The original formulation is Drautz, <i>Atomic Cluster Expansion</i> (2019); the modern message-passing variant is Kovács et al., <i>MACE</i>. The catalog's ACE cluster on the Map (NequIP, Allegro, MACE) reflects this lineage; readers will see overlap with the Equivariant family above and that overlap is real. We list ACE separately because the embedding clusters do — and because, in practice, the basis choice matters more than the equivariant label suggests."
+}

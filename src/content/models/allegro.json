@@ -1,0 +1,11 @@
+{
+  "name": "Allegro",
+  "family": "ace",
+  "year": 2022,
+  "params": "8.0M",
+  "rootstockEnv": "mace_env",
+  "trainingData": [
+    { "dataset": "md17", "role": "Training data" },
+    { "dataset": "spice", "role": "Training data" }
+  ]
+}

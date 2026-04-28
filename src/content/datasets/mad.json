@@ -1,0 +1,11 @@
+{
+  "name": "MAD",
+  "fullName": "Massive Atomistic Diversity",
+  "domain": "mixed",
+  "curator": "Garden Collaboration",
+  "year": 2025,
+  "size": "~95M frames spanning crystals, surfaces, molecules, and disordered configurations",
+  "dftLevel": "PBE / r²SCAN (mixed-fidelity)",
+  "license": "CC-BY 4.0",
+  "primaryPaper": "Pending. Internal release notes at thegardens.ai/datasets/mad."
+}

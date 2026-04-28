@@ -1,0 +1,10 @@
+{
+  "name": "CHGNet",
+  "family": "mpnn",
+  "year": 2023,
+  "params": "0.4M",
+  "rootstockEnv": "chgnet_env",
+  "trainingData": [
+    { "dataset": "mptrj", "role": "Sole training data" }
+  ]
+}

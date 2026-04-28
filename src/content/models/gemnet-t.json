@@ -1,0 +1,10 @@
+{
+  "name": "GemNet-T",
+  "family": "mpnn",
+  "year": 2021,
+  "params": "31M",
+  "rootstockEnv": "_legacy_env",
+  "trainingData": [
+    { "dataset": "oc20", "role": "Training data" }
+  ]
+}

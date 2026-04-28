@@ -1,0 +1,12 @@
+{
+  "name": "OC20",
+  "fullName": "Open Catalyst 2020",
+  "domain": "catalysis",
+  "curator": "Meta FAIR-Chem (formerly OCP)",
+  "year": 2020,
+  "size": "~1.3M relaxations, ~265M structure-energy pairs along the relaxation paths",
+  "dftLevel": "RPBE; VASP",
+  "license": "CC-BY 4.0",
+  "doi": "https://doi.org/10.1021/acscatal.0c04525",
+  "primaryPaper": "Chanussot et al., Open Catalyst 2020 (OC20) Dataset and Community Challenges, ACS Catal. (2021)."
+}

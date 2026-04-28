@@ -1,0 +1,10 @@
+{
+  "name": "M3GNet",
+  "family": "mpnn",
+  "year": 2022,
+  "params": "0.2M",
+  "rootstockEnv": "tensornet_env",
+  "trainingData": [
+    { "dataset": "mp2018", "role": "Sole training data" }
+  ]
+}

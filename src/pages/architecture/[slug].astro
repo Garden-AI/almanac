@@ -1,0 +1,55 @@
+---
+import { getCollection } from 'astro:content';
+import Page from '../../layouts/Page.astro';
+
+export async function getStaticPaths() {
+  const architectures = await getCollection('architectures');
+  const models = await getCollection('models');
+  return architectures.map((a) => ({
+    params: { slug: a.id },
+    props: {
+      architecture: a,
+      models: models.filter((m) => m.data.family.id === a.id),
+    },
+  }));
+}
+
+const { architecture, models } = Astro.props;
+const a = architecture.data;
+---
+<Page
+  title={`${a.name} — Garden's Almanac`}
+  section="§ Architecture"
+  folioId={`/architecture/${architecture.id}`}
+>
+  <p class="sc" style="font-size: 11.5px; letter-spacing: 0.14em;">Architecture family</p>
+  <h1>{a.name}</h1>
+  <p class="it" style="color: var(--ink-2); font-size: 14px;">{a.descriptor}</p>
+  <hr class="title-rule" />
+
+  <div class="detail-body">
+    <div>
+      <p style="margin-top: 12px;">{a.body}</p>
+    </div>
+    <aside class="detail-rail">
+      <div class="margin">
+        <span class="label">Models in this family</span>
+        {models.length > 0 ? (
+          <table class="almanac fam-table" style="margin-top: 4px;">
+            <tbody>
+              {models.map((m) => (
+                <tr>
+                  <td><a class="ink-link it" href={`/model/${m.id}`}>{m.data.name}</a></td>
+                  <td style="text-align: right;">{m.data.year}</td>
+                  <td style="text-align: right; font-variant-numeric: tabular-nums;">{m.data.params}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ) : (
+          <p class="it">No catalog models in this family yet.</p>
+        )}
+      </div>
+    </aside>
+  </div>
+</Page>

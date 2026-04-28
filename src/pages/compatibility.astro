@@ -1,0 +1,158 @@
+---
+import { getCollection } from 'astro:content';
+import Page from '../layouts/Page.astro';
+import { getRootstockDump } from '../lib/rootstock';
+
+const models = (await getCollection('models')).sort((a, b) => {
+  // Sort by family, then by params descending.
+  const fam = a.data.family.id.localeCompare(b.data.family.id);
+  if (fam !== 0) return fam;
+  const pa = parseFloat(a.data.params) * (a.data.params.endsWith('B') ? 1000 : 1);
+  const pb = parseFloat(b.data.params) * (b.data.params.endsWith('B') ? 1000 : 1);
+  return pb - pa;
+});
+const clusters = await getCollection('clusters');
+const families = await getCollection('architectures');
+const familyName = (id: string) => families.find((f) => f.id === id)?.data.name ?? id;
+
+const dump = await getRootstockDump();
+const lastUpdated = dump.manifests
+  .map((m) => m.last_updated)
+  .sort()
+  .at(-1);
+
+type CellState = 'verified' | 'lapsed' | 'na';
+const stateFor = (modelEnv: string, clusterSlug: string): CellState => {
+  const manifest = dump.manifests.find((m) => m.cluster === clusterSlug);
+  const env = manifest?.environments[modelEnv];
+  if (!env) return 'na';
+  return env.status === 'ready' ? 'verified' : 'lapsed';
+};
+
+let counts = { verified: 0, lapsed: 0, na: 0 };
+const grid = models.map((m) => ({
+  model: m,
+  cells: clusters.map((c) => {
+    const state = stateFor(m.data.rootstockEnv, c.id);
+    counts[state]++;
+    return { cluster: c, state };
+  }),
+}));
+---
+<Page
+  title="The Compatibility Matrix — Garden's Almanac"
+  section="The Compatibility Matrix"
+  folioId="§ Pull-out"
+>
+  <style>
+    /* Override the default 880px max so the matrix has room. */
+    .page { max-width: 1280px; }
+    .matrix-table { table-layout: fixed; }
+    .matrix-table th.cluster-h { vertical-align: bottom; padding: 6px 4px; text-align: center; }
+    .matrix-table td.cell { text-align: center; padding: 4px 0; }
+  </style>
+
+  <div style="display: grid; grid-template-columns: 1fr auto; gap: 24px; align-items: end;">
+    <div>
+      <p class="sc" style="font-size: 11.5px; letter-spacing: 0.14em; color: var(--ink-2);">Pull-out reference</p>
+      <h1 style="font-size: 40px; margin-top: 2px; line-height: 1;">The Availability Matrix</h1>
+      <p class="it" style="color: var(--ink-2); font-size: 14px; margin-top: 4px; max-width: 780px;">
+        A filled circle means Rootstock built the model's environment on that cluster and reports it ready.
+        A diagonal hatch means the model isn't carried on that cluster (no matching Rootstock environment).
+        An open circle would mean the build has lapsed; in the current dump every reported environment is fresh.
+      </p>
+    </div>
+    <div style="text-align: right; font-size: 12.5px; color: var(--ink-2); white-space: nowrap;">
+      <div class="sc" style="font-size: 10.5px; letter-spacing: 0.10em; color: var(--ink);">Last updated</div>
+      {lastUpdated ? new Date(lastUpdated).toUTCString() : '—'}<br />
+      <span class="mono" style="font-size: 11px;">via Rootstock manifests</span>
+    </div>
+  </div>
+  <hr class="double-rule" style="margin-top: 10px; margin-bottom: 14px;" />
+
+  <table class="almanac matrix-table">
+    <colgroup>
+      <col style="width: 24px;" />
+      <col style="width: 160px;" />
+      <col style="width: 60px;" />
+      {clusters.map(() => <col />)}
+    </colgroup>
+    <thead>
+      <tr>
+        <th>№</th>
+        <th>Model</th>
+        <th style="text-align: right;">Size</th>
+        {clusters.map((c) => (
+          <th class="cluster-h">
+            <div style="font-family: var(--smallcaps); font-size: 12.5px; letter-spacing: 0.06em;">
+              <a class="ink-link" href={`/cluster/${c.id}`}>{c.data.name}</a>
+            </div>
+            <div class="sc" style="font-size: 9.5px; letter-spacing: 0.10em; color: var(--ink-2); margin-top: 1px;">
+              {c.data.institution.split('·')[0].trim()}
+            </div>
+          </th>
+        ))}
+      </tr>
+    </thead>
+    <tbody>
+      {grid.map(({ model, cells }, i) => (
+        <tr>
+          <td style="font-variant-numeric: tabular-nums; color: var(--ink-2);">{String(i + 1).padStart(2, '0')}</td>
+          <td><a class="ink-link" href={`/model/${model.id}`} style="font-weight: 600;">{model.data.name}</a></td>
+          <td style="text-align: right; font-variant-numeric: tabular-nums;">{model.data.params}</td>
+          {cells.map(({ state }) => (
+            <td class="cell">
+              {state === 'verified' && (
+                <svg width="14" height="14" viewBox="0 0 14 14" aria-label="verified">
+                  <circle cx="7" cy="7" r="3.6" fill="var(--oxblood)" />
+                </svg>
+              )}
+              {state === 'lapsed' && (
+                <svg width="14" height="14" viewBox="0 0 14 14" aria-label="lapsed">
+                  <circle cx="7" cy="7" r="3.4" fill="none" stroke="var(--oxblood)" stroke-width="1" />
+                </svg>
+              )}
+              {state === 'na' && (
+                <svg width="100%" height="14" viewBox="0 0 40 14" preserveAspectRatio="none" aria-label="not applicable" style="display: block;">
+                  <defs>
+                    <pattern id="na-hatch" patternUnits="userSpaceOnUse" width="5" height="5" patternTransform="rotate(45)">
+                      <line x1="0" y1="0" x2="0" y2="5" stroke="var(--ink)" stroke-width="0.5" opacity="0.35" />
+                    </pattern>
+                  </defs>
+                  <rect x="0" y="3" width="40" height="8" fill="url(#na-hatch)" />
+                </svg>
+              )}
+            </td>
+          ))}
+        </tr>
+      ))}
+    </tbody>
+  </table>
+
+  <div style="display: flex; justify-content: space-between; align-items: baseline; margin-top: 8px; font-size: 11.5px;">
+    <span class="it" style="color: var(--ink-2);">
+      {models.length} models · {clusters.length} clusters · {counts.verified} verified, {counts.lapsed} lapsed, {counts.na} not applicable
+    </span>
+    <span style="display: inline-flex; align-items: center; gap: 14px;">
+      <span style="display: inline-flex; align-items: center; gap: 6px;">
+        <svg width="14" height="14" viewBox="0 0 14 14"><circle cx="7" cy="7" r="3.6" fill="var(--oxblood)" /></svg>
+        <span class="sc" style="font-size: 10.5px; letter-spacing: 0.08em; color: var(--ink-2);">Verified</span>
+      </span>
+      <span style="display: inline-flex; align-items: center; gap: 6px;">
+        <svg width="14" height="14" viewBox="0 0 14 14"><circle cx="7" cy="7" r="3.4" fill="none" stroke="var(--oxblood)" stroke-width="1" /></svg>
+        <span class="sc" style="font-size: 10.5px; letter-spacing: 0.08em; color: var(--ink-2);">Lapsed</span>
+      </span>
+      <span style="display: inline-flex; align-items: center; gap: 6px;">
+        <svg width="14" height="6" viewBox="0 0 14 6">
+          <defs>
+            <pattern id="lg-hatch" patternUnits="userSpaceOnUse" width="5" height="5" patternTransform="rotate(45)">
+              <line x1="0" y1="0" x2="0" y2="5" stroke="var(--ink)" stroke-width="0.5" opacity="0.5" />
+            </pattern>
+          </defs>
+          <rect x="0" y="0" width="14" height="6" fill="url(#lg-hatch)" />
+        </svg>
+        <span class="sc" style="font-size: 10.5px; letter-spacing: 0.08em; color: var(--ink-2);">Not applicable</span>
+      </span>
+    </span>
+  </div>
+</Page>

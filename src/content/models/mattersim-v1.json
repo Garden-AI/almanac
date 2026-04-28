@@ -1,0 +1,11 @@
+{
+  "name": "MatterSim-v1",
+  "family": "mpnn",
+  "year": 2024,
+  "params": "182M",
+  "rootstockEnv": "tensornet_env",
+  "trainingData": [
+    { "dataset": "mp2018", "role": "Training data" },
+    { "dataset": "mptrj", "role": "Auxiliary" }
+  ]
+}

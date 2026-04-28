@@ -1,0 +1,53 @@
+---
+import { getCollection, getEntry } from 'astro:content';
+import Page from '../layouts/Page.astro';
+
+const models = (await getCollection('models')).sort((a, b) => a.data.name.localeCompare(b.data.name));
+const families = await getCollection('architectures');
+const familyName = (id: string) => families.find((f) => f.id === id)?.data.name ?? id;
+---
+<Page title="Model Catalog — Garden's Almanac" section="Model Catalog · Index" folioId="§03">
+  <div style="text-align: center; margin-top: 6px;">
+    <div class="sc" style="font-size: 13px; letter-spacing: 0.16em;">Model Catalog</div>
+    <p class="it" style="font-size: 13.5px; color: var(--ink-2); margin-top: 4px;">
+      All {models.length} models, sorted A–Z.
+    </p>
+    <hr class="hairline" style="margin-top: 10px;" />
+  </div>
+
+  <div class="detail-body" style="margin-top: 18px;">
+    <table class="almanac" style="font-size: 12.5px;">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Family</th>
+          <th style="text-align: right; width: 80px;">Params</th>
+          <th style="text-align: right; width: 60px;">Year</th>
+          <th style="width: 24px;" aria-hidden="true"></th>
+        </tr>
+      </thead>
+      <tbody>
+        {models.map((m) => (
+          <tr>
+            <td><a class="ink-link it" href={`/model/${m.id}`}>{m.data.name}</a></td>
+            <td class="sc" style="font-size: 11px;">{familyName(m.data.family.id)}</td>
+            <td style="text-align: right; font-variant-numeric: tabular-nums;">{m.data.params}</td>
+            <td style="text-align: right; font-variant-numeric: tabular-nums;">{m.data.year}</td>
+            <td style="text-align: right; color: var(--ink-3);" aria-hidden="true">→</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+
+    <aside class="detail-rail">
+      <div class="margin">
+        <span class="label">On reading the map</span>
+        <p class="it">
+          The <a class="ink-link" href="/map">map's</a> layout shifts with the reference dataset. A model's
+          neighbors on OMat24 may differ from its neighbors on QM9. The catalog entries note both, where it
+          matters.
+        </p>
+      </div>
+    </aside>
+  </div>
+</Page>

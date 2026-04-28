@@ -1,0 +1,11 @@
+{
+  "name": "MACE-Large",
+  "family": "ace",
+  "year": 2024,
+  "params": "15.6M",
+  "rootstockEnv": "mace_env",
+  "trainingData": [
+    { "dataset": "mptrj", "role": "Training data" },
+    { "dataset": "spice", "role": "Auxiliary" }
+  ]
+}

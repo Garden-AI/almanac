@@ -1,0 +1,12 @@
+{
+  "name": "MP-2018+",
+  "fullName": "Materials Project structures",
+  "domain": "materials",
+  "curator": "Materials Project (LBNL)",
+  "year": 2018,
+  "size": "~150k DFT-relaxed inorganic crystals (MP-2018 snapshot, growing)",
+  "dftLevel": "PBE; PBE+U for selected TM oxides; VASP",
+  "license": "CC-BY 4.0",
+  "doi": "https://doi.org/10.1063/1.4812323",
+  "primaryPaper": "Jain et al., Commentary: The Materials Project, APL Materials 1:011002 (2013)."
+}

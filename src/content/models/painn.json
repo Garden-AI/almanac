@@ -1,0 +1,11 @@
+{
+  "name": "PaiNN",
+  "family": "mpnn",
+  "year": 2021,
+  "params": "14M",
+  "rootstockEnv": "_legacy_env",
+  "trainingData": [
+    { "dataset": "qm9", "role": "Training data" },
+    { "dataset": "md17", "role": "Training data" }
+  ]
+}

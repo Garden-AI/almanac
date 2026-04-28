@@ -1,0 +1,110 @@
+---
+import Page from '../layouts/Page.astro';
+import OrnamentRule from '../components/OrnamentRule.astro';
+
+const toc = [
+  { num: '01', title: 'About this Almanac', href: '/about' },
+  { num: '02', title: 'The Map', href: '/map' },
+  { num: '03', title: 'Model Catalog', href: '/catalog', note: 'A–Z, all 22 entries' },
+  { num: '04', title: 'Where to Run on HPC', href: '/compatibility' },
+  { num: '05', title: 'Datasets', href: '/datasets' },
+  { num: '06', title: 'Architectures', href: '/architectures' },
+];
+---
+<Page title="Garden's Almanac of Matter Models — 2026 Edition" section="2026 Edition" folioId="Cover · i">
+  <div style="text-align: center; margin-top: 8px;">
+    <div class="sc" style="font-size: 13px; letter-spacing: 0.18em; color: var(--ink-2);">Garden's</div>
+    <div style="height: 4px;"></div>
+    <h1 style="font-family: var(--serif); font-size: 50px; line-height: 1.0; font-weight: 600; letter-spacing: -0.005em;">
+      Almanac of Matter Models
+    </h1>
+    <div style="margin-top: 10px; font-style: italic; font-size: 17.5px; color: var(--ink-2); line-height: 1.35;">
+      A guide to foundation models for<br />molecules, materials, and proteins
+    </div>
+    <div style="margin: 14px auto 0; width: 240px;">
+      <OrnamentRule width={240} />
+    </div>
+    <div class="sc" style="font-size: 12px; letter-spacing: 0.16em; margin-top: 8px;">2026 Edition</div>
+    <div style="font-style: italic; font-size: 13px; color: var(--ink-2); margin-top: 1px;">
+      22 models, with notes on how to install them and how they compare
+    </div>
+  </div>
+
+  <div style="margin-top: 22px;">
+    <div class="ornament">
+      <hr />
+      <span class="sc glyph" style="font-family: var(--smallcaps); font-size: 11.5px; letter-spacing: 0.10em;">
+        Machine Learning Interatomic Potentials
+      </span>
+      <hr />
+    </div>
+
+    <p style="font-size: 13.75px; line-height: 1.55; color: var(--ink); margin: 12px auto 0; max-width: 560px; text-align: center;">
+      The Almanac charts the present generation of MLIPs by the similarity of their internal representations,
+      lists where they run on shared HPC, and notes which datasets and architectures they descend from. It is
+      intended as a companion to Hugging Face and the public leaderboards — a chart of the territory, not a
+      replacement for them.
+    </p>
+
+    <div style="display: flex; justify-content: center; margin-top: 16px;">
+      <img
+        src="/adsorption.png"
+        alt="Adsorbate on surface, set among flowers"
+        style="width: 380px; height: auto; display: block; mix-blend-mode: multiply;"
+      />
+    </div>
+
+    <table class="almanac" style="margin-top: 24px; max-width: 560px; margin-left: auto; margin-right: auto;">
+      <tbody>
+        {toc.map((row) => (
+          <tr>
+            <td style="width: 42px; font-variant-numeric: tabular-nums; color: var(--ink-2);">{row.num}</td>
+            <td>
+              <a class="ink-link" href={row.href}>{row.title}</a>
+              {row.note && <span class="it" style="color: var(--ink-3);"> · {row.note}</span>}
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+
+  <div style="display: flex; align-items: center; justify-content: center; gap: 14px; margin-top: 36px; color: var(--ink);">
+    <span style="flex: 1; border-top: 0.5px solid var(--rule);"></span>
+    <span style="font-family: var(--serif); font-size: 18px; line-height: 1; color: var(--ink);">❦</span>
+    <span style="flex: 0 0 90px; border-top: 1.5px solid var(--ink); border-bottom: 0.5px solid var(--ink); height: 3px;"></span>
+    <span style="font-family: var(--serif); font-size: 18px; line-height: 1; color: var(--ink);">❦</span>
+    <span style="flex: 1; border-top: 0.5px solid var(--rule);"></span>
+  </div>
+
+  <div style="margin-top: 14px;">
+    <div class="ornament" style="justify-content: center;">
+      <span class="sc glyph" style="font-family: var(--smallcaps); font-size: 11px; letter-spacing: 0.12em; color: var(--ink-2);">
+        Forthcoming
+      </span>
+    </div>
+    <div style="display: grid; grid-template-columns: auto 1fr; gap: 18px; align-items: center; margin: 10px auto 0; max-width: 620px;">
+      <img
+        src="/proteins.png"
+        alt="Protein ribbon diagram, set among flowers"
+        style="width: 230px; height: auto; display: block; mix-blend-mode: multiply;"
+      />
+      <p class="it" style="font-size: 13px; line-height: 1.5; color: var(--ink-2); margin: 0;">
+        Future editions of the Almanac may extend to protein foundation models — ESM, ESM3, ProstT5, and their kin.
+        The methodology that organizes the MLIP almanac applies equally to protein representation; the curatorial
+        work is ongoing.
+      </p>
+    </div>
+  </div>
+
+  <div style="margin-top: 48px; padding-top: 18px; display: grid; grid-template-columns: 1fr 1fr; gap: 24px; font-size: 12.5px; color: var(--ink-2);">
+    <div>
+      <span class="sc" style="font-size: 10.5px; letter-spacing: 0.10em; color: var(--ink);">Published by</span><br />
+      Globus Labs
+    </div>
+    <div style="text-align: right;">
+      <span class="sc" style="font-size: 10.5px; letter-spacing: 0.10em; color: var(--ink);">Cite as</span><br />
+      <span class="mono" style="font-size: 11px;">10.26311/almanac-2026</span>
+    </div>
+  </div>
+</Page>

@@ -1,0 +1,68 @@
+---
+import { getCollection } from 'astro:content';
+import Page from '../layouts/Page.astro';
+import OrnamentRule from '../components/OrnamentRule.astro';
+
+const datasets = (await getCollection('datasets')).sort((a, b) => a.data.year - b.data.year);
+---
+<Page title="Datasets — Garden's Almanac" section="Datasets" folioId="§05">
+  <p class="sc" style="font-size: 11.5px; letter-spacing: 0.14em; color: var(--ink-2);">§05</p>
+  <h1 style="margin-top: 3px;">Datasets</h1>
+  <p class="it" style="margin-top: 4px; font-size: 14px; color: var(--ink-2);">
+    The structure libraries from which these models descend.
+  </p>
+  <div style="margin-top: 8px;"><OrnamentRule width={220} /></div>
+
+  <div class="detail-body" style="margin-top: 14px;">
+    <div>
+      <p style="font-size: 13px; line-height: 1.5; margin: 0 0 10px;">
+        The lineage of an MLIP is shaped at least as much by what it was trained on as by its architecture.
+        Two equivariant transformers with nearly identical layer counts can produce wildly different relaxation
+        paths if one was raised on QM9 and the other on OMat24. The clusters in the <a class="ink-link" href="/map">Map</a>
+        track training dataset more reliably than they track model family — and on most days, more reliably
+        than the architecture diagrams in the original papers.
+      </p>
+      <p style="font-size: 13px; line-height: 1.5; margin: 0 0 14px;">
+        This section is a working reference, not a comprehensive review of materials and molecular chemistry
+        datasets. The entries cover the libraries actually referenced by the catalog.
+      </p>
+
+      <table class="almanac" style="font-size: 12.5px;">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th style="width: 110px;">Domain</th>
+            <th style="width: 140px; text-align: right;">Size</th>
+            <th style="width: 130px;">DFT level</th>
+            <th style="width: 54px; text-align: right;">Year</th>
+          </tr>
+        </thead>
+        <tbody>
+          {datasets.map((d) => (
+            <tr>
+              <td><a class="ink-link it" href={`/dataset/${d.id}`}>{d.data.name}</a></td>
+              <td class="sc" style="font-size: 11px;">{d.data.domain}</td>
+              <td style="text-align: right;">{d.data.size.split(';')[0]}</td>
+              <td class="sc" style="font-size: 11px;">{d.data.dftLevel}</td>
+              <td style="text-align: right;">{d.data.year}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <p class="it" style="font-size: 11.5px; color: var(--ink-2); margin-top: 6px;">
+        Sorted oldest first to read as a timeline of what models had to learn from.
+      </p>
+    </div>
+
+    <aside class="detail-rail">
+      <div class="margin">
+        <span class="label">Cross-references</span>
+        <p class="it">
+          Datasets and models cross-reference throughout the Almanac. Each dataset entry lists which models
+          trained on it; each model entry lists its training data. The reverse-index is one of the most useful
+          pages in the book — it answers "what's the lineage?" in a single glance.
+        </p>
+      </div>
+    </aside>
+  </div>
+</Page>

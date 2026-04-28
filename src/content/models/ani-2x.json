@@ -1,0 +1,10 @@
+{
+  "name": "ANI-2x",
+  "family": "earlier",
+  "year": 2020,
+  "params": "1.5M",
+  "rootstockEnv": "_legacy_env",
+  "trainingData": [
+    { "dataset": "ani1x", "role": "Training data" }
+  ]
+}

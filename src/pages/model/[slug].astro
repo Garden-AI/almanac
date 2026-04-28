@@ -1,0 +1,98 @@
+---
+import { getCollection, getEntry } from 'astro:content';
+import Page from '../../layouts/Page.astro';
+import { getRootstockDump } from '../../lib/rootstock';
+
+export async function getStaticPaths() {
+  const models = await getCollection('models');
+  return models.map((m) => ({ params: { slug: m.id }, props: { model: m } }));
+}
+
+const { model } = Astro.props;
+const family = await getEntry('architectures', model.data.family.id);
+
+const trainingData = await Promise.all(
+  model.data.trainingData.map(async (t) => ({
+    role: t.role,
+    dataset: await getEntry('datasets', t.dataset.id),
+  })),
+);
+
+// Per-cluster availability for this model, via its rootstockEnv.
+const dump = await getRootstockDump();
+const availability = dump.manifests.map((m) => {
+  const env = m.environments[model.data.rootstockEnv];
+  return { cluster: m.cluster, status: env?.status ?? 'n/a', builtAt: env?.built_at };
+});
+---
+<Page
+  title={`${model.data.name} — Garden's Almanac`}
+  section="§ Model"
+  folioId={`/model/${model.id}`}
+>
+  <p class="sc" style="font-size: 11.5px; letter-spacing: 0.14em;">
+    {family?.data.name ?? 'Unknown family'}
+  </p>
+  <h1>{model.data.name}</h1>
+  <p class="it" style="color: var(--ink-2); font-size: 14px;">
+    {model.data.year}{model.data.leadAuthor && ` · ${model.data.leadAuthor}`}
+  </p>
+  <hr class="title-rule" />
+
+  <div class="detail-body">
+    <div>
+      <h2 class="sc" style="font-size: 13px;">Specifications</h2>
+      <table class="almanac" style="margin-top: 6px;">
+        <tbody>
+          <tr><td>Family</td><td><a class="ink-link it" href={`/architecture/${model.data.family.id}`}>{family?.data.name}</a></td></tr>
+          <tr><td>Year</td><td>{model.data.year}</td></tr>
+          <tr><td>Parameters</td><td>{model.data.params}</td></tr>
+          <tr><td>Rootstock environment</td><td><span class="mono">{model.data.rootstockEnv}</span></td></tr>
+        </tbody>
+      </table>
+
+      <h2 class="sc" style="font-size: 13px; margin-top: 22px;">Training data</h2>
+      <table class="almanac" style="margin-top: 6px;">
+        <thead><tr><th>Dataset</th><th>Used as</th></tr></thead>
+        <tbody>
+          {trainingData.map(({ dataset, role }) => (
+            <tr>
+              <td><a class="ink-link it" href={`/dataset/${dataset?.id}`}>{dataset?.data.name}</a></td>
+              <td class="it">{role}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+      <h2 class="sc" style="font-size: 13px; margin-top: 22px;">Running on</h2>
+      <table class="almanac" style="margin-top: 6px;">
+        <thead><tr><th>Cluster</th><th>Status</th><th>Last built</th></tr></thead>
+        <tbody>
+          {availability.map((a) => (
+            <tr>
+              <td><a class="ink-link it" href={`/cluster/${a.cluster}`}>{a.cluster}</a></td>
+              <td>
+                {a.status === 'ready'
+                  ? <span class="status-verified">●</span>
+                  : a.status === 'n/a'
+                  ? <span class="status-na">○</span>
+                  : <span class="status-stale">◐</span>}
+                {' '}{a.status}
+              </td>
+              <td class="mono">{a.builtAt?.slice(0, 10) ?? '—'}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+
+    <aside class="detail-rail">
+      {model.data.notes && (
+        <div class="margin">
+          <span class="label">Notes</span>
+          <p class="it">{model.data.notes}</p>
+        </div>
+      )}
+    </aside>
+  </div>
+</Page>

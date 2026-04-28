@@ -1,0 +1,12 @@
+{
+  "name": "SPICE",
+  "fullName": "Small-molecule/Protein Interaction Chemical Energies",
+  "domain": "molecules",
+  "curator": "Eastman, Pande et al. (OpenMM)",
+  "year": 2023,
+  "size": "~1.1M conformations; small drug-like molecules, dipeptides, ions, ligand-binding poses",
+  "dftLevel": "ωB97M-D3(BJ) / def2-TZVPPD",
+  "license": "MIT",
+  "doi": "https://doi.org/10.1038/s41597-022-01882-6",
+  "primaryPaper": "Eastman et al., SPICE: A Dataset for Training Machine Learning Potentials, Sci. Data 10:11 (2023)."
+}

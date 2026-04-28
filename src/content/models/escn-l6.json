@@ -1,0 +1,11 @@
+{
+  "name": "eSCN-L6",
+  "family": "equivariant",
+  "year": 2022,
+  "params": "200M",
+  "rootstockEnv": "uma_env",
+  "trainingData": [
+    { "dataset": "oc20", "role": "Training data" },
+    { "dataset": "omat24", "role": "Fine-tuning" }
+  ]
+}

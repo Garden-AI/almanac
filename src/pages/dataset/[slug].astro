@@ -1,0 +1,91 @@
+---
+import { getCollection } from 'astro:content';
+import Page from '../../layouts/Page.astro';
+
+export async function getStaticPaths() {
+  const datasets = await getCollection('datasets');
+  const models = await getCollection('models');
+  return datasets.map((d) => ({
+    params: { slug: d.id },
+    props: {
+      dataset: d,
+      modelsTrainedOn: models
+        .map((m) => ({
+          model: m,
+          uses: m.data.trainingData.filter((t) => t.dataset.id === d.id),
+        }))
+        .filter((x) => x.uses.length > 0),
+    },
+  }));
+}
+
+const { dataset, modelsTrainedOn } = Astro.props;
+const d = dataset.data;
+---
+<Page
+  title={`${d.name} — Garden's Almanac`}
+  section="§ Dataset"
+  folioId={`/dataset/${dataset.id}`}
+>
+  <p class="sc" style="font-size: 11.5px; letter-spacing: 0.14em;">
+    {d.domain}
+  </p>
+  <h1>{d.fullName}</h1>
+  <p class="it" style="color: var(--ink-2); font-size: 14px;">
+    {d.curator} · {d.year}
+  </p>
+  <hr class="title-rule" />
+
+  <div class="detail-body">
+    <div>
+      <h2 class="sc" style="font-size: 13px;">Constitution</h2>
+      <table class="almanac" style="margin-top: 6px;">
+        <tbody>
+          <tr><td>Full name</td><td>{d.fullName}</td></tr>
+          <tr><td>Curator</td><td>{d.curator}</td></tr>
+          <tr><td>Size</td><td>{d.size}</td></tr>
+          <tr><td>DFT level</td><td>{d.dftLevel}</td></tr>
+          <tr><td>Released</td><td>{d.year}</td></tr>
+          <tr><td>License</td><td>{d.license}</td></tr>
+          {d.doi && <tr><td>DOI</td><td><a class="ink-link" href={d.doi}>{d.doi}</a></td></tr>}
+          {d.primaryPaper && <tr><td>Primary paper</td><td>{d.primaryPaper}</td></tr>}
+        </tbody>
+      </table>
+
+      {d.howToGet && (
+        <>
+          <h2 class="sc" style="font-size: 13px; margin-top: 22px;">How to get it</h2>
+          <p style="margin-top: 6px;">{d.howToGet}</p>
+        </>
+      )}
+
+      {modelsTrainedOn.length > 0 && (
+        <>
+          <h2 class="sc" style="font-size: 13px; margin-top: 22px;">Models trained on {d.name}</h2>
+          <table class="almanac" style="margin-top: 6px;">
+            <thead><tr><th>Model</th><th>Used as</th></tr></thead>
+            <tbody>
+              {modelsTrainedOn.map(({ model, uses }) =>
+                uses.map((u) => (
+                  <tr>
+                    <td><a class="ink-link it" href={`/model/${model.id}`}>{model.data.name}</a></td>
+                    <td class="it">{u.role}</td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </>
+      )}
+    </div>
+
+    <aside class="detail-rail">
+      {d.notes && (
+        <div class="margin">
+          <span class="label">Notes</span>
+          <p class="it">{d.notes}</p>
+        </div>
+      )}
+    </aside>
+  </div>
+</Page>

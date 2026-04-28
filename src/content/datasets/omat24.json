@@ -1,0 +1,14 @@
+{
+  "name": "OMat24",
+  "fullName": "Open Materials 2024",
+  "domain": "materials",
+  "curator": "Meta FAIR-Chem",
+  "year": 2024,
+  "size": "~118M structures; ~3.2B atom-environments",
+  "dftLevel": "PBE; PBE+U for 3d transition metals",
+  "license": "CC-BY 4.0",
+  "doi": "https://doi.org/10.48550/arXiv.2410.12771",
+  "primaryPaper": "Barroso-Luque et al., Open Materials 2024 (OMat24): A Foundation Dataset for Inorganic Materials, arXiv:2410.12771 (2024).",
+  "howToGet": "OMat24 is hosted on Hugging Face Datasets at fairchem/OMat24 and mirrored in the FAIR-Chem repository. The canonical format is LMDB (one shard per split: train, val_id, val_ood). Total on-disk size is ~640 GB; plan for that plus a working buffer. No registration is required — the dataset is CC-BY 4.0. On a Garden-supported cluster, the data is already at /scratch/.../garden-cache/datasets/omat24 and Rootstock will pick it up.",
+  "notes": "OMat24 is the largest publicly available DFT-quality materials dataset to date and the de facto pretraining corpus for the UMA family and Orb-v3. Two caveats: composition coverage is broad but not uniform (oxides and intermetallics dominate; lanthanides and actinides are underrepresented), and PBE+U is applied to 3d transition metals only, which keeps energetics consistent within OMat24 but introduces a discontinuity if you fine-tune on r²SCAN data."
+}

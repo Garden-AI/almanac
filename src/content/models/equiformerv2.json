@@ -1,0 +1,12 @@
+{
+  "name": "EquiformerV2",
+  "family": "equivariant",
+  "year": 2023,
+  "params": "153M",
+  "rootstockEnv": "uma_env",
+  "trainingData": [
+    { "dataset": "oc20", "role": "Training data" },
+    { "dataset": "oc22", "role": "Training data" },
+    { "dataset": "omat24", "role": "Fine-tuning" }
+  ]
+}

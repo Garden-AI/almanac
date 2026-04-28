@@ -1,0 +1,5 @@
+{
+  "name": "Earlier Generations",
+  "descriptor": "Architectures from before the current scale era — included for historical orientation.",
+  "body": "Some catalog entries come from a period when MLIPs were small, single-purpose, and trained on one chemistry domain at a time. SchNet, DimeNet++, GemNet-T, and ANI-2x are listed here as historical anchors. Their inclusion in the catalog is partly archival and partly practical: they remain the most widely cited baselines, and recent papers continue to benchmark against them. This capsule overlaps with the Message-Passing family above and that overlap is intentional — the lineage matters, even when the architecture name is the same."
+}

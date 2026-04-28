@@ -1,0 +1,80 @@
+---
+import { getCollection } from 'astro:content';
+import Page from '../layouts/Page.astro';
+import OrnamentRule from '../components/OrnamentRule.astro';
+import LatticeCartouche from '../components/LatticeCartouche.astro';
+
+const FAMILY_ORDER = ['equivariant', 'ace', 'mpnn', 'vanilla', 'earlier'];
+const families = (await getCollection('architectures')).sort(
+  (a, b) => FAMILY_ORDER.indexOf(a.id) - FAMILY_ORDER.indexOf(b.id),
+);
+const allModels = await getCollection('models');
+const modelsByFamily = Object.fromEntries(
+  families.map((f) => [
+    f.id,
+    allModels
+      .filter((m) => m.data.family.id === f.id)
+      .sort((a, b) => a.data.year - b.data.year || a.data.name.localeCompare(b.data.name)),
+  ]),
+);
+---
+<Page title="Architectures — Garden's Almanac" section="Architectures" folioId="§06">
+  <div style="display: grid; grid-template-columns: 1fr 72px; gap: 14px; align-items: end;">
+    <div>
+      <p class="sc" style="font-size: 11.5px; letter-spacing: 0.14em; color: var(--ink-2);">§06</p>
+      <h1 style="margin-top: 3px;">Architectures</h1>
+      <p class="it" style="margin-top: 4px; font-size: 14px; color: var(--ink-2);">
+        A short field guide to the families of models in the catalog.
+      </p>
+    </div>
+    <LatticeCartouche />
+  </div>
+  <div style="margin-top: 8px;"><OrnamentRule width={220} /></div>
+
+  <p style="max-width: 640px; font-size: 13px; line-height: 1.5; margin-top: 10px;">
+    A working vocabulary for reading the rest of the Almanac, not a tutorial. Representational similarity
+    tracks training data more reliably than architecture (per <a class="ink-link" href="/map">§02</a>), but
+    architecture still shapes what a model can learn. The five families below are the ones the catalog uses.
+  </p>
+
+  <hr class="hairline" style="margin: 14px 0 0;" />
+
+  {families.map((f, idx) => {
+    const rows = modelsByFamily[f.id] ?? [];
+    return (
+      <section id={f.id} style="margin-top: 14px;">
+        <h2 style="font-size: 21px; font-weight: 600; line-height: 1.0; letter-spacing: -0.003em;">
+          {f.data.name}
+        </h2>
+        <p class="it" style="font-size: 12.5px; color: var(--ink-2); margin-top: 1px;">
+          {f.data.descriptor}
+        </p>
+
+        <div style="display: grid; grid-template-columns: 1fr 260px; column-gap: 20px; align-items: start; margin-top: 6px;">
+          <div style="font-size: 12.5px; line-height: 1.5; max-width: 560px;" set:html={f.data.body} />
+
+          <div>
+            <div class="sc" style="font-size: 10.5px; letter-spacing: 0.10em; padding-bottom: 2px; border-bottom: 0.5px solid var(--rule); margin-bottom: 2px;">
+              Models in this family
+            </div>
+            <table class="almanac fam-table" style="font-size: 11.5px;">
+              <tbody>
+                {rows.length === 0 ? (
+                  <tr><td class="it" style="color: var(--ink-2);">— no catalog entries yet —</td></tr>
+                ) : rows.map((m) => (
+                  <tr>
+                    <td><a class="ink-link it" href={`/model/${m.id}`}>{m.data.name}</a></td>
+                    <td style="width: 46px; text-align: right; color: var(--ink-2);">{m.data.year}</td>
+                    <td style="width: 54px; text-align: right;">{m.data.params}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {idx < families.length - 1 && <hr class="hairline" style="margin-top: 12px;" />}
+      </section>
+    );
+  })}
+</Page>

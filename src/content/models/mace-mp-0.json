@@ -1,0 +1,10 @@
+{
+  "name": "MACE-MP-0",
+  "family": "ace",
+  "year": 2023,
+  "params": "4.7M",
+  "rootstockEnv": "mace_env",
+  "trainingData": [
+    { "dataset": "mptrj", "role": "Training data" }
+  ]
+}

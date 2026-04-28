@@ -1,0 +1,14 @@
+{
+  "name": "UMA Medium",
+  "family": "equivariant",
+  "year": 2026,
+  "params": "1.4B",
+  "leadAuthor": "Meta FAIR-Chem (UMA collaboration)",
+  "rootstockEnv": "uma_env",
+  "trainingData": [
+    { "dataset": "omat24", "role": "Pretraining" },
+    { "dataset": "salex", "role": "Pretraining" },
+    { "dataset": "omol25", "role": "Joint training" }
+  ],
+  "notes": "Mid-sized member of the UMA family — the same architecture as UMA Small, scaled up. Joint training across materials, molecules, and catalysis means a single checkpoint covers all three domains, at the cost of a few percentage points on any single in-domain benchmark vs. a specialist."
+}

@@ -1,0 +1,5 @@
+{
+  "name": "Equivariant Models",
+  "descriptor": "Models that respect the symmetries of three-dimensional space by construction.",
+  "body": "Equivariant networks build SO(3) rotational symmetry directly into their layers, propagating tensor representations of various angular-momentum orders rather than relying on data augmentation to teach the model that rotated molecules are still molecules. The promise is precise: predictions transform correctly under rotation by <i>construction</i>, not by training. Canonical examples are Batzner et al., <i>NequIP</i> and Liao et al., <i>EquiformerV2</i>. The tradeoff is cost: the operations that preserve equivariance are more expensive than their unconstrained counterparts, and large models in this family demand significant GPU memory."
+}

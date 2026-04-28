@@ -1,0 +1,11 @@
+{
+  "name": "DimeNet++",
+  "family": "mpnn",
+  "year": 2020,
+  "params": "10M",
+  "rootstockEnv": "_legacy_env",
+  "trainingData": [
+    { "dataset": "qm9", "role": "Training data" },
+    { "dataset": "md17", "role": "Training data" }
+  ]
+}

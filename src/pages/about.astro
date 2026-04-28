@@ -1,0 +1,86 @@
+---
+import Page from '../layouts/Page.astro';
+import OrnamentRule from '../components/OrnamentRule.astro';
+
+const sections = [
+  {
+    heading: 'What this is',
+    body: [
+      "The Garden's Almanac is a curated guide to machine learning interatomic potentials — the family of models that, having absorbed millions of quantum mechanical calculations, now predict the energies and forces of atomic systems at a small fraction of the cost.",
+      "The 2026 Edition catalogs twenty-two such models. Each is placed on a map by the similarity of its internal representation, annotated with installation notes, and linked to the datasets and architectures from which it descends. The Almanac will grow.",
+    ],
+    dropCap: true,
+  },
+  {
+    heading: "What this isn't",
+    body: [
+      "The Almanac does not rank models, and it does not report a single number against which every potential is measured. Such a number would not be meaningful across the breadth of materials chemistry the field now spans.",
+      'It is not a substitute for the underlying papers. <i>Matbench Discovery</i> remains the place to look for predictive performance; the <i>Hugging Face Hub</i> remains the place to obtain weights. The Almanac links to both, and competes with neither.',
+    ],
+  },
+  {
+    heading: 'How models are placed',
+    body: [
+      'Two models sit near one another on the map when, given the same input structures, they encode them in similar ways internally. This is not a measure of accuracy but of representational kinship: models that share a lineage — a dataset, a training recipe, an architectural ancestor — tend to cluster.',
+      'The methodology follows Edamadaka, Yang, et al. (2025), <i>Universally Converging Representations of Matter Across Scientific Foundation Models</i>. Similarity is computed on a fixed reference set drawn from QM9, OMat24, OMol25, and sAlex. Representational kinship does not, by itself, predict downstream behavior — two near neighbors can still disagree on a particular phase diagram. The map is a chart of the territory, not the territory itself.',
+    ],
+  },
+  {
+    heading: 'How installations are verified',
+    body: [
+      'For every cluster the Almanac covers, Garden runs a nightly automated test suite that installs each supported model from a clean environment and executes a basic inference run. The freshness threshold is seven days; the Compatibility Matrix reflects the most recent result.',
+      "<i>Verified</i> means precisely that — the install and a basic inference succeeded recently. It does not mean the model produces correct physics for your problem. That remains, as ever, the reader's responsibility.",
+    ],
+  },
+  {
+    heading: 'How the Almanac is maintained',
+    body: [
+      'The Almanac ships an annual edition, preserved at its published DOI as a static record of the field on the day of release. Between editions, the Compatibility Matrix and the catalog update continuously as Garden adds clusters and models.',
+      'Inclusion is, for now, by curatorial judgment rather than open submission. A new cluster joins the verification CI by partnering with Garden directly.',
+    ],
+  },
+];
+
+const marginalia = [
+  { label: 'Acknowledgement', body: 'The methodological foundation is the work of Sathya Edamadaka, Soojung Yang, and collaborators at MIT. The Almanac is their map, drawn by other hands.' },
+  { label: 'Reference set', body: 'The structures used to compute representational similarity are drawn from QM9, OMat24, OMol25, and sAlex — all public. The Almanac uses a fixed sample; the sample list is preserved at the edition\'s DOI.' },
+  { label: 'See also', body: 'Weights and inference code live on the <i>Hugging Face Hub</i>. Predictive performance is tracked on <i>Matbench Discovery</i>. Both are linked from every model entry in the catalog.' },
+  { label: 'Cadence', body: 'Annual editions, preserved at DOI. Continuous updates to the Compatibility Matrix and catalog between editions.' },
+];
+---
+<Page title="About — Garden's Almanac" section="About this Almanac" folioId="§01">
+  <p class="sc" style="font-size: 12px; letter-spacing: 0.18em; color: var(--ink-2);">Section 01</p>
+  <h1 style="margin-top: 3px;">About this Almanac</h1>
+  <p class="it" style="margin-top: 5px; font-size: 14.5px; color: var(--ink-2);">
+    What it is, what it isn't, and how it was made.
+  </p>
+  <div style="margin-top: 8px;"><OrnamentRule width={220} /></div>
+
+  <div class="detail-body" style="margin-top: 14px;">
+    <div style="font-size: 13px; line-height: 1.5;">
+      {sections.map((s) => (
+        <section style="margin-top: 12px;">
+          <h3 class="sc" style="font-size: 11.5px; letter-spacing: 0.10em; margin-bottom: 4px; font-weight: 500;">
+            {s.heading}
+          </h3>
+          {s.body.map((p, i) => (
+            <p
+              class={s.dropCap && i === 0 ? 'drop-cap' : undefined}
+              style={`margin: ${i === 0 ? '0' : '8px 0 0'};`}
+              set:html={p}
+            />
+          ))}
+        </section>
+      ))}
+    </div>
+
+    <aside class="detail-rail">
+      {marginalia.map((m, i) => (
+        <div class="margin" style={`padding-bottom: 10px; ${i < marginalia.length - 1 ? 'border-bottom: 0.5px solid var(--rule-soft); margin-bottom: 12px;' : ''}`}>
+          <span class="label">{m.label}</span>
+          <p class="it" style="margin: 0;" set:html={m.body} />
+        </div>
+      ))}
+    </aside>
+  </div>
+</Page>

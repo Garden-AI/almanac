@@ -1,0 +1,12 @@
+{
+  "name": "ANI-1x / ANI-2x",
+  "fullName": "ANI-1x and ANI-2x",
+  "domain": "molecules",
+  "curator": "Smith, Isayev, Roitberg et al.",
+  "year": 2018,
+  "size": "~5M (ANI-1x) and ~9M (ANI-2x) conformations of small organics",
+  "dftLevel": "ωB97X / 6-31G*",
+  "license": "CC-BY 4.0",
+  "doi": "https://doi.org/10.1038/s41597-020-0473-z",
+  "primaryPaper": "Smith et al., The ANI-1ccx and ANI-1x data sets, Sci. Data 7:134 (2020)."
+}

@@ -1,0 +1,12 @@
+{
+  "name": "OC22",
+  "fullName": "Open Catalyst 2022 (oxides)",
+  "domain": "catalysis",
+  "curator": "Meta FAIR-Chem",
+  "year": 2022,
+  "size": "~62k relaxations on oxide surfaces; ~62M structure-energy pairs",
+  "dftLevel": "PBE+U; VASP",
+  "license": "CC-BY 4.0",
+  "doi": "https://doi.org/10.1021/acscatal.2c05426",
+  "primaryPaper": "Tran et al., The Open Catalyst 2022 (OC22) Dataset and Challenges for Oxide Electrocatalysis, ACS Catal. (2023)."
+}

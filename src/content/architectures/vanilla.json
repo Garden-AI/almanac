@@ -1,0 +1,5 @@
+{
+  "name": "Vanilla / Direct-Prediction",
+  "descriptor": "Architectures that don't impose equivariance as a hard constraint.",
+  "body": "Direct-prediction models trade the equivariance guarantee for raw throughput. The headline example is the Orb family, which uses an <i>equigrad</i> training-time regularizer to encourage rotational consistency without enforcing it in the architecture. See Neumann et al., <i>Orb</i> and the v3 follow-up Rhodes et al., <i>Orb-v3</i>. What's gained is wall-clock speed (often 2–4× over equivariant siblings on the same hardware); what's risked is sporadic violations of physical consistency that can surface at long simulation timescales. Worth the tradeoff for many screening-scale workloads, less defensible for production MD."
+}

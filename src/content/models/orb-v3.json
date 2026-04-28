@@ -1,0 +1,11 @@
+{
+  "name": "Orb-v3",
+  "family": "vanilla",
+  "year": 2025,
+  "params": "48M",
+  "rootstockEnv": "orb_env",
+  "trainingData": [
+    { "dataset": "mptrj", "role": "Training data" },
+    { "dataset": "omat24", "role": "Fine-tuning" }
+  ]
+}

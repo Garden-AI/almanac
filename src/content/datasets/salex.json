@@ -1,0 +1,12 @@
+{
+  "name": "sAlex",
+  "fullName": "Subsampled Alexandria",
+  "domain": "materials",
+  "curator": "Schmidt, Marques et al. (Alexandria) / FAIR-Chem (subsample)",
+  "year": 2024,
+  "size": "~4.2M inorganic structures, subsampled from the Alexandria database",
+  "dftLevel": "PBE; some PBE+U; VASP",
+  "license": "CC-BY 4.0",
+  "doi": "https://doi.org/10.1002/adma.202210788",
+  "primaryPaper": "Schmidt et al., Machine-Learning-Assisted Determination of the Global Zero-Temperature Phase Diagram of Materials, Adv. Mater. (2023)."
+}

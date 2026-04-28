@@ -1,0 +1,11 @@
+{
+  "name": "NequIP",
+  "family": "equivariant",
+  "year": 2021,
+  "params": "2.5M",
+  "rootstockEnv": "mace_env",
+  "trainingData": [
+    { "dataset": "md17", "role": "Training data" },
+    { "dataset": "qm9", "role": "Training data" }
+  ]
+}

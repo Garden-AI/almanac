@@ -1,0 +1,75 @@
+import { defineCollection, reference, z } from 'astro:content';
+import { glob } from 'astro/loaders';
+
+const FAMILY_KEY = z.enum(['equivariant', 'ace', 'message-passing', 'vanilla', 'earlier']);
+
+const architectures = defineCollection({
+  loader: glob({ pattern: '**/*.json', base: './src/content/architectures' }),
+  schema: z.object({
+    name: z.string(),
+    descriptor: z.string(),
+    body: z.string(),
+  }),
+});
+
+const datasets = defineCollection({
+  loader: glob({ pattern: '**/*.json', base: './src/content/datasets' }),
+  schema: z.object({
+    name: z.string(),
+    fullName: z.string(),
+    domain: z.enum(['molecules', 'materials', 'catalysis', 'mixed']),
+    curator: z.string(),
+    year: z.number().int(),
+    size: z.string(),
+    dftLevel: z.string(),
+    license: z.string(),
+    doi: z.string().url().optional(),
+    primaryPaper: z.string().optional(),
+    notes: z.string().optional(),
+    howToGet: z.string().optional(),
+  }),
+});
+
+const models = defineCollection({
+  loader: glob({ pattern: '**/*.json', base: './src/content/models' }),
+  schema: z.object({
+    name: z.string(),
+    family: reference('architectures'),
+    year: z.number().int(),
+    params: z.string(),
+    leadAuthor: z.string().optional(),
+    /** Rootstock environment key (e.g. "uma_env") this model belongs to.
+        Drives compatibility-matrix lookups. */
+    rootstockEnv: z.string(),
+    trainingData: z.array(
+      z.object({
+        dataset: reference('datasets'),
+        role: z.enum([
+          'Training data',
+          'Pretraining',
+          'Fine-tuning',
+          'Sole training data',
+          'Joint training',
+          'Auxiliary',
+        ]),
+      }),
+    ),
+    notes: z.string().optional(),
+  }),
+});
+
+const clusters = defineCollection({
+  loader: glob({ pattern: '**/*.json', base: './src/content/clusters' }),
+  schema: z.object({
+    /** Slug must match `manifests[].cluster` from the Rootstock dump. */
+    name: z.string(),
+    institution: z.string(),
+    subtitle: z.string().optional(),
+    specs: z.record(z.string(), z.string()),
+    runningOn: z.string().optional(),
+    notes: z.string().optional(),
+  }),
+});
+
+export const collections = { architectures, datasets, models, clusters };
+export { FAMILY_KEY };

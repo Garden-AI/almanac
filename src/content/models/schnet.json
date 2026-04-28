@@ -1,0 +1,11 @@
+{
+  "name": "SchNet",
+  "family": "earlier",
+  "year": 2017,
+  "params": "1.7M",
+  "rootstockEnv": "_legacy_env",
+  "trainingData": [
+    { "dataset": "qm9", "role": "Training data" },
+    { "dataset": "md17", "role": "Training data" }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "name": "GemNet-OC",
+  "family": "mpnn",
+  "year": 2022,
+  "params": "38M",
+  "rootstockEnv": "uma_env",
+  "trainingData": [
+    { "dataset": "oc20", "role": "Training data" }
+  ]
+}

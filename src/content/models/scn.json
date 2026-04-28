@@ -1,0 +1,10 @@
+{
+  "name": "SCN",
+  "family": "equivariant",
+  "year": 2022,
+  "params": "87M",
+  "rootstockEnv": "uma_env",
+  "trainingData": [
+    { "dataset": "oc20", "role": "Training data" }
+  ]
+}

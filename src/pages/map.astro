@@ -1,0 +1,166 @@
+---
+import { getCollection } from 'astro:content';
+import Page from '../layouts/Page.astro';
+import OrnamentRule from '../components/OrnamentRule.astro';
+
+// Pre-computed t-SNE-style layout, OMat24 reference set. Hand-tuned in the
+// design prototype; would be regenerated from real activations in v2.
+// Slug → [u, v] in [0,1].
+const LAYOUT: Record<string, [number, number]> = {
+  'uma-medium': [0.50, 0.40],
+  'uma-small': [0.46, 0.44],
+  'equiformerv2': [0.42, 0.38],
+  'escn-l6': [0.38, 0.42],
+  'scn': [0.36, 0.36],
+  'gemnet-oc': [0.62, 0.58],
+  'gemnet-t': [0.66, 0.54],
+  'painn': [0.70, 0.62],
+  'dimenetpp': [0.66, 0.66],
+  'schnet': [0.74, 0.68],
+  'mace-mp-0': [0.28, 0.22],
+  'mace-off23': [0.24, 0.26],
+  'mace-large': [0.32, 0.20],
+  'allegro': [0.26, 0.18],
+  'nequip': [0.30, 0.16],
+  'orb-v2': [0.74, 0.34],
+  'orb-v3': [0.78, 0.30],
+  'mattersim-v1': [0.70, 0.22],
+  'chgnet': [0.76, 0.26],
+  'm3gnet': [0.80, 0.22],
+  'ani-2x': [0.56, 0.74],
+  'torchmd-net': [0.52, 0.70],
+};
+
+const constellations = [
+  { name: 'The Equivariants', members: ['uma-medium', 'uma-small', 'equiformerv2', 'escn-l6', 'scn'] },
+  { name: 'The ACE Cluster', members: ['mace-mp-0', 'mace-off23', 'mace-large', 'allegro', 'nequip'] },
+  { name: 'Message-Passing', members: ['gemnet-oc', 'gemnet-t', 'painn', 'dimenetpp', 'schnet'] },
+  { name: 'Materials Belt', members: ['orb-v2', 'orb-v3', 'mattersim-v1', 'chgnet', 'm3gnet'] },
+  { name: 'Earlier Generations', members: ['ani-2x', 'torchmd-net'] },
+];
+
+const models = (await getCollection('models')).filter((m) => LAYOUT[m.id]);
+const W = 740;
+const H = 700;
+
+const sizeFor = (params: string) => {
+  const n = parseFloat(params);
+  const M = params.endsWith('B') ? n * 1000 : n;
+  return Math.max(2.6, Math.min(6.5, 2 + Math.log10(M + 1) * 1.2));
+};
+
+const px = (slug: string) => {
+  const [u, v] = LAYOUT[slug];
+  return { x: u * W, y: v * H };
+};
+
+const hulls = constellations.map((con) => {
+  const pts = con.members.map((slug) => px(slug));
+  const xs = pts.map((p) => p.x);
+  const ys = pts.map((p) => p.y);
+  const minx = Math.min(...xs);
+  const maxx = Math.max(...xs);
+  const miny = Math.min(...ys);
+  const maxy = Math.max(...ys);
+  return {
+    name: con.name,
+    cx: (minx + maxx) / 2,
+    cy: (miny + maxy) / 2,
+    rx: Math.max(40, (maxx - minx) / 2 + 36),
+    ry: Math.max(32, (maxy - miny) / 2 + 28),
+  };
+});
+---
+<Page title="The Map — Garden's Almanac" section="The Map" folioId="§02">
+  <div style="display: flex; align-items: flex-end; justify-content: space-between; gap: 16px;">
+    <div>
+      <p class="sc" style="font-size: 12px; letter-spacing: 0.18em; color: var(--ink-2);">Section 02</p>
+      <h1 style="margin-top: 3px;">The Map</h1>
+      <p class="it" style="color: var(--ink-2); margin-top: 4px; font-size: 14.5px;">
+        Twenty-two models, charted by representational similarity.
+      </p>
+    </div>
+    <div style="text-align: right;">
+      <div class="sc" style="font-size: 10.5px; letter-spacing: 0.10em; color: var(--ink-2); margin-bottom: 4px;">
+        Reference dataset
+      </div>
+      <span class="sc" style="font-size: 12.5px; letter-spacing: 0.10em; border-bottom: 0.8px solid var(--ink); padding-bottom: 2px;">
+        OMat24
+      </span>
+    </div>
+  </div>
+  <div style="margin: 10px 0 12px;"><OrnamentRule width={220} /></div>
+
+  <svg
+    width="100%"
+    viewBox={`0 0 ${W} ${H}`}
+    style="background: var(--paper-2); border: 1px solid var(--ink); display: block;"
+  >
+    <defs>
+      <pattern id="dotgrid" width="32" height="32" patternUnits="userSpaceOnUse">
+        <circle cx="0" cy="0" r="0.5" fill="var(--ink)" opacity="0.30" />
+      </pattern>
+    </defs>
+
+    <rect x="0" y="0" width={W} height={H} fill="url(#dotgrid)" />
+
+    {[0.25, 0.5, 0.75].map((t) => (
+      <>
+        <line x1="0" y1={t * H} x2={W} y2={t * H} stroke="var(--ink)" stroke-width="0.3" stroke-dasharray="1 4" opacity="0.7" />
+        <line y1="0" x1={t * W} y2={H} x2={t * W} stroke="var(--ink)" stroke-width="0.3" stroke-dasharray="1 4" opacity="0.7" />
+      </>
+    ))}
+
+    <text x="10" y="16" font-family="var(--smallcaps)" font-size="9" letter-spacing="1.6" fill="var(--ink-2)">DIM. I</text>
+    <text x={W - 54} y={H - 10} font-family="var(--smallcaps)" font-size="9" letter-spacing="1.6" fill="var(--ink-2)">DIM. II</text>
+
+    {hulls.map((h) => (
+      <g>
+        <ellipse cx={h.cx} cy={h.cy} rx={h.rx} ry={h.ry} fill="none" stroke="var(--ink)" stroke-width="0.5" stroke-dasharray="2 3" opacity="0.55" />
+        <text
+          x={h.cx}
+          y={h.cy - h.ry - 6}
+          text-anchor="middle"
+          font-family="var(--smallcaps)"
+          font-size="11"
+          letter-spacing="2"
+          fill="var(--ink)"
+        >
+          {h.name.toUpperCase()}
+        </text>
+      </g>
+    ))}
+
+    {models.map((m) => {
+      const p = px(m.id);
+      const r = sizeFor(m.data.params);
+      return (
+        <a href={`/model/${m.id}`} style="cursor: pointer;">
+          {r >= 4 && (
+            <g stroke="var(--ink)" stroke-width="0.6">
+              <line x1={p.x - r - 2} y1={p.y} x2={p.x + r + 2} y2={p.y} />
+              <line x1={p.x} y1={p.y - r - 2} x2={p.x} y2={p.y + r + 2} />
+            </g>
+          )}
+          <circle cx={p.x} cy={p.y} r={r} fill="var(--ink)" />
+          <text
+            x={p.x + r + 4}
+            y={p.y + 3.5}
+            font-family="var(--serif)"
+            font-size="11.5"
+            font-style="italic"
+            fill="var(--ink)"
+            style="paint-order: stroke; stroke: var(--paper); stroke-width: 3; stroke-linejoin: round;"
+          >
+            {m.data.name}
+          </text>
+        </a>
+      );
+    })}
+  </svg>
+
+  <div style="display: flex; justify-content: space-between; margin-top: 8px; font-size: 12px; color: var(--ink-2);">
+    <span class="it">Layout: t-SNE on activations from 4,096 structures in OMat24.</span>
+    <span class="sc" style="font-size: 10.5px; letter-spacing: 0.10em;">{models.length} models</span>
+  </div>
+</Page>

@@ -1,0 +1,11 @@
+{
+  "name": "OMol25",
+  "fullName": "Open Molecules 2025",
+  "domain": "molecules",
+  "curator": "Meta FAIR-Chem",
+  "year": 2025,
+  "size": "~110M molecular frames; ωB97X-D-quality energies and forces",
+  "dftLevel": "ωB97X-D / def2-TZVPD",
+  "license": "CC-BY 4.0",
+  "primaryPaper": "Levine et al., Open Molecules 2025: A Foundation Dataset for Molecular Chemistry, arXiv:2505.xxxxx (2025)."
+}
