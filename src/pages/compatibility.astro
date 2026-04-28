@@ -1,8 +1,37 @@
 ---
 import { getCollection } from 'astro:content';
+import { Code } from 'astro:components';
 import Page from '../layouts/Page.astro';
 import { getRootstockDump } from '../lib/rootstock';
 import { url } from '../lib/url';
+
+// Paper-and-ink syntax theme for the How-To snippet. Ink for default text,
+// oxblood for keywords and string literals, muted ink for comments/punctuation.
+const almanacCodeTheme = {
+  name: 'almanac',
+  type: 'light' as const,
+  bg: 'rgba(26,22,18,0.035)',
+  fg: '#1f1c18',
+  settings: [
+    { settings: { foreground: '#1f1c18', background: 'rgba(26,22,18,0.035)' } },
+    { scope: ['comment', 'comment.line', 'comment.block', 'punctuation.definition.comment'],
+      settings: { foreground: '#7a7268', fontStyle: 'italic' } },
+    { scope: ['keyword', 'keyword.control', 'keyword.operator.expression', 'storage.type', 'storage.modifier'],
+      settings: { foreground: '#7a1f1f' } },
+    { scope: ['string', 'string.quoted', 'string.quoted.single', 'string.quoted.double', 'punctuation.definition.string'],
+      settings: { foreground: '#5a1414' } },
+    { scope: ['constant.numeric', 'constant.language'],
+      settings: { foreground: '#5a1414' } },
+    { scope: ['entity.name.function', 'support.function', 'meta.function-call.generic'],
+      settings: { foreground: '#1f1c18', fontStyle: 'bold' } },
+    { scope: ['entity.name.class', 'support.class'],
+      settings: { foreground: '#1f1c18', fontStyle: 'bold' } },
+    { scope: ['variable.parameter.function-call', 'variable.parameter'],
+      settings: { foreground: '#4a4540' } },
+    { scope: ['punctuation', 'meta.brace', 'punctuation.separator'],
+      settings: { foreground: '#4a4540' } },
+  ],
+};
 
 const clusters = (await getCollection('clusters')).sort((a, b) => {
   const oa = a.data.order ?? 999;
@@ -147,7 +176,7 @@ with RootstockCalculator(
         {' '}<span class="mono" style="font-size: 10.5px;">RootstockCalculator</span>{' '}
         which plugs in wherever you use ASE calculators.
       </p>
-      <pre>{codeSnippet}</pre>
+      <Code code={codeSnippet} lang="python" theme={almanacCodeTheme} />
       <div style="display: grid; grid-template-columns: auto 1fr; column-gap: 8px; row-gap: 1px; font-size: 10px; line-height: 1.35; color: var(--ink); margin-top: 5px;">
         <div class="sc" style="font-size: 9.5px; letter-spacing: 0.10em; color: var(--ink-2); align-self: start;">Further →</div>
         <div>
@@ -157,7 +186,7 @@ with RootstockCalculator(
         <div></div>
         <div>
           <a class="ink-link it" href="https://gitlab.osti.gov/genesis/genesis-skills/-/tree/main/skills/modcon-skills">DOE agent skills</a>
-          <span style="color: var(--ink-2);"> — Add to your agents to run on DOE clusters.</span>
+          <span style="color: var(--ink-2);"> — Skills to run on DOE clusters with agents (incl. Academy).</span>
         </div>
         <div></div>
       </div>
