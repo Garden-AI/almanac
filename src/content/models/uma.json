@@ -1,0 +1,14 @@
+{
+  "name": "UMA",
+  "family": "equivariant",
+  "year": 2026,
+  "leadAuthor": "Meta FAIR-Chem (UMA collaboration)",
+  "checkpoints": [
+    { "id": "uma-s-1p1", "params": "420M" }
+  ],
+  "trainingData": [
+    { "dataset": "omat24", "role": "Pretraining" },
+    { "dataset": "salex", "role": "Pretraining" },
+    { "dataset": "omol25", "role": "Joint training" }
+  ]
+}

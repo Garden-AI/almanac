@@ -3,12 +3,20 @@
  *
  * Today this reads from a captured fixture so the build is offline-clean.
  * To switch to live data, set ROOTSTOCK_URL in .env and the loader will
- * fetch instead. Response shape matches the live endpoint as of 2026-04.
+ * fetch instead. Response shape matches manifest schema v3 (per-checkpoint
+ * verification, env keys without the `_env` suffix).
  */
 
 import fixture from '../fixtures/rootstock-dump.json' with { type: 'json' };
 
 export type RootstockStatus = 'ready' | string;
+
+export interface RootstockCheckpoint {
+  fetched_at: string;
+  verified_at: string;
+  verified_device: string;
+  last_error: string | null;
+}
 
 export interface RootstockEnvironment {
   status: RootstockStatus;
@@ -17,7 +25,8 @@ export interface RootstockEnvironment {
   source: string;
   python_requires: string;
   dependencies: Record<string, string>;
-  checkpoints: unknown[];
+  /** Map of canonical checkpoint identifier → verification record. */
+  checkpoints: Record<string, RootstockCheckpoint>;
 }
 
 export interface RootstockManifest {
@@ -53,14 +62,34 @@ export async function getClusterManifest(
   return dump.manifests.find((m) => m.cluster === clusterSlug) ?? null;
 }
 
-/** Compatibility-matrix lookup. Returns the env's status, or null if the
-    cluster doesn't carry that environment (= "n/a" in matrix terms). */
-export async function getEnvStatusOnCluster(
+export interface CheckpointVerification {
+  /** Env (manifest key) the checkpoint was verified through. */
+  env: string;
+  verifiedAt: string;
+  verifiedDevice: string;
+  lastError: string | null;
+}
+
+/** Compatibility-matrix lookup. Returns the latest verification for a
+    `(cluster, checkpoint)` pair across all envs on that cluster, or null
+    if the cluster's manifest doesn't list that checkpoint anywhere
+    (= "n/a" / hatched in the matrix). */
+export async function getCheckpointVerification(
   clusterSlug: string,
-  envName: string,
-): Promise<{ status: RootstockStatus; builtAt: string } | null> {
+  checkpointId: string,
+): Promise<CheckpointVerification | null> {
   const manifest = await getClusterManifest(clusterSlug);
-  const env = manifest?.environments[envName];
-  if (!env) return null;
-  return { status: env.status, builtAt: env.built_at };
+  if (!manifest) return null;
+  for (const [envName, env] of Object.entries(manifest.environments)) {
+    const cp = env.checkpoints?.[checkpointId];
+    if (cp) {
+      return {
+        env: envName,
+        verifiedAt: cp.verified_at,
+        verifiedDevice: cp.verified_device,
+        lastError: cp.last_error,
+      };
+    }
+  }
+  return null;
 }

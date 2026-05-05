@@ -2,7 +2,7 @@
 import { getCollection } from 'astro:content';
 import { Code } from 'astro:components';
 import Page from '../layouts/Page.astro';
-import { getRootstockDump } from '../lib/rootstock';
+import { getRootstockDump, getCheckpointVerification } from '../lib/rootstock';
 import { url } from '../lib/url';
 
 // Paper-and-ink syntax theme for the How-To snippet. Ink for default text,
@@ -40,13 +40,36 @@ const clusters = (await getCollection('clusters')).sort((a, b) => {
   return a.data.name.localeCompare(b.data.name);
 });
 
-const models = (await getCollection('models')).sort((a, b) => {
-  const fam = a.data.family.id.localeCompare(b.data.family.id);
-  if (fam !== 0) return fam;
-  const pa = parseFloat(a.data.params) * (a.data.params.endsWith('B') ? 1000 : 1);
-  const pb = parseFloat(b.data.params) * (b.data.params.endsWith('B') ? 1000 : 1);
-  return pb - pa;
-});
+const models = await getCollection('models');
+
+// Flatten to one row per checkpoint, keeping a back-reference to the model
+// page. Sort by family → params (descending, where known) → id.
+const parseParams = (p: string | undefined): number => {
+  if (!p) return -1;
+  const n = parseFloat(p);
+  if (Number.isNaN(n)) return -1;
+  return n * (p.endsWith('B') ? 1000 : 1);
+};
+const rows = models
+  .flatMap((m) =>
+    m.data.checkpoints.map((cp) => ({
+      pageId: m.id,
+      pageName: m.data.name,
+      family: m.data.family.id,
+      checkpointId: cp.id,
+      params: cp.params,
+    })),
+  )
+  .sort((a, b) => {
+    const fam = a.family.localeCompare(b.family);
+    if (fam !== 0) return fam;
+    const page = a.pageId.localeCompare(b.pageId);
+    if (page !== 0) return page;
+    const pa = parseParams(a.params);
+    const pb = parseParams(b.params);
+    if (pa !== pb) return pb - pa;
+    return a.checkpointId.localeCompare(b.checkpointId);
+  });
 
 const dump = await getRootstockDump();
 const lastUpdated = dump.manifests
@@ -68,47 +91,29 @@ const formatLastUpdated = (iso: string | undefined) => {
 
 type CellState = 'verified' | 'lapsed' | 'na';
 
-// WIREFRAME DATA: cell states are fabricated for presentation purposes.
-// The Rootstock fixture currently only carries manifests for Della and Sophia,
-// which would leave most of the matrix hatched. Replace this with the real
-// stateFor() once the other clusters are onboarded:
-//   const env = manifest?.environments[modelEnv];
-//   if (!env) return 'na';
-//   return env.status === 'ready' ? 'verified' : 'lapsed';
-const djb2 = (s: string): number => {
-  let h = 5381;
-  for (let i = 0; i < s.length; i++) h = (((h << 5) + h) ^ s.charCodeAt(i)) >>> 0;
-  return h;
-};
-const wireframeState = (modelId: string, clusterSlug: string): CellState => {
-  const r = djb2(`${modelId}/${clusterSlug}`) % 100;
-  // Frontier runs AMD/ROCm; only ACE-style and a few message-passing models port cleanly.
-  if (clusterSlug === 'frontier') {
-    if (r < 30) return 'verified';
-    if (r < 38) return 'lapsed';
-    return 'na';
-  }
-  // Della carries a tighter env set than the leadership facilities.
-  if (clusterSlug === 'della') {
-    if (r < 70) return 'verified';
-    if (r < 82) return 'lapsed';
-    return 'na';
-  }
-  // Polaris, Perlmutter, Delta, Sophia: broad coverage, occasional lapsed.
-  if (r < 84) return 'verified';
-  if (r < 92) return 'lapsed';
-  return 'na';
+const STALE_AFTER_MS = 7 * 24 * 60 * 60 * 1000;
+const now = Date.now();
+const cellStateFor = (verifiedAtIso: string, lastError: string | null): CellState => {
+  if (lastError) return 'lapsed';
+  const age = now - new Date(verifiedAtIso).getTime();
+  if (Number.isNaN(age) || age > STALE_AFTER_MS) return 'lapsed';
+  return 'verified';
 };
 
 let counts = { verified: 0, lapsed: 0, na: 0 };
-const grid = models.map((m) => ({
-  model: m,
-  cells: clusters.map((c) => {
-    const state = wireframeState(m.id, c.id);
-    counts[state]++;
-    return { cluster: c, state };
-  }),
-}));
+const grid = await Promise.all(
+  rows.map(async (row) => ({
+    row,
+    cells: await Promise.all(
+      clusters.map(async (c) => {
+        const v = await getCheckpointVerification(c.id, row.checkpointId);
+        const state: CellState = v ? cellStateFor(v.verifiedAt, v.lastError) : 'na';
+        counts[state]++;
+        return { cluster: c, state };
+      }),
+    ),
+  })),
+);
 
 const codeSnippet = `from ase.build import bulk
 from rootstock import RootstockCalculator
@@ -116,10 +121,9 @@ from rootstock import RootstockCalculator
 atoms = bulk("Cu", "fcc", a=3.6) * (5, 5, 5)
 
 with RootstockCalculator(
-  cluster="della", 
-  model="mace", 
-  checkpoint="medium", 
-  device="cuda"
+  cluster="perlmutter",
+  checkpoint="mace-mp-0-medium",
+  device="cuda",
 ) as calc:
     atoms.calc = calc
     print(atoms.get_potential_energy())`;
@@ -134,6 +138,7 @@ with RootstockCalculator(
     .matrix-table { table-layout: fixed; }
     .matrix-table th.cluster-h { text-align: center; vertical-align: bottom; padding: 6px 4px; line-height: 1.2; }
     .matrix-table td.cell { text-align: center; padding: 4px 0; }
+    .matrix-table td.checkpoint-id { font-family: var(--mono); font-size: 11px; color: var(--ink-2); }
     .howto pre {
       margin: 4px 0 0;
       font-family: var(--mono);
@@ -171,7 +176,7 @@ with RootstockCalculator(
         How to use these models
       </div>
       <p style="margin: 0 0 4px; font-size: 11px; line-height: 1.4; color: var(--ink);">
-        A filled circle means the model is ready to run with Rootstock
+        A filled circle means the checkpoint is ready to run with Rootstock
         on that cluster. Install the Rootstock Python library with pip or uv, and then use a
         {' '}<span class="mono" style="font-size: 10.5px;">RootstockCalculator</span>{' '}
         which plugs in wherever you use ASE calculators.
@@ -199,6 +204,7 @@ with RootstockCalculator(
       <colgroup>
         <col style="width: 24px;" />
         <col style="width: 160px;" />
+        <col style="width: 180px;" />
         <col style="width: 60px;" />
         {clusters.map(() => <col />)}
         <col />
@@ -207,6 +213,7 @@ with RootstockCalculator(
         <tr>
           <th>№</th>
           <th>Model</th>
+          <th>Checkpoint</th>
           <th style="text-align: right;">Size</th>
           {clusters.map((c) => (
             <th class="cluster-h">
@@ -233,11 +240,12 @@ with RootstockCalculator(
         </tr>
       </thead>
       <tbody>
-        {grid.map(({ model, cells }, i) => (
+        {grid.map(({ row, cells }, i) => (
           <tr>
             <td style="font-variant-numeric: tabular-nums; color: var(--ink-2);">{String(i + 1).padStart(2, '0')}</td>
-            <td><a class="ink-link" href={url(`/model/${model.id}`)} style="font-weight: 600;">{model.data.name}</a></td>
-            <td style="text-align: right; font-variant-numeric: tabular-nums;">{model.data.params}</td>
+            <td><a class="ink-link" href={url(`/model/${row.pageId}`)} style="font-weight: 600;">{row.pageName}</a></td>
+            <td class="checkpoint-id">{row.checkpointId}</td>
+            <td style="text-align: right; font-variant-numeric: tabular-nums;">{row.params ?? '—'}</td>
             {cells.map(({ state }) => (
               <td class="cell">
                 {state === 'verified' && (
@@ -272,7 +280,7 @@ with RootstockCalculator(
 
     <div style="display: flex; justify-content: space-between; align-items: baseline; margin-top: 8px; font-size: 11.5px;">
       <span class="it" style="color: var(--ink-2);">
-        {models.length} models · {clusters.length} clusters · {counts.verified} verified, {counts.lapsed} lapsed, {counts.na} not applicable
+        {rows.length} checkpoints · {clusters.length} clusters · {counts.verified} verified, {counts.lapsed} lapsed, {counts.na} not applicable
       </span>
       <span style="display: inline-flex; align-items: center; gap: 14px;">
         <span style="display: inline-flex; align-items: center; gap: 6px;">

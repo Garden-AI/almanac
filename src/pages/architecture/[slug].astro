@@ -2,6 +2,7 @@
 import { getCollection } from 'astro:content';
 import Page from '../../layouts/Page.astro';
 import { url } from '../../lib/url';
+import { displayParams } from '../../lib/params';
 
 export async function getStaticPaths() {
   const architectures = await getCollection('architectures');
@@ -41,8 +42,8 @@ const a = architecture.data;
               {models.map((m) => (
                 <tr>
                   <td><a class="ink-link it" href={url(`/model/${m.id}`)}>{m.data.name}</a></td>
-                  <td style="text-align: right;">{m.data.year}</td>
-                  <td style="text-align: right; font-variant-numeric: tabular-nums;">{m.data.params}</td>
+                  <td style="text-align: right;">{m.data.year ?? '—'}</td>
+                  <td style="text-align: right; font-variant-numeric: tabular-nums;">{displayParams(m.data.checkpoints)}</td>
                 </tr>
               ))}
             </tbody>

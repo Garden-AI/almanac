@@ -2,8 +2,11 @@
   "name": "MACE-MP-0",
   "family": "ace",
   "year": 2023,
-  "params": "4.7M",
-  "rootstockEnv": "mace_env",
+  "checkpoints": [
+    { "id": "mace-mp-0-small" },
+    { "id": "mace-mp-0-medium", "params": "4.7M" },
+    { "id": "mace-mp-0-large", "params": "15.6M" }
+  ],
   "trainingData": [
     { "dataset": "mptrj", "role": "Training data" }
   ]

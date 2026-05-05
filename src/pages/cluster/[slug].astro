@@ -13,15 +13,51 @@ const { cluster } = Astro.props;
 const c = cluster.data;
 const manifest = await getClusterManifest(cluster.id);
 
+// Build a back-index from canonical checkpoint id → model page slug, so we
+// can link checkpoints back to the article they're catalogued under.
 const models = await getCollection('models');
-const supported = manifest
-  ? models
-      .filter((m) => manifest.environments[m.data.rootstockEnv])
-      .map((m) => ({
-        model: m,
-        env: manifest.environments[m.data.rootstockEnv],
+const checkpointToPage = new Map<string, { pageId: string; pageName: string }>();
+for (const m of models) {
+  for (const cp of m.data.checkpoints) {
+    checkpointToPage.set(cp.id, { pageId: m.id, pageName: m.data.name });
+  }
+}
+
+// Group checkpoints by env, ordered by env name. Each group lists its
+// checkpoints with their verification record.
+type EnvGroup = {
+  envName: string;
+  status: string;
+  builtAt: string;
+  checkpoints: Array<{
+    id: string;
+    verifiedAt: string;
+    verifiedDevice: string;
+    lastError: string | null;
+    page: { pageId: string; pageName: string } | undefined;
+  }>;
+};
+const envGroups: EnvGroup[] = manifest
+  ? Object.entries(manifest.environments)
+      .map(([envName, env]) => ({
+        envName,
+        status: env.status,
+        builtAt: env.built_at,
+        checkpoints: Object.entries(env.checkpoints ?? {})
+          .map(([id, cp]) => ({
+            id,
+            verifiedAt: cp.verified_at,
+            verifiedDevice: cp.verified_device,
+            lastError: cp.last_error,
+            page: checkpointToPage.get(id),
+          }))
+          .sort((a, b) => a.id.localeCompare(b.id)),
       }))
+      .filter((g) => g.checkpoints.length > 0)
+      .sort((a, b) => a.envName.localeCompare(b.envName))
   : [];
+
+const totalCheckpoints = envGroups.reduce((n, g) => n + g.checkpoints.length, 0);
 ---
 <Page
   title={`${c.name} — Garden's Almanac`}
@@ -53,60 +89,80 @@ const supported = manifest
         </tbody>
       </table>
 
-      <h2 class="sc" style="font-size: 13px; margin-top: 22px;">Supported models</h2>
+      <h2 class="sc" style="font-size: 13px; margin-top: 22px;">Available checkpoints</h2>
       {manifest ? (
-        <>
-          <p class="it" style="font-size: 12px; color: var(--ink-2); margin-top: 4px;">
-            Live from Rootstock · last updated {manifest.last_updated.slice(0, 10)}
-          </p>
-          {supported.length > 0 ? (
-            <table class="almanac" style="margin-top: 6px;">
-              <thead>
-                <tr><th>Model</th><th>Environment</th><th>Status</th><th>Built</th></tr>
-              </thead>
-              <tbody>
-                {supported.map(({ model, env }) => (
-                  <tr>
-                    <td><a class="ink-link it" href={url(`/model/${model.id}`)}>{model.data.name}</a></td>
-                    <td class="mono">{model.data.rootstockEnv}</td>
-                    <td>
-                      {env.status === 'ready'
-                        ? <span class="status-verified">●</span>
-                        : <span class="status-stale">◐</span>}
-                      {' '}{env.status}
-                    </td>
-                    <td class="mono">{env.built_at.slice(0, 10)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          ) : (
-            <p class="it" style="color: var(--ink-2);">
-              No catalog model declares an environment served on this cluster.
+        totalCheckpoints > 0 ? (
+          <>
+            <p class="it" style="font-size: 12px; color: var(--ink-2); margin-top: 4px;">
+              Live from Rootstock · {totalCheckpoints} checkpoint{totalCheckpoints === 1 ? '' : 's'}
+              {' '}across {envGroups.length} environment{envGroups.length === 1 ? '' : 's'}
+              {' · '}last updated {manifest.last_updated.slice(0, 10)}
             </p>
-          )}
-
-          <details style="margin-top: 14px;">
-            <summary class="sc" style="cursor: pointer; font-size: 11.5px;">
-              All Rootstock environments on this cluster
-            </summary>
-            <table class="almanac" style="margin-top: 6px;">
-              <thead><tr><th>Environment</th><th>Status</th><th>Built</th></tr></thead>
-              <tbody>
-                {Object.entries(manifest.environments).map(([name, env]) => (
-                  <tr>
-                    <td class="mono">{name}</td>
-                    <td>{env.status}</td>
-                    <td class="mono">{env.built_at.slice(0, 10)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </details>
-        </>
+            {envGroups.map((g) => (
+              <div style="margin-top: 14px;">
+                <div style="display: flex; align-items: baseline; gap: 10px;">
+                  <span class="sc" style="font-size: 11.5px; letter-spacing: 0.10em;">env</span>
+                  <span class="mono" style="font-size: 12px;">{g.envName}</span>
+                  <span class="it" style="font-size: 11px; color: var(--ink-3);">
+                    built {g.builtAt.slice(0, 10)}
+                  </span>
+                </div>
+                <table class="almanac" style="margin-top: 4px;">
+                  <thead>
+                    <tr>
+                      <th>Checkpoint</th>
+                      <th>Page</th>
+                      <th style="width: 110px;">Verified</th>
+                      <th style="width: 80px;">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {g.checkpoints.map((cp) => (
+                      <tr>
+                        <td class="mono" style="font-size: 11.5px;">{cp.id}</td>
+                        <td>
+                          {cp.page ? (
+                            <a class="ink-link it" href={url(`/model/${cp.page.pageId}`)}>{cp.page.pageName}</a>
+                          ) : (
+                            <span class="it" style="color: var(--ink-3);">— no catalog entry</span>
+                          )}
+                        </td>
+                        <td class="mono" style="font-variant-numeric: tabular-nums;">
+                          {cp.verifiedAt.slice(0, 10)}
+                        </td>
+                        <td>
+                          {cp.lastError ? (
+                            <><span class="status-stale">○</span> errored</>
+                          ) : (
+                            <><span class="status-verified">●</span> verified</>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {g.checkpoints.some((cp) => cp.lastError) && (
+                  <ul style="margin-top: 4px; font-size: 11px; color: var(--ink-2);">
+                    {g.checkpoints
+                      .filter((cp) => cp.lastError)
+                      .map((cp) => (
+                        <li>
+                          <span class="mono">{cp.id}</span>: <span class="it">{cp.lastError}</span>
+                        </li>
+                      ))}
+                  </ul>
+                )}
+              </div>
+            ))}
+          </>
+        ) : (
+          <p class="it" style="color: var(--ink-2); margin-top: 4px;">
+            Rootstock has a manifest for this cluster, but no checkpoints have been verified yet.
+          </p>
+        )
       ) : (
-        <p class="it" style="color: var(--ink-2);">
-          Rootstock has no manifest for <span class="mono">{cluster.id}</span>.
+        <p class="it" style="color: var(--ink-2); margin-top: 4px;">
+          Rootstock has no manifest for <span class="mono">{cluster.id}</span> yet.
         </p>
       )}
 

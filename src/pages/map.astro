@@ -3,6 +3,7 @@ import { getCollection } from 'astro:content';
 import Page from '../layouts/Page.astro';
 import OrnamentRule from '../components/OrnamentRule.astro';
 import { url } from '../lib/url';
+import { paramsForSize } from '../lib/params';
 
 // Pre-computed t-SNE-style layout, OMat24 reference set. Hand-tuned in the
 // design prototype; would be regenerated from real activations in v2.
@@ -44,11 +45,8 @@ const models = (await getCollection('models')).filter((m) => LAYOUT[m.id]);
 const W = 740;
 const H = 700;
 
-const sizeFor = (params: string) => {
-  const n = parseFloat(params);
-  const M = params.endsWith('B') ? n * 1000 : n;
-  return Math.max(2.6, Math.min(6.5, 2 + Math.log10(M + 1) * 1.2));
-};
+const sizeFor = (M: number) =>
+  Math.max(2.6, Math.min(6.5, 2 + Math.log10(M + 1) * 1.2));
 
 const px = (slug: string) => {
   const [u, v] = LAYOUT[slug];
@@ -134,7 +132,7 @@ const hulls = constellations.map((con) => {
 
     {models.map((m) => {
       const p = px(m.id);
-      const r = sizeFor(m.data.params);
+      const r = sizeFor(paramsForSize(m.data.checkpoints));
       return (
         <a href={url(`/model/${m.id}`)} style="cursor: pointer;">
           {r >= 4 && (

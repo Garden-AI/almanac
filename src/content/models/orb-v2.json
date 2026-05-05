@@ -2,8 +2,9 @@
   "name": "Orb-v2",
   "family": "vanilla",
   "year": 2024,
-  "params": "25M",
-  "rootstockEnv": "orb_env",
+  "checkpoints": [
+    { "id": "orb-v2", "params": "25M" }
+  ],
   "trainingData": [
     { "dataset": "mptrj", "role": "Training data" }
   ]
