@@ -30,7 +30,7 @@ export interface RootstockEnvironment {
 }
 
 export interface RootstockManifest {
-  schema_version: string;
+  schema_version: string | number;
   cluster: string;
   root: string;
   maintainer: { name: string; email: string };
