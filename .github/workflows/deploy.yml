@@ -22,6 +22,8 @@ jobs:
       - uses: withastro/action@v3
         with:
           node-version: 22
+        env:
+          ROOTSTOCK_URL: https://garden-ai-prod--rootstock-admin-dashboard.modal.run/
 
   deploy:
     needs: build

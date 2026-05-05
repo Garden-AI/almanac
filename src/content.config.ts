@@ -35,25 +35,33 @@ const models = defineCollection({
   schema: z.object({
     name: z.string(),
     family: reference('architectures'),
-    year: z.number().int(),
-    params: z.string(),
+    year: z.number().int().optional(),
     leadAuthor: z.string().optional(),
-    /** Rootstock environment key (e.g. "uma_env") this model belongs to.
-        Drives compatibility-matrix lookups. */
-    rootstockEnv: z.string(),
-    trainingData: z.array(
-      z.object({
-        dataset: reference('datasets'),
-        role: z.enum([
-          'Training data',
-          'Pretraining',
-          'Fine-tuning',
-          'Sole training data',
-          'Joint training',
-          'Auxiliary',
-        ]),
-      }),
-    ),
+    /** Canonical checkpoint identifiers for this model page. The matrix has
+        one row per entry; cluster manifests verify by these same ids. */
+    checkpoints: z
+      .array(
+        z.object({
+          id: z.string(),
+          params: z.string().optional(),
+        }),
+      )
+      .min(1),
+    trainingData: z
+      .array(
+        z.object({
+          dataset: reference('datasets'),
+          role: z.enum([
+            'Training data',
+            'Pretraining',
+            'Fine-tuning',
+            'Sole training data',
+            'Joint training',
+            'Auxiliary',
+          ]),
+        }),
+      )
+      .default([]),
     notes: z.string().optional(),
   }),
 });

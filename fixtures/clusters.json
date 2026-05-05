@@ -1,0 +1,193 @@
+{
+    "manifests": [
+        {
+            "schema_version": 2,
+            "cluster": "perlmutter",
+            "root": "/global/cfs/cdirs/m4845/rootstock",
+            "maintainer": {
+                "name": "Will Engler",
+                "email": "willengler@uchicago.edu"
+            },
+            "rootstock_version": "0.5.0",
+            "python_version": "unknown",
+            "last_updated": "2026-05-04T15:29:20.477891+00:00",
+            "environments": {
+                "mace_env": {
+                    "status": "ready",
+                    "built_at": "2026-05-01T22:37:10.589055+00:00",
+                    "source_hash": "sha256:8f49eb565411b7d3f015383c4e5d52ca9770d4295d9cb2c51c10cfa8ab173e75",
+                    "source": "# /// script\n# requires-python = \">=3.10\"\n# dependencies = [\n#     \"mace-torch>=0.3.0\",\n#     \"ase>=3.22\",\n#     \"torch>=2.4.0,<2.10\",\n# ]\n# ///\n\"\"\"\nMACE environment for Rootstock.\n\nThis environment provides access to MACE foundation models for\nmachine learning interatomic potentials.\n\nModels:\n    - \"small\", \"medium\", \"large\": Pre-trained MACE-MP-0 models\n    - Path to a .pt file: Custom fine-tuned model\n\"\"\"\n\n\ndef setup(model: str, device: str = \"cuda\"):\n    \"\"\"\n    Load a MACE calculator.\n\n    Args:\n        model: Model identifier. Can be:\n            - \"small\", \"medium\", \"large\" for MACE-MP-0 foundation models\n            - Path to a .pt file for custom models\n        device: PyTorch device string (e.g., \"cuda\", \"cuda:0\", \"cpu\")\n\n    Returns:\n        ASE-compatible calculator\n    \"\"\"\n    from mace.calculators import mace_mp\n\n    return mace_mp(model=model, device=device, default_dtype=\"float32\")\n",
+                    "python_requires": ">=3.10",
+                    "dependencies": {
+                        "ase": "3.28.0",
+                        "mace-torch": "0.3.15",
+                        "rootstock": "0.7.3",
+                        "torch": "2.9.1"
+                    },
+                    "checkpoints": {
+                        "medium": {
+                            "fetched_at": "2026-05-01T22:43:17.853626+00:00",
+                            "verified_at": "2026-05-01T23:38:19.056739+00:00",
+                            "verified_device": "cuda",
+                            "last_error": null
+                        },
+                        "small": {
+                            "fetched_at": "2026-05-04T15:19:58.624853+00:00",
+                            "verified_at": "2026-05-04T15:28:36.499379+00:00",
+                            "verified_device": "cuda",
+                            "last_error": null
+                        },
+                        "large": {
+                            "fetched_at": "2026-05-04T15:20:18.525106+00:00",
+                            "verified_at": "2026-05-04T15:29:18.929608+00:00",
+                            "verified_device": "cuda",
+                            "last_error": null
+                        }
+                    }
+                },
+                "uma_env": {
+                    "status": "ready",
+                    "built_at": "2026-05-01T22:40:01.754764+00:00",
+                    "source_hash": "sha256:5b590ecd27f397d6903840fc90e6efbbf644ef1d8cd553a0ece7250cf1fcb57d",
+                    "source": "# /// script\n# requires-python = \">=3.10,<3.11\"\n# dependencies = [\n#     \"torch>=2.4.0\",\n#     \"fairchem-core>=2.0.0\",\n#     \"ase>=3.22\",\n#     \"torch-geometric\",\n# ]\n#\n# [tool.uv]\n# find-links = [\"https://data.pyg.org/whl/torch-2.4.0+cu121.html\"]\n# ///\n\"\"\"\nUMA (Universal Atomistic Model) environment for Rootstock.\n\nThis environment provides access to Meta's UMA foundation model\nvia the FAIRChem library.\n\nModels:\n    - \"uma-s-1p1\": UMA small model (default)\n    - Other UMA variants as released by FAIRChem\n\"\"\"\n\n\ndef setup(model: str = \"uma-s-1p1\", device: str = \"cuda\", task: str = \"omat\"):\n    \"\"\"\n    Load a UMA calculator.\n\n    Args:\n        model: Model identifier (e.g., \"uma-s-1p1\"). Passed directly to\n               pretrained_mlip.get_predict_unit().\n        device: PyTorch device string (e.g., \"cuda\", \"cuda:0\", \"cpu\")\n        task: Task head for the FAIRChem calculator. Common values: \"omat\"\n              (materials, the default), \"omol\" (molecules).\n\n    Returns:\n        ASE-compatible calculator\n    \"\"\"\n    from fairchem.core import FAIRChemCalculator, pretrained_mlip\n\n    predictor = pretrained_mlip.get_predict_unit(model, device=device)\n    return FAIRChemCalculator(predictor, task_name=task)\n",
+                    "python_requires": ">=3.10,<3.11",
+                    "dependencies": {
+                        "ase": "3.28.0",
+                        "fairchem-core": "2.14.0",
+                        "rootstock": "0.7.3",
+                        "torch": "2.8.0",
+                        "torch-geometric": "2.7.0"
+                    },
+                    "checkpoints": {
+                        "uma-s-1p1": {
+                            "fetched_at": "2026-05-01T22:47:22.848565+00:00",
+                            "verified_at": "2026-05-01T23:40:34.971046+00:00",
+                            "verified_device": "cuda",
+                            "last_error": null
+                        }
+                    }
+                },
+                "esen_env": {
+                    "status": "ready",
+                    "built_at": "2026-05-01T22:41:11.219927+00:00",
+                    "source_hash": "sha256:79d02f167b4ddcdff145ad96f8ad3593e8df805f43c0d84ca6d7879a3d058489",
+                    "source": "# /// script\n# requires-python = \">=3.10,<3.11\"\n# dependencies = [\n#     \"torch>=2.4.0\",\n#     \"fairchem-core>=2.0.0\",\n#     \"ase>=3.22\",\n#     \"torch-geometric\",\n# ]\n#\n# [tool.uv]\n# find-links = [\"https://data.pyg.org/whl/torch-2.4.0+cu121.html\"]\n# ///\n\"\"\"\neSEN environment for Rootstock.\n\nProvides access to FAIRChem's eSEN single-task checkpoints. Unlike UMA,\neSEN is single-task, so task_name is not passed to FAIRChemCalculator.\n\nAvailable checkpoints (from fairchem-core's pretrained_mlip registry):\n    OMol25:  esen-md-direct-all-omol (default), esen-sm-conserving-all-omol,\n             esen-sm-direct-all-omol\n    OC25:    esen-sm-conserving-all-oc25, esen-md-direct-all-oc25\n    ODAC25:  esen-sm-filtered-odac25, esen-sm-full-odac25\n\nOMol checkpoints expect `charge` and `spin` in `atoms.info`.\n\"\"\"\n\n\ndef setup(model: str = \"esen-md-direct-all-omol\", device: str = \"cuda\"):\n    \"\"\"\n    Load an eSEN calculator.\n\n    Args:\n        model: Checkpoint name from FAIRChem's pretrained_mlip registry\n               (e.g., \"esen-md-direct-all-omol\", \"esen-sm-conserving-all-oc25\").\n        device: PyTorch device string (e.g., \"cuda\", \"cuda:0\", \"cpu\").\n\n    Returns:\n        ASE-compatible FAIRChemCalculator.\n    \"\"\"\n    from fairchem.core import FAIRChemCalculator, pretrained_mlip\n\n    predictor = pretrained_mlip.get_predict_unit(model, device=device)\n    return FAIRChemCalculator(predictor)\n",
+                    "python_requires": ">=3.10,<3.11",
+                    "dependencies": {
+                        "ase": "3.28.0",
+                        "fairchem-core": "2.14.0",
+                        "rootstock": "0.7.3",
+                        "torch": "2.8.0",
+                        "torch-geometric": "2.7.0"
+                    },
+                    "checkpoints": {
+                        "esen-md-direct-all-omol": {
+                            "fetched_at": "2026-05-01T22:54:17.061104+00:00",
+                            "verified_at": "2026-05-01T23:42:16.369969+00:00",
+                            "verified_device": "cuda",
+                            "last_error": null
+                        },
+                        "esen-sm-conserving-all-omol": {
+                            "fetched_at": "2026-05-04T15:18:40.372025+00:00",
+                            "verified_at": "2026-05-04T15:26:10.002545+00:00",
+                            "verified_device": "cuda",
+                            "last_error": null
+                        },
+                        "esen-sm-direct-all-omol": {
+                            "fetched_at": "2026-05-04T15:19:00.069473+00:00",
+                            "verified_at": "2026-05-04T15:27:01.695701+00:00",
+                            "verified_device": "cuda",
+                            "last_error": null
+                        }
+                    }
+                },
+                "orb_env": {
+                    "status": "ready",
+                    "built_at": "2026-05-04T14:13:09.485599+00:00",
+                    "source_hash": "sha256:41b51eb9c4f17aa30b968045681f81e828dc8ce1311f4b538732387cdfbbf78a",
+                    "source": "# /// script\n# requires-python = \">=3.10\"\n# dependencies = [\n#     \"orb-models>=0.4.0\",\n#     \"ase>=3.22\",\n#     \"torch>=2.0\",\n# ]\n# ///\n\"\"\"\nOrb environment for Rootstock.\n\nProvides access to Orbital Materials' Orb universal potentials for periodic\nand molecular systems.\n\nModels:\n    - \"orb-v2\": Orb v2 universal potential (default)\n    - \"orb-v3-conservative-inf-omat\": Orb v3, conservative forces, infinity\n    - \"orb-v3-direct-inf-omat\": Orb v3, direct forces, infinity\n    See orb_models.pretrained for the full checkpoint list.\n\"\"\"\n\n\ndef setup(model: str = \"orb-v2\", device: str = \"cuda\"):\n    \"\"\"\n    Load an Orb calculator.\n\n    Args:\n        model: Checkpoint name passed to orb_models.pretrained.orb_pretrained().\n        device: PyTorch device string (e.g., \"cuda\", \"cpu\").\n\n    Returns:\n        ASE-compatible ORBCalculator.\n    \"\"\"\n    import torch\n    from orb_models.forcefield import pretrained\n    from orb_models.forcefield.calculator import ORBCalculator\n\n    # orb-models exposes one function per checkpoint, e.g. pretrained.orb_v2().\n    # Map \"orb-v2\" -> \"orb_v2\", \"orb-v3-conservative-inf-omat\" -> \"orb_v3_conservative_inf_omat\".\n    fn_name = model.replace(\"-\", \"_\")\n    load_fn = getattr(pretrained, fn_name)\n    orbff = load_fn(device=torch.device(device))\n    return ORBCalculator(orbff, device=torch.device(device))\n",
+                    "python_requires": ">=3.10",
+                    "dependencies": {
+                        "ase": "3.28.0",
+                        "orb-models": "0.5.5",
+                        "rootstock": "0.8.0",
+                        "torch": "2.11.0"
+                    },
+                    "checkpoints": {
+                        "orb-v2": {
+                            "fetched_at": "2026-05-04T14:18:11.893992+00:00",
+                            "verified_at": "2026-05-04T14:33:39.844760+00:00",
+                            "verified_device": "cuda",
+                            "last_error": null
+                        }
+                    }
+                },
+                "tensornet_env": {
+                    "status": "ready",
+                    "built_at": "2026-05-04T14:15:29.046375+00:00",
+                    "source_hash": "sha256:b871cfcdb8aa0089cd053e85c8aff12bbf7d590afdb4df224d094eabe19d1973",
+                    "source": "# /// script\n# requires-python = \">=3.11\"\n# dependencies = [\n#     \"torch>=2.4.0\",\n#     \"ase>=3.22\",\n#     \"huggingface_hub\",\n#     \"nvalchemi-toolkit-ops\",\n#     \"matgl\",\n#     \"pymatgen\",\n#     \"monty\",\n#     \"ruamel.yaml\",\n#     \"scipy\",\n#     \"torch-geometric\",\n#     \"torch-scatter\",\n#     \"torch-sparse\",\n#     \"torch-cluster\",\n#     \"torch-spline-conv\",\n# ]\n#\n# [tool.uv]\n# find-links = [\"https://data.pyg.org/whl/torch-2.4.0+cu121.html\"]\n#\n# [tool.uv.sources]\n# matgl = { git = \"https://github.com/materialsvirtuallab/matgl.git\" }\n# ///\n\"\"\"\nTensorNet environment for Rootstock.\n\nProvides access to TensorNet models via the MatGL library. Models are hosted\non HuggingFace under the materialyze org and loaded by passing the HF model\nID directly to matgl.load_model().\n\nModels:\n    - \"materialyze/TensorNet-PES-MatPES-PBE-2025.2\": PBE functional (default)\n    - \"materialyze/TensorNet-PES-MatPES-r2SCAN-2025.2\": r2SCAN functional\n    - \"materialyze/TensorNetDGL-PES-MatPES-PBE-2025.2\": DGL-backend variant\n\"\"\"\n\n\ndef setup(model: str = \"materialyze/TensorNet-PES-MatPES-PBE-2025.2\", device: str = \"cuda\"):\n    \"\"\"\n    Load a TensorNet/MatGL calculator.\n\n    Args:\n        model: HuggingFace model ID (e.g., \"materialyze/TensorNet-PES-MatPES-PBE-2025.2\").\n               Passed directly to matgl.load_model().\n        device: PyTorch device string (currently MatGL handles device internally)\n\n    Returns:\n        ASE-compatible calculator\n    \"\"\"\n    import torch\n    torch.set_default_device(device)\n\n    # matgl 1.0.0 imports ExpCellFilter from ase.constraints, but it moved to\n    # ase.filters in ASE 3.23. Patch it in before matgl imports.\n    import ase.constraints\n    if not hasattr(ase.constraints, \"ExpCellFilter\"):\n        from ase.filters import ExpCellFilter\n        ase.constraints.ExpCellFilter = ExpCellFilter\n\n    # DGL 2.x imports torchdata.datapipes at init, but torchdata>=0.7 removed\n    # datapipes. Stub the minimum needed so DGL imports cleanly. matgl only\n    # uses DGL for graph construction, not graphbolt.\n    import sys, types\n\n    # DGL 2.x graphbolt imports torchdata submodules removed in torchdata>=0.7.\n    # Stub the entire graphbolt subpackage before `import dgl` runs; DGL's\n    # __init__ will use our empty stub and skip the real graphbolt initialisation.\n    # matgl only uses DGL for graph construction — graphbolt is never called.\n    for _name in [\n        \"dgl.graphbolt\",\n        \"dgl.graphbolt.base\",\n        \"dgl.graphbolt.dataloader\",\n        \"dgl.graphbolt.feature_fetcher\",\n        \"dgl.graphbolt.minibatch_transformer\",\n    ]:\n        if _name not in sys.modules:\n            sys.modules[_name] = types.ModuleType(_name)\n\n    from huggingface_hub import snapshot_download\n\n    import matgl\n    from matgl.ext.ase import PESCalculator\n\n    # matgl 1.0.0 load_model only checks the GitHub manifest; HF models must\n    # be downloaded explicitly and passed as a local path.\n    local_path = snapshot_download(repo_id=model)\n    pot = matgl.load_model(local_path)\n    return PESCalculator(potential=pot)\n",
+                    "python_requires": ">=3.11",
+                    "dependencies": {
+                        "ase": "3.28.0",
+                        "huggingface-hub": "1.13.0",
+                        "matgl": "2.2.1",
+                        "monty": "2026.2.18",
+                        "nvalchemi-toolkit-ops": "0.3.1",
+                        "pymatgen": "2026.3.23",
+                        "rootstock": "0.8.0",
+                        "ruamel-yaml": "0.19.1",
+                        "scipy": "1.17.1",
+                        "torch": "2.11.0",
+                        "torch-cluster": "1.6.3+pt24cu121",
+                        "torch-geometric": "2.7.0",
+                        "torch-scatter": "2.1.2+pt24cu121",
+                        "torch-sparse": "0.6.18+pt24cu121",
+                        "torch-spline-conv": "1.2.2+pt24cu121"
+                    },
+                    "checkpoints": {
+                        "materialyze/TensorNet-PES-MatPES-PBE-2025.2": {
+                            "fetched_at": "2026-05-04T14:22:37.957033+00:00",
+                            "verified_at": "2026-05-04T14:32:05.891770+00:00",
+                            "verified_device": "cuda",
+                            "last_error": null
+                        }
+                    }
+                },
+                "maceoff_env": {
+                    "status": "ready",
+                    "built_at": "2026-05-04T15:15:44.698587+00:00",
+                    "source_hash": "sha256:7365c42719be35e73326ef9fcc5b72e0b728c188d4e72c5d21c4ecbfa4432916",
+                    "source": "# /// script\n# requires-python = \">=3.10\"\n# dependencies = [\n#     \"mace-torch>=0.3.0\",\n#     \"ase>=3.22\",\n#     \"torch>=2.4.0,<2.10\",\n# ]\n# ///\n\"\"\"\nMACE-OFF environment for Rootstock.\n\nMACE-OFF is the organic-chemistry-focused MACE foundation model, trained\non a different dataset than MACE-MP and intended for molecular systems\nrather than periodic materials. It ships in the same `mace-torch` package\nas MACE-MP but is loaded via a different entry point.\n\nModels:\n    - \"small\", \"medium\", \"large\": MACE-OFF-23 foundation models\n\"\"\"\n\ndef setup(model: str = \"medium\", device: str = \"cuda\"):\n    from mace.calculators import mace_off\n    return mace_off(model=model, device=device, default_dtype=\"float32\")\n\n",
+                    "python_requires": ">=3.10",
+                    "dependencies": {
+                        "ase": "3.28.0",
+                        "mace-torch": "0.3.15",
+                        "rootstock": "0.8.0",
+                        "torch": "2.9.1"
+                    },
+                    "checkpoints": {
+                        "small": {
+                            "fetched_at": "2026-05-04T15:16:35.889448+00:00",
+                            "verified_at": "2026-05-04T15:23:00.934150+00:00",
+                            "verified_device": "cuda",
+                            "last_error": null
+                        },
+                        "medium": {
+                            "fetched_at": "2026-05-04T15:16:59.911551+00:00",
+                            "verified_at": "2026-05-04T15:23:45.023426+00:00",
+                            "verified_device": "cuda",
+                            "last_error": null
+                        },
+                        "large": {
+                            "fetched_at": "2026-05-04T15:17:46.692161+00:00",
+                            "verified_at": "2026-05-04T15:24:43.595373+00:00",
+                            "verified_device": "cuda",
+                            "last_error": null
+                        }
+                    }
+                }
+            }
+        }
+    ]
+}

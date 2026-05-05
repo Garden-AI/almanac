@@ -4,6 +4,7 @@ import Page from '../layouts/Page.astro';
 import OrnamentRule from '../components/OrnamentRule.astro';
 import LatticeCartouche from '../components/LatticeCartouche.astro';
 import { url } from '../lib/url';
+import { displayParams } from '../lib/params';
 
 const FAMILY_ORDER = ['equivariant', 'ace', 'mpnn', 'vanilla', 'earlier'];
 const families = (await getCollection('architectures')).sort(
@@ -15,7 +16,11 @@ const modelsByFamily = Object.fromEntries(
     f.id,
     allModels
       .filter((m) => m.data.family.id === f.id)
-      .sort((a, b) => a.data.year - b.data.year || a.data.name.localeCompare(b.data.name)),
+      .sort(
+        (a, b) =>
+          (a.data.year ?? Infinity) - (b.data.year ?? Infinity) ||
+          a.data.name.localeCompare(b.data.name),
+      ),
   ]),
 );
 ---
@@ -65,8 +70,8 @@ const modelsByFamily = Object.fromEntries(
                 ) : rows.map((m) => (
                   <tr>
                     <td><a class="ink-link it" href={url(`/model/${m.id}`)}>{m.data.name}</a></td>
-                    <td style="width: 46px; text-align: right; color: var(--ink-2);">{m.data.year}</td>
-                    <td style="width: 54px; text-align: right;">{m.data.params}</td>
+                    <td style="width: 46px; text-align: right; color: var(--ink-2);">{m.data.year ?? '—'}</td>
+                    <td style="width: 54px; text-align: right;">{displayParams(m.data.checkpoints)}</td>
                   </tr>
                 ))}
               </tbody>

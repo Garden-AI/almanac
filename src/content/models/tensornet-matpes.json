@@ -1,0 +1,7 @@
+{
+  "name": "TensorNet (MatPES)",
+  "family": "equivariant",
+  "checkpoints": [
+    { "id": "tensornet-matpes-pbe-2025-2" }
+  ]
+}

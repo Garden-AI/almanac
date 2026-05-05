@@ -1,7 +1,7 @@
 ---
 import { getCollection, getEntry } from 'astro:content';
 import Page from '../../layouts/Page.astro';
-import { getRootstockDump } from '../../lib/rootstock';
+import { getCheckpointVerification } from '../../lib/rootstock';
 import { url } from '../../lib/url';
 
 export async function getStaticPaths() {
@@ -19,12 +19,42 @@ const trainingData = await Promise.all(
   })),
 );
 
-// Per-cluster availability for this model, via its rootstockEnv.
-const dump = await getRootstockDump();
-const availability = dump.manifests.map((m) => {
-  const env = m.environments[model.data.rootstockEnv];
-  return { cluster: m.cluster, status: env?.status ?? 'n/a', builtAt: env?.built_at };
+// Per-checkpoint, per-cluster availability. Sophia has no manifest in
+// the current dump — `getCheckpointVerification` returns null, and we
+// render that as "n/a".
+const clusters = (await getCollection('clusters')).sort((a, b) => {
+  const oa = a.data.order ?? 999;
+  const ob = b.data.order ?? 999;
+  if (oa !== ob) return oa - ob;
+  return a.data.name.localeCompare(b.data.name);
 });
+
+const STALE_AFTER_MS = 7 * 24 * 60 * 60 * 1000;
+const now = Date.now();
+type CellState = 'verified' | 'lapsed' | 'na';
+const cellStateFor = (verifiedAtIso: string, lastError: string | null): CellState => {
+  if (lastError) return 'lapsed';
+  const age = now - new Date(verifiedAtIso).getTime();
+  if (Number.isNaN(age) || age > STALE_AFTER_MS) return 'lapsed';
+  return 'verified';
+};
+
+const checkpointAvailability = await Promise.all(
+  model.data.checkpoints.map(async (cp) => ({
+    checkpoint: cp,
+    perCluster: await Promise.all(
+      clusters.map(async (c) => {
+        const v = await getCheckpointVerification(c.id, cp.id);
+        return {
+          cluster: c,
+          state: v ? cellStateFor(v.verifiedAt, v.lastError) : ('na' as CellState),
+          verifiedAt: v?.verifiedAt,
+          lastError: v?.lastError ?? null,
+        };
+      }),
+    ),
+  })),
+);
 ---
 <Page
   title={`${model.data.name} — Garden's Almanac`}
@@ -35,9 +65,11 @@ const availability = dump.manifests.map((m) => {
     {family?.data.name ?? 'Unknown family'}
   </p>
   <h1>{model.data.name}</h1>
-  <p class="it" style="color: var(--ink-2); font-size: 14px;">
-    {model.data.year}{model.data.leadAuthor && ` · ${model.data.leadAuthor}`}
-  </p>
+  {(model.data.year || model.data.leadAuthor) && (
+    <p class="it" style="color: var(--ink-2); font-size: 14px;">
+      {model.data.year}{model.data.year && model.data.leadAuthor && ' · '}{model.data.leadAuthor}
+    </p>
+  )}
   <hr class="title-rule" />
 
   <div class="detail-body">
@@ -46,45 +78,71 @@ const availability = dump.manifests.map((m) => {
       <table class="almanac" style="margin-top: 6px;">
         <tbody>
           <tr><td>Family</td><td><a class="ink-link it" href={url(`/architecture/${model.data.family.id}`)}>{family?.data.name}</a></td></tr>
-          <tr><td>Year</td><td>{model.data.year}</td></tr>
-          <tr><td>Parameters</td><td>{model.data.params}</td></tr>
-          <tr><td>Rootstock environment</td><td><span class="mono">{model.data.rootstockEnv}</span></td></tr>
+          {model.data.year && <tr><td>Year</td><td>{model.data.year}</td></tr>}
+          <tr>
+            <td>Checkpoints</td>
+            <td>
+              {model.data.checkpoints.map((cp, i) => (
+                <>
+                  {i > 0 && ', '}
+                  <span class="mono" style="font-size: 11.5px;">{cp.id}</span>
+                  {cp.params && <span class="it" style="color: var(--ink-2);"> · {cp.params}</span>}
+                </>
+              ))}
+            </td>
+          </tr>
         </tbody>
       </table>
 
-      <h2 class="sc" style="font-size: 13px; margin-top: 22px;">Training data</h2>
-      <table class="almanac" style="margin-top: 6px;">
-        <thead><tr><th>Dataset</th><th>Used as</th></tr></thead>
-        <tbody>
-          {trainingData.map(({ dataset, role }) => (
-            <tr>
-              <td><a class="ink-link it" href={url(`/dataset/${dataset?.id}`)}>{dataset?.data.name}</a></td>
-              <td class="it">{role}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      {trainingData.length > 0 && (
+        <>
+          <h2 class="sc" style="font-size: 13px; margin-top: 22px;">Training data</h2>
+          <table class="almanac" style="margin-top: 6px;">
+            <thead><tr><th>Dataset</th><th>Used as</th></tr></thead>
+            <tbody>
+              {trainingData.map(({ dataset, role }) => (
+                <tr>
+                  <td><a class="ink-link it" href={url(`/dataset/${dataset?.id}`)}>{dataset?.data.name}</a></td>
+                  <td class="it">{role}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </>
+      )}
 
-      <h2 class="sc" style="font-size: 13px; margin-top: 22px;">Running on</h2>
-      <table class="almanac" style="margin-top: 6px;">
-        <thead><tr><th>Cluster</th><th>Status</th><th>Last built</th></tr></thead>
-        <tbody>
-          {availability.map((a) => (
-            <tr>
-              <td><a class="ink-link it" href={url(`/cluster/${a.cluster}`)}>{a.cluster}</a></td>
-              <td>
-                {a.status === 'ready'
-                  ? <span class="status-verified">●</span>
-                  : a.status === 'n/a'
-                  ? <span class="status-na">○</span>
-                  : <span class="status-stale">◐</span>}
-                {' '}{a.status}
-              </td>
-              <td class="mono">{a.builtAt?.slice(0, 10) ?? '—'}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <h2 class="sc" style="font-size: 13px; margin-top: 22px;">Availability</h2>
+      <p class="it" style="font-size: 12px; color: var(--ink-2); margin-top: 4px;">
+        Per-checkpoint verification, by cluster. Verified within seven days = ●; older or errored = ○; absent = n/a.
+      </p>
+      {checkpointAvailability.map(({ checkpoint, perCluster }) => (
+        <div style="margin-top: 14px;">
+          <div class="mono" style="font-size: 11.5px;">
+            {checkpoint.id}
+            {checkpoint.params && (
+              <span class="it" style="color: var(--ink-2); margin-left: 6px;">· {checkpoint.params}</span>
+            )}
+          </div>
+          <table class="almanac" style="margin-top: 4px;">
+            <thead><tr><th>Cluster</th><th style="width: 80px;">Status</th><th style="width: 110px;">Verified</th></tr></thead>
+            <tbody>
+              {perCluster.map(({ cluster, state, verifiedAt, lastError }) => (
+                <tr>
+                  <td><a class="ink-link it" href={url(`/cluster/${cluster.id}`)}>{cluster.data.name}</a></td>
+                  <td>
+                    {state === 'verified' && <><span class="status-verified">●</span> verified</>}
+                    {state === 'lapsed' && <><span class="status-stale">○</span> {lastError ? 'errored' : 'lapsed'}</>}
+                    {state === 'na' && <span style="color: var(--ink-3);">n/a</span>}
+                  </td>
+                  <td class="mono" style="font-variant-numeric: tabular-nums;">
+                    {verifiedAt ? verifiedAt.slice(0, 10) : '—'}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ))}
     </div>
 
     <aside class="detail-rail">
