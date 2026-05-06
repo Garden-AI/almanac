@@ -1,7 +1,7 @@
 ---
 import { getCollection, getEntry } from 'astro:content';
 import Page from '../../layouts/Page.astro';
-import { getCheckpointVerification } from '../../lib/rootstock';
+import { getRootstockDump, findVerification, cellStateFor, type CellState } from '../../lib/rootstock';
 import { url } from '../../lib/url';
 
 export async function getStaticPaths() {
@@ -29,32 +29,26 @@ const clusters = (await getCollection('clusters')).sort((a, b) => {
   return a.data.name.localeCompare(b.data.name);
 });
 
-const STALE_AFTER_MS = 7 * 24 * 60 * 60 * 1000;
-const now = Date.now();
-type CellState = 'verified' | 'lapsed' | 'na';
-const cellStateFor = (verifiedAtIso: string, lastError: string | null): CellState => {
-  if (lastError) return 'lapsed';
-  const age = now - new Date(verifiedAtIso).getTime();
-  if (Number.isNaN(age) || age > STALE_AFTER_MS) return 'lapsed';
-  return 'verified';
-};
+const dump = await getRootstockDump();
 
-const checkpointAvailability = await Promise.all(
-  model.data.checkpoints.map(async (cp) => ({
-    checkpoint: cp,
-    perCluster: await Promise.all(
-      clusters.map(async (c) => {
-        const v = await getCheckpointVerification(c.id, cp.id);
-        return {
-          cluster: c,
-          state: v ? cellStateFor(v.verifiedAt, v.lastError) : ('na' as CellState),
-          verifiedAt: v?.verifiedAt,
-          lastError: v?.lastError ?? null,
-        };
-      }),
-    ),
-  })),
-);
+const checkpointAvailability = model.data.checkpoints.map((cp) => ({
+  checkpoint: cp,
+  perCluster: clusters.map((c) => {
+    const v = findVerification(dump, c.id, cp.id);
+    return {
+      cluster: c,
+      state: cellStateFor(v),
+      verifiedAt: v?.verifiedAt,
+      lastError: v?.lastError ?? null,
+    };
+  }),
+}));
+
+const statusHtml = (state: CellState, lastError: string | null): string => {
+  if (state === 'verified') return '<span class="status-verified">●</span> verified';
+  if (state === 'lapsed') return `<span class="status-stale">○</span> ${lastError ? 'errored' : 'lapsed'}`;
+  return '<span style="color: var(--ink-3);">n/a</span>';
+};
 ---
 <Page
   title={`${model.data.name} — Garden's Almanac`}
@@ -127,14 +121,10 @@ const checkpointAvailability = await Promise.all(
             <thead><tr><th>Cluster</th><th style="width: 80px;">Status</th><th style="width: 110px;">Verified</th></tr></thead>
             <tbody>
               {perCluster.map(({ cluster, state, verifiedAt, lastError }) => (
-                <tr>
+                <tr data-rs-row={`${cluster.id}:${checkpoint.id}`}>
                   <td><a class="ink-link it" href={url(`/cluster/${cluster.id}`)}>{cluster.data.name}</a></td>
-                  <td>
-                    {state === 'verified' && <><span class="status-verified">●</span> verified</>}
-                    {state === 'lapsed' && <><span class="status-stale">○</span> {lastError ? 'errored' : 'lapsed'}</>}
-                    {state === 'na' && <span style="color: var(--ink-3);">n/a</span>}
-                  </td>
-                  <td class="mono" style="font-variant-numeric: tabular-nums;">
+                  <td data-rs-status set:html={statusHtml(state, lastError)} />
+                  <td class="mono" data-rs-verified style="font-variant-numeric: tabular-nums;">
                     {verifiedAt ? verifiedAt.slice(0, 10) : '—'}
                   </td>
                 </tr>
@@ -155,3 +145,28 @@ const checkpointAvailability = await Promise.all(
     </aside>
   </div>
 </Page>
+
+<script>
+  import { loadLiveDump } from '../../lib/rootstock-client';
+  import { findVerification, cellStateFor, type CellState } from '../../lib/rootstock';
+
+  const statusHtml = (state: CellState, lastError: string | null): string => {
+    if (state === 'verified') return '<span class="status-verified">●</span> verified';
+    if (state === 'lapsed') return `<span class="status-stale">○</span> ${lastError ? 'errored' : 'lapsed'}`;
+    return '<span style="color: var(--ink-3);">n/a</span>';
+  };
+
+  loadLiveDump()
+    .then((dump) => {
+      document.querySelectorAll<HTMLElement>('[data-rs-row]').forEach((tr) => {
+        const [cluster, checkpoint] = tr.dataset.rsRow!.split(':');
+        const v = findVerification(dump, cluster, checkpoint);
+        const state = cellStateFor(v);
+        const status = tr.querySelector<HTMLElement>('[data-rs-status]');
+        const verified = tr.querySelector<HTMLElement>('[data-rs-verified]');
+        if (status) status.innerHTML = statusHtml(state, v?.lastError ?? null);
+        if (verified) verified.textContent = v?.verifiedAt ? v.verifiedAt.slice(0, 10) : '—';
+      });
+    })
+    .catch((err) => console.warn('Rootstock live refresh failed', err));
+</script>

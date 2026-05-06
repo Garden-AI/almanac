@@ -2,7 +2,7 @@
 import { getCollection } from 'astro:content';
 import { Code } from 'astro:components';
 import Page from '../layouts/Page.astro';
-import { getRootstockDump, getCheckpointVerification } from '../lib/rootstock';
+import { getRootstockDump, findVerification, cellStateFor, type CellState } from '../lib/rootstock';
 import { url } from '../lib/url';
 
 // Paper-and-ink syntax theme for the How-To snippet. Ink for default text,
@@ -72,48 +72,26 @@ const rows = models
   });
 
 const dump = await getRootstockDump();
-const lastUpdated = dump.manifests
-  .map((m) => m.last_updated)
-  .sort()
-  .at(-1);
-const rootstockVersion = dump.manifests[0]?.rootstock_version;
 
-const formatLastUpdated = (iso: string | undefined) => {
-  if (!iso) return '—';
-  const d = new Date(iso);
-  const day = d.getUTCDate();
-  const month = d.toLocaleString('en-US', { month: 'long', timeZone: 'UTC' });
-  const year = d.getUTCFullYear();
-  const hh = String(d.getUTCHours()).padStart(2, '0');
-  const mm = String(d.getUTCMinutes()).padStart(2, '0');
-  return `${day} ${month} ${year} · ${hh}:${mm} UTC`;
-};
-
-type CellState = 'verified' | 'lapsed' | 'na';
-
-const STALE_AFTER_MS = 7 * 24 * 60 * 60 * 1000;
-const now = Date.now();
-const cellStateFor = (verifiedAtIso: string, lastError: string | null): CellState => {
-  if (lastError) return 'lapsed';
-  const age = now - new Date(verifiedAtIso).getTime();
-  if (Number.isNaN(age) || age > STALE_AFTER_MS) return 'lapsed';
-  return 'verified';
+const cellSvg = (state: CellState): string => {
+  if (state === 'verified') {
+    return '<svg width="14" height="14" viewBox="0 0 14 14" aria-label="verified"><circle cx="7" cy="7" r="3.6" fill="var(--oxblood)" /></svg>';
+  }
+  if (state === 'lapsed') {
+    return '<svg width="14" height="14" viewBox="0 0 14 14" aria-label="lapsed"><circle cx="7" cy="7" r="3.4" fill="none" stroke="var(--oxblood)" stroke-width="1" /></svg>';
+  }
+  return '<svg width="100%" height="14" viewBox="0 0 40 14" preserveAspectRatio="none" aria-label="not applicable" style="display: block;"><defs><pattern id="na-hatch" patternUnits="userSpaceOnUse" width="5" height="5" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="5" stroke="var(--ink)" stroke-width="0.5" opacity="0.35" /></pattern></defs><rect x="0" y="3" width="40" height="8" fill="url(#na-hatch)" /></svg>';
 };
 
 let counts = { verified: 0, lapsed: 0, na: 0 };
-const grid = await Promise.all(
-  rows.map(async (row) => ({
-    row,
-    cells: await Promise.all(
-      clusters.map(async (c) => {
-        const v = await getCheckpointVerification(c.id, row.checkpointId);
-        const state: CellState = v ? cellStateFor(v.verifiedAt, v.lastError) : 'na';
-        counts[state]++;
-        return { cluster: c, state };
-      }),
-    ),
-  })),
-);
+const grid = rows.map((row) => ({
+  row,
+  cells: clusters.map((c) => {
+    const state: CellState = cellStateFor(findVerification(dump, c.id, row.checkpointId));
+    counts[state]++;
+    return { cluster: c, state };
+  }),
+}));
 
 const codeSnippet = `from ase.build import bulk
 from rootstock import RootstockCalculator
@@ -160,15 +138,6 @@ with RootstockCalculator(
         A filled circle means Rootstock tested the install and ran a basic inference within the last
         seven days. An open circle means that check has lapsed. Hatched cells are not supported.
       </p>
-      <div style="font-size: 11px; color: var(--ink-2); white-space: nowrap; margin-top: 6px;">
-        <span class="sc" style="font-size: 10px; letter-spacing: 0.10em; color: var(--ink);">Last updated</span>
-        {' '}{formatLastUpdated(lastUpdated)}
-        {rootstockVersion && (
-          <>
-            {' · '}<span class="mono" style="font-size: 10.5px;">nightly CI · rootstock {rootstockVersion}</span>
-          </>
-        )}
-      </div>
     </div>
 
     <section class="howto" style="border-left: 0.5px solid var(--rule); padding-left: 18px;">
@@ -246,29 +215,8 @@ with RootstockCalculator(
             <td><a class="ink-link" href={url(`/model/${row.pageId}`)} style="font-weight: 600;">{row.pageName}</a></td>
             <td class="checkpoint-id">{row.checkpointId}</td>
             <td style="text-align: right; font-variant-numeric: tabular-nums;">{row.params ?? '—'}</td>
-            {cells.map(({ state }) => (
-              <td class="cell">
-                {state === 'verified' && (
-                  <svg width="14" height="14" viewBox="0 0 14 14" aria-label="verified">
-                    <circle cx="7" cy="7" r="3.6" fill="var(--oxblood)" />
-                  </svg>
-                )}
-                {state === 'lapsed' && (
-                  <svg width="14" height="14" viewBox="0 0 14 14" aria-label="lapsed">
-                    <circle cx="7" cy="7" r="3.4" fill="none" stroke="var(--oxblood)" stroke-width="1" />
-                  </svg>
-                )}
-                {state === 'na' && (
-                  <svg width="100%" height="14" viewBox="0 0 40 14" preserveAspectRatio="none" aria-label="not applicable" style="display: block;">
-                    <defs>
-                      <pattern id="na-hatch" patternUnits="userSpaceOnUse" width="5" height="5" patternTransform="rotate(45)">
-                        <line x1="0" y1="0" x2="0" y2="5" stroke="var(--ink)" stroke-width="0.5" opacity="0.35" />
-                      </pattern>
-                    </defs>
-                    <rect x="0" y="3" width="40" height="8" fill="url(#na-hatch)" />
-                  </svg>
-                )}
-              </td>
+            {cells.map(({ cluster, state }) => (
+              <td class="cell" data-rs-cell={`${cluster.id}:${row.checkpointId}`} set:html={cellSvg(state)} />
             ))}
             <td class="cell">
               <span style="color: var(--ink-3); opacity: 0.6; font-size: 12px;">·</span>
@@ -280,7 +228,10 @@ with RootstockCalculator(
 
     <div style="display: flex; justify-content: space-between; align-items: baseline; margin-top: 8px; font-size: 11.5px;">
       <span class="it" style="color: var(--ink-2);">
-        {rows.length} checkpoints · {clusters.length} clusters · {counts.verified} verified, {counts.lapsed} lapsed, {counts.na} not applicable
+        {rows.length} checkpoints · {clusters.length} clusters ·
+        {' '}<span data-rs-count="verified">{counts.verified}</span> verified,
+        {' '}<span data-rs-count="lapsed">{counts.lapsed}</span> lapsed,
+        {' '}<span data-rs-count="na">{counts.na}</span> not applicable
       </span>
       <span style="display: inline-flex; align-items: center; gap: 14px;">
         <span style="display: inline-flex; align-items: center; gap: 6px;">
@@ -306,3 +257,34 @@ with RootstockCalculator(
     </div>
   </div>
 </Page>
+
+<script>
+  import { loadLiveDump } from '../lib/rootstock-client';
+  import { findVerification, cellStateFor, type CellState } from '../lib/rootstock';
+
+  const cellSvg = (state: CellState): string => {
+    if (state === 'verified') {
+      return '<svg width="14" height="14" viewBox="0 0 14 14" aria-label="verified"><circle cx="7" cy="7" r="3.6" fill="var(--oxblood)" /></svg>';
+    }
+    if (state === 'lapsed') {
+      return '<svg width="14" height="14" viewBox="0 0 14 14" aria-label="lapsed"><circle cx="7" cy="7" r="3.4" fill="none" stroke="var(--oxblood)" stroke-width="1" /></svg>';
+    }
+    return '<svg width="100%" height="14" viewBox="0 0 40 14" preserveAspectRatio="none" aria-label="not applicable" style="display: block;"><defs><pattern id="na-hatch" patternUnits="userSpaceOnUse" width="5" height="5" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="5" stroke="var(--ink)" stroke-width="0.5" opacity="0.35" /></pattern></defs><rect x="0" y="3" width="40" height="8" fill="url(#na-hatch)" /></svg>';
+  };
+
+  loadLiveDump()
+    .then((dump) => {
+      const counts = { verified: 0, lapsed: 0, na: 0 };
+      document.querySelectorAll<HTMLElement>('[data-rs-cell]').forEach((td) => {
+        const [cluster, checkpoint] = td.dataset.rsCell!.split(':');
+        const state = cellStateFor(findVerification(dump, cluster, checkpoint));
+        td.innerHTML = cellSvg(state);
+        counts[state]++;
+      });
+      document.querySelectorAll<HTMLElement>('[data-rs-count]').forEach((el) => {
+        const k = el.dataset.rsCount as keyof typeof counts;
+        el.textContent = String(counts[k]);
+      });
+    })
+    .catch((err) => console.warn('Rootstock live refresh failed', err));
+</script>

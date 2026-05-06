@@ -1,7 +1,7 @@
 ---
 import { getCollection } from 'astro:content';
 import Page from '../../layouts/Page.astro';
-import { getClusterManifest } from '../../lib/rootstock';
+import { getRootstockDump, findManifest, envGroupsForCluster } from '../../lib/rootstock';
 import { url } from '../../lib/url';
 
 export async function getStaticPaths() {
@@ -11,51 +11,21 @@ export async function getStaticPaths() {
 
 const { cluster } = Astro.props;
 const c = cluster.data;
-const manifest = await getClusterManifest(cluster.id);
+const dump = await getRootstockDump();
+const manifest = findManifest(dump, cluster.id);
+const envGroups = envGroupsForCluster(dump, cluster.id);
 
-// Build a back-index from canonical checkpoint id → model page slug, so we
-// can link checkpoints back to the article they're catalogued under.
+// Back-index from canonical checkpoint id → model page slug, so we can
+// link checkpoints back to the article they're catalogued under. Shared
+// with the client script as JSON.
 const models = await getCollection('models');
-const checkpointToPage = new Map<string, { pageId: string; pageName: string }>();
+const checkpointPageIndex: Record<string, { pageId: string; pageName: string }> = {};
 for (const m of models) {
   for (const cp of m.data.checkpoints) {
-    checkpointToPage.set(cp.id, { pageId: m.id, pageName: m.data.name });
+    checkpointPageIndex[cp.id] = { pageId: m.id, pageName: m.data.name };
   }
 }
-
-// Group checkpoints by env, ordered by env name. Each group lists its
-// checkpoints with their verification record.
-type EnvGroup = {
-  envName: string;
-  status: string;
-  builtAt: string;
-  checkpoints: Array<{
-    id: string;
-    verifiedAt: string;
-    verifiedDevice: string;
-    lastError: string | null;
-    page: { pageId: string; pageName: string } | undefined;
-  }>;
-};
-const envGroups: EnvGroup[] = manifest
-  ? Object.entries(manifest.environments)
-      .map(([envName, env]) => ({
-        envName,
-        status: env.status,
-        builtAt: env.built_at,
-        checkpoints: Object.entries(env.checkpoints ?? {})
-          .map(([id, cp]) => ({
-            id,
-            verifiedAt: cp.verified_at,
-            verifiedDevice: cp.verified_device,
-            lastError: cp.last_error,
-            page: checkpointToPage.get(id),
-          }))
-          .sort((a, b) => a.id.localeCompare(b.id)),
-      }))
-      .filter((g) => g.checkpoints.length > 0)
-      .sort((a, b) => a.envName.localeCompare(b.envName))
-  : [];
+const checkpointToPage = new Map(Object.entries(checkpointPageIndex));
 
 const totalCheckpoints = envGroups.reduce((n, g) => n + g.checkpoints.length, 0);
 ---
@@ -90,81 +60,92 @@ const totalCheckpoints = envGroups.reduce((n, g) => n + g.checkpoints.length, 0)
       </table>
 
       <h2 class="sc" style="font-size: 13px; margin-top: 22px;">Available checkpoints</h2>
-      {manifest ? (
-        totalCheckpoints > 0 ? (
-          <>
-            <p class="it" style="font-size: 12px; color: var(--ink-2); margin-top: 4px;">
-              Live from Rootstock · {totalCheckpoints} checkpoint{totalCheckpoints === 1 ? '' : 's'}
-              {' '}across {envGroups.length} environment{envGroups.length === 1 ? '' : 's'}
-              {' · '}last updated {manifest.last_updated.slice(0, 10)}
-            </p>
-            {envGroups.map((g) => (
-              <div style="margin-top: 14px;">
-                <div style="display: flex; align-items: baseline; gap: 10px;">
-                  <span class="sc" style="font-size: 11.5px; letter-spacing: 0.10em;">env</span>
-                  <span class="mono" style="font-size: 12px;">{g.envName}</span>
-                  <span class="it" style="font-size: 11px; color: var(--ink-3);">
-                    built {g.builtAt.slice(0, 10)}
-                  </span>
-                </div>
-                <table class="almanac" style="margin-top: 4px;">
-                  <thead>
-                    <tr>
-                      <th>Checkpoint</th>
-                      <th>Page</th>
-                      <th style="width: 110px;">Verified</th>
-                      <th style="width: 80px;">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {g.checkpoints.map((cp) => (
+      <div data-rs-cluster-section>
+        {manifest ? (
+          totalCheckpoints > 0 ? (
+            <>
+              <p class="it" style="font-size: 12px; color: var(--ink-2); margin-top: 4px;">
+                Live from Rootstock · {totalCheckpoints} checkpoint{totalCheckpoints === 1 ? '' : 's'}
+                {' '}across {envGroups.length} environment{envGroups.length === 1 ? '' : 's'}
+              </p>
+              {envGroups.map((g) => (
+                <div style="margin-top: 14px;">
+                  <div style="display: flex; align-items: baseline; gap: 10px;">
+                    <span class="sc" style="font-size: 11.5px; letter-spacing: 0.10em;">env</span>
+                    <span class="mono" style="font-size: 12px;">{g.envName}</span>
+                    <span class="it" style="font-size: 11px; color: var(--ink-3);">
+                      built {g.builtAt.slice(0, 10)}
+                    </span>
+                  </div>
+                  <table class="almanac" style="margin-top: 4px;">
+                    <thead>
                       <tr>
-                        <td class="mono" style="font-size: 11.5px;">{cp.id}</td>
-                        <td>
-                          {cp.page ? (
-                            <a class="ink-link it" href={url(`/model/${cp.page.pageId}`)}>{cp.page.pageName}</a>
-                          ) : (
-                            <span class="it" style="color: var(--ink-3);">— no catalog entry</span>
-                          )}
-                        </td>
-                        <td class="mono" style="font-variant-numeric: tabular-nums;">
-                          {cp.verifiedAt.slice(0, 10)}
-                        </td>
-                        <td>
-                          {cp.lastError ? (
-                            <><span class="status-stale">○</span> errored</>
-                          ) : (
-                            <><span class="status-verified">●</span> verified</>
-                          )}
-                        </td>
+                        <th>Checkpoint</th>
+                        <th>Page</th>
+                        <th style="width: 110px;">Verified</th>
+                        <th style="width: 80px;">Status</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-                {g.checkpoints.some((cp) => cp.lastError) && (
-                  <ul style="margin-top: 4px; font-size: 11px; color: var(--ink-2);">
-                    {g.checkpoints
-                      .filter((cp) => cp.lastError)
-                      .map((cp) => (
-                        <li>
-                          <span class="mono">{cp.id}</span>: <span class="it">{cp.lastError}</span>
-                        </li>
-                      ))}
-                  </ul>
-                )}
-              </div>
-            ))}
-          </>
+                    </thead>
+                    <tbody>
+                      {g.checkpoints.map((cp) => {
+                        const page = checkpointToPage.get(cp.id);
+                        return (
+                          <tr>
+                            <td class="mono" style="font-size: 11.5px;">{cp.id}</td>
+                            <td>
+                              {page ? (
+                                <a class="ink-link it" href={url(`/model/${page.pageId}`)}>{page.pageName}</a>
+                              ) : (
+                                <span class="it" style="color: var(--ink-3);">— no catalog entry</span>
+                              )}
+                            </td>
+                            <td class="mono" style="font-variant-numeric: tabular-nums;">
+                              {cp.verifiedAt.slice(0, 10)}
+                            </td>
+                            <td>
+                              {cp.lastError ? (
+                                <><span class="status-stale">○</span> errored</>
+                              ) : (
+                                <><span class="status-verified">●</span> verified</>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                  {g.checkpoints.some((cp) => cp.lastError) && (
+                    <ul style="margin-top: 4px; font-size: 11px; color: var(--ink-2);">
+                      {g.checkpoints
+                        .filter((cp) => cp.lastError)
+                        .map((cp) => (
+                          <li>
+                            <span class="mono">{cp.id}</span>: <span class="it">{cp.lastError}</span>
+                          </li>
+                        ))}
+                    </ul>
+                  )}
+                </div>
+              ))}
+            </>
+          ) : (
+            <p class="it" style="color: var(--ink-2); margin-top: 4px;">
+              Rootstock has a manifest for this cluster, but no checkpoints have been verified yet.
+            </p>
+          )
         ) : (
           <p class="it" style="color: var(--ink-2); margin-top: 4px;">
-            Rootstock has a manifest for this cluster, but no checkpoints have been verified yet.
+            Rootstock has no manifest for <span class="mono">{cluster.id}</span> yet.
           </p>
-        )
-      ) : (
-        <p class="it" style="color: var(--ink-2); margin-top: 4px;">
-          Rootstock has no manifest for <span class="mono">{cluster.id}</span> yet.
-        </p>
-      )}
+        )}
+      </div>
+
+      <script type="application/json" data-rs-cluster-meta set:html={JSON.stringify({
+        clusterId: cluster.id,
+        baseUrl: import.meta.env.BASE_URL,
+        checkpointToPage: checkpointPageIndex,
+      })} />
+
 
       {c.runningOn && (
         <>
@@ -184,3 +165,90 @@ const totalCheckpoints = envGroups.reduce((n, g) => n + g.checkpoints.length, 0)
     </aside>
   </div>
 </Page>
+
+<script>
+  import { loadLiveDump } from '../../lib/rootstock-client';
+  import { findManifest, envGroupsForCluster } from '../../lib/rootstock';
+
+  type PageRef = { pageId: string; pageName: string };
+  const escape = (s: string) =>
+    s.replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]!));
+
+  const meta = document.querySelector('[data-rs-cluster-meta]');
+  if (meta?.textContent) {
+    const { clusterId, baseUrl, checkpointToPage } = JSON.parse(meta.textContent) as {
+      clusterId: string;
+      baseUrl: string;
+      checkpointToPage: Record<string, PageRef>;
+    };
+    const base = baseUrl.replace(/\/$/, '');
+    const url_ = (path: string) => `${base}${path}`;
+
+    loadLiveDump()
+      .then((dump) => {
+        const target = document.querySelector('[data-rs-cluster-section]');
+        if (!target) return;
+        const manifest = findManifest(dump, clusterId);
+        if (!manifest) {
+          target.innerHTML = `<p class="it" style="color: var(--ink-2); margin-top: 4px;">Rootstock has no manifest for <span class="mono">${escape(clusterId)}</span> yet.</p>`;
+          return;
+        }
+        const groups = envGroupsForCluster(dump, clusterId);
+        const total = groups.reduce((n, g) => n + g.checkpoints.length, 0);
+        if (total === 0) {
+          target.innerHTML = `<p class="it" style="color: var(--ink-2); margin-top: 4px;">Rootstock has a manifest for this cluster, but no checkpoints have been verified yet.</p>`;
+          return;
+        }
+
+        const groupHtml = groups
+          .map((g) => {
+            const rows = g.checkpoints
+              .map((cp) => {
+                const page = checkpointToPage[cp.id];
+                const pageCell = page
+                  ? `<a class="ink-link it" href="${escape(url_(`/model/${page.pageId}`))}">${escape(page.pageName)}</a>`
+                  : `<span class="it" style="color: var(--ink-3);">— no catalog entry</span>`;
+                const statusCell = cp.lastError
+                  ? `<span class="status-stale">○</span> errored`
+                  : `<span class="status-verified">●</span> verified`;
+                return `<tr>
+                  <td class="mono" style="font-size: 11.5px;">${escape(cp.id)}</td>
+                  <td>${pageCell}</td>
+                  <td class="mono" style="font-variant-numeric: tabular-nums;">${escape(cp.verifiedAt.slice(0, 10))}</td>
+                  <td>${statusCell}</td>
+                </tr>`;
+              })
+              .join('');
+            const errors = g.checkpoints.filter((cp) => cp.lastError);
+            const errList = errors.length
+              ? `<ul style="margin-top: 4px; font-size: 11px; color: var(--ink-2);">${errors
+                  .map((cp) => `<li><span class="mono">${escape(cp.id)}</span>: <span class="it">${escape(cp.lastError!)}</span></li>`)
+                  .join('')}</ul>`
+              : '';
+            return `<div style="margin-top: 14px;">
+              <div style="display: flex; align-items: baseline; gap: 10px;">
+                <span class="sc" style="font-size: 11.5px; letter-spacing: 0.10em;">env</span>
+                <span class="mono" style="font-size: 12px;">${escape(g.envName)}</span>
+                <span class="it" style="font-size: 11px; color: var(--ink-3);">built ${escape(g.builtAt.slice(0, 10))}</span>
+              </div>
+              <table class="almanac" style="margin-top: 4px;">
+                <thead><tr><th>Checkpoint</th><th>Page</th><th style="width: 110px;">Verified</th><th style="width: 80px;">Status</th></tr></thead>
+                <tbody>${rows}</tbody>
+              </table>
+              ${errList}
+            </div>`;
+          })
+          .join('');
+
+        const cpWord = total === 1 ? 'checkpoint' : 'checkpoints';
+        const envWord = groups.length === 1 ? 'environment' : 'environments';
+        target.innerHTML = `
+          <p class="it" style="font-size: 12px; color: var(--ink-2); margin-top: 4px;">
+            Live from Rootstock · ${total} ${cpWord} across ${groups.length} ${envWord}
+          </p>
+          ${groupHtml}
+        `;
+      })
+      .catch((err) => console.warn('Rootstock live refresh failed', err));
+  }
+</script>
