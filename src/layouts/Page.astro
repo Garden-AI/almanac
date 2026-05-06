@@ -9,6 +9,7 @@ interface Props {
 }
 
 const { title, section = "Garden's Almanac", folioId = '', wide = false } = Astro.props;
+const rootstockUrl = import.meta.env.PUBLIC_ROOTSTOCK_URL;
 ---
 <!doctype html>
 <html lang="en">
@@ -16,6 +17,7 @@ const { title, section = "Garden's Almanac", folioId = '', wide = false } = Astr
     <meta charset="utf-8" />
     <title>{title}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    {rootstockUrl && <link rel="prefetch" href={rootstockUrl} as="fetch" crossorigin="anonymous" />}
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
