@@ -40,7 +40,7 @@ manifests.find(m => m.cluster === clusterSlug)
 
 `undefined` = "n/a" (cluster doesn't carry that env). `status: "ready"` = verified.
 
-The client lives in `src/lib/rootstock.ts`. By default it reads from a captured fixture at `src/fixtures/rootstock-dump.json` (build is offline-clean). Set `ROOTSTOCK_URL` in `.env` to fetch live. `checkpoints[]` is empty in the current Rootstock dump — presumably will populate with per-checkpoint info later; the schema allows for it.
+The client lives in `src/lib/rootstock.ts`. By default it reads from a captured fixture at `src/fixtures/rootstock-dump.json` (build is offline-clean). Set `PUBLIC_ROOTSTOCK_URL` in `.env` (or in the deploy env) to fetch live — the `PUBLIC_` prefix is required so Astro exposes it to both the build-time render and the client-side refresh bundle. `checkpoints[]` is empty in the current Rootstock dump — presumably will populate with per-checkpoint info later; the schema allows for it.
 
 ### Page chrome
 `src/layouts/Page.astro` is the shared shell: running head + folio + paper background, wrapping a `<slot />`. Loads Google Fonts (Source Serif 4, IM Fell English SC, JetBrains Mono). All design tokens live in `src/styles/almanac.css` as `:root` custom properties.
