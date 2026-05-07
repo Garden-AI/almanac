@@ -12,15 +12,15 @@ import fixture from '../fixtures/rootstock-dump.json' with { type: 'json' };
 export type RootstockStatus = 'ready' | string;
 
 export interface RootstockCheckpoint {
-  fetched_at: string;
-  verified_at: string;
-  verified_device: string;
+  fetched_at: string | null;
+  verified_at: string | null;
+  verified_device: string | null;
   last_error: string | null;
 }
 
 export interface RootstockEnvironment {
   status: RootstockStatus;
-  built_at: string;
+  built_at: string | null;
   source_hash: string;
   source: string;
   python_requires: string;
@@ -65,8 +65,8 @@ export function findManifest(
 export interface CheckpointVerification {
   /** Env (manifest key) the checkpoint was verified through. */
   env: string;
-  verifiedAt: string;
-  verifiedDevice: string;
+  verifiedAt: string | null;
+  verifiedDevice: string | null;
   lastError: string | null;
 }
 
@@ -105,6 +105,7 @@ export function cellStateFor(
 ): CellState {
   if (!v) return 'na';
   if (v.lastError) return 'lapsed';
+  if (!v.verifiedAt) return 'lapsed';
   const age = now - new Date(v.verifiedAt).getTime();
   if (Number.isNaN(age) || age > STALE_AFTER_MS) return 'lapsed';
   return 'verified';
@@ -113,11 +114,11 @@ export function cellStateFor(
 export interface ClusterEnvGroup {
   envName: string;
   status: string;
-  builtAt: string;
+  builtAt: string | null;
   checkpoints: Array<{
     id: string;
-    verifiedAt: string;
-    verifiedDevice: string;
+    verifiedAt: string | null;
+    verifiedDevice: string | null;
     lastError: string | null;
   }>;
 }

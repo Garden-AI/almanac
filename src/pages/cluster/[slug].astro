@@ -28,6 +28,8 @@ for (const m of models) {
 const checkpointToPage = new Map(Object.entries(checkpointPageIndex));
 
 const totalCheckpoints = envGroups.reduce((n, g) => n + g.checkpoints.length, 0);
+
+const day = (s: string | null | undefined) => (s ? s.slice(0, 10) : '—');
 ---
 <Page
   title={`${c.name} — Garden's Almanac`}
@@ -74,7 +76,7 @@ const totalCheckpoints = envGroups.reduce((n, g) => n + g.checkpoints.length, 0)
                     <span class="sc" style="font-size: 11.5px; letter-spacing: 0.10em;">env</span>
                     <span class="mono" style="font-size: 12px;">{g.envName}</span>
                     <span class="it" style="font-size: 11px; color: var(--ink-3);">
-                      built {g.builtAt.slice(0, 10)}
+                      built {day(g.builtAt)}
                     </span>
                   </div>
                   <table class="almanac" style="margin-top: 4px;">
@@ -100,7 +102,7 @@ const totalCheckpoints = envGroups.reduce((n, g) => n + g.checkpoints.length, 0)
                               )}
                             </td>
                             <td class="mono" style="font-variant-numeric: tabular-nums;">
-                              {cp.verifiedAt.slice(0, 10)}
+                              {day(cp.verifiedAt)}
                             </td>
                             <td>
                               {cp.lastError ? (
@@ -173,6 +175,7 @@ const totalCheckpoints = envGroups.reduce((n, g) => n + g.checkpoints.length, 0)
   type PageRef = { pageId: string; pageName: string };
   const escape = (s: string) =>
     s.replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]!));
+  const day = (s: string | null | undefined) => (s ? s.slice(0, 10) : '—');
 
   const meta = document.querySelector('[data-rs-cluster-meta]');
   if (meta?.textContent) {
@@ -214,7 +217,7 @@ const totalCheckpoints = envGroups.reduce((n, g) => n + g.checkpoints.length, 0)
                 return `<tr>
                   <td class="mono" style="font-size: 11.5px;">${escape(cp.id)}</td>
                   <td>${pageCell}</td>
-                  <td class="mono" style="font-variant-numeric: tabular-nums;">${escape(cp.verifiedAt.slice(0, 10))}</td>
+                  <td class="mono" style="font-variant-numeric: tabular-nums;">${escape(day(cp.verifiedAt))}</td>
                   <td>${statusCell}</td>
                 </tr>`;
               })
@@ -229,7 +232,7 @@ const totalCheckpoints = envGroups.reduce((n, g) => n + g.checkpoints.length, 0)
               <div style="display: flex; align-items: baseline; gap: 10px;">
                 <span class="sc" style="font-size: 11.5px; letter-spacing: 0.10em;">env</span>
                 <span class="mono" style="font-size: 12px;">${escape(g.envName)}</span>
-                <span class="it" style="font-size: 11px; color: var(--ink-3);">built ${escape(g.builtAt.slice(0, 10))}</span>
+                <span class="it" style="font-size: 11px; color: var(--ink-3);">built ${escape(day(g.builtAt))}</span>
               </div>
               <table class="almanac" style="margin-top: 4px;">
                 <thead><tr><th>Checkpoint</th><th>Page</th><th style="width: 110px;">Verified</th><th style="width: 80px;">Status</th></tr></thead>
