@@ -1,5 +1,8 @@
 ---
 import '../styles/almanac.css';
+import '../styles/nav.css';
+import Nav from '../components/Nav.astro';
+import { url } from '../lib/url';
 
 interface Props {
   title: string;
@@ -10,6 +13,11 @@ interface Props {
 
 const { title, section = "Garden's Almanac", folioId = '', wide = false } = Astro.props;
 const rootstockUrl = import.meta.env.PUBLIC_ROOTSTOCK_URL;
+
+const homeHref = url('/');
+const path = Astro.url.pathname.replace(/\/$/, '') || '/';
+const isHome = path === (homeHref.replace(/\/$/, '') || '/');
+const wordmark = "Garden's Almanac of Matter Models";
 ---
 <!doctype html>
 <html lang="en">
@@ -28,7 +36,24 @@ const rootstockUrl = import.meta.env.PUBLIC_ROOTSTOCK_URL;
   <body>
     <article class:list={['page', { 'page--wide': wide }]}>
       <header class="running-head">
-        <span>Garden's Almanac of Matter Models</span>
+        {isHome ? (
+          <span>{wordmark}</span>
+        ) : (
+          <a class="home-link" href={homeHref} title="Return to cover">
+            <svg class="home-glyph" width="13" height="13" viewBox="0 0 16 16" aria-hidden="true">
+              <path
+                d="M2 7.5L8 2.5l6 5V13.5a.5.5 0 0 1-.5.5H10v-4H6v4H2.5a.5.5 0 0 1-.5-.5V7.5z"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.1"
+                stroke-linejoin="round"
+              />
+            </svg>
+            <span class="home-label">Home</span>
+            <span class="home-sep" aria-hidden="true">·</span>
+            <span class="home-wordmark">{wordmark}</span>
+          </a>
+        )}
         <span>{section}</span>
       </header>
       <slot />
@@ -38,5 +63,6 @@ const rootstockUrl = import.meta.env.PUBLIC_ROOTSTOCK_URL;
         <span>Garden's Almanac, 2026</span>
       </footer>
     </article>
+    <Nav />
   </body>
 </html>

@@ -1,0 +1,96 @@
+---
+import { getNavRoutes, type NavRoute } from '../lib/nav-routes';
+
+const routes = await getNavRoutes();
+
+const norm = (p: string) => (p.replace(/\/$/, '') || '/');
+const current = norm(Astro.url.pathname);
+
+const grouped: { key: string; items: NavRoute[] }[] = [];
+for (const r of routes) {
+  const last = grouped[grouped.length - 1];
+  if (last && last.key === r.section) last.items.push(r);
+  else grouped.push({ key: r.section, items: [r] });
+}
+
+const isCurrent = (href: string) => norm(href) === current;
+---
+<button class="thumbtab" aria-expanded="false" aria-label="Open Table of Contents" data-toc-toggle>
+  <span class="thumbtab-label sc">Contents</span>
+  <span class="thumbtab-rule"></span>
+</button>
+
+<div class="toc-backdrop" data-toc-backdrop hidden></div>
+
+<aside class="toc-drawer" aria-hidden="true" data-toc-drawer>
+  <div class="toc-inner">
+    <div class="running-head">
+      <span>Garden's Almanac of Matter Models</span>
+      <span>Table of Contents</span>
+    </div>
+
+    <div style="text-align: center; margin-top: 18px;">
+      <div class="sc" style="font-size: 11.5px; letter-spacing: 0.18em; color: var(--ink-2);">Garden's</div>
+      <h2 style="font-family: var(--serif); font-size: 26px; line-height: 1.05; font-weight: 600; letter-spacing: -0.005em; margin-top: 2px;">
+        Almanac of Matter Models
+      </h2>
+    </div>
+
+    <nav style="margin-top: 18px;">
+      {grouped.map((group) => {
+        const lead = group.items[0];
+        const num = group.key === 'i' ? '' : group.key;
+        return (
+          <div style="margin-bottom: 14px;">
+            {lead.sectionTitle && (
+              <div class="toc-section-head">
+                {num && <span class="sc toc-section-num">{num}</span>}
+                <span class="sc toc-section-label">{lead.sectionTitle}</span>
+              </div>
+            )}
+            <ul class="toc-list">
+              {group.items.map((r) => (
+                <li>
+                  <a class:list={['toc-row', { 'is-current': isCurrent(r.href) }]} href={r.href}>
+                    <span class="toc-row-title">
+                      {r.indent && <span class="toc-row-indent" />}
+                      <span class={r.indent ? 'it' : undefined}>{r.title}</span>
+                      {r.note && <span class="it toc-row-note">· {r.note}</span>}
+                    </span>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        );
+      })}
+    </nav>
+
+    <div class="folio" style="margin-top: 18px;">
+      <span>Press <span class="mono" style="font-size: 11px;">Esc</span> to close</span>
+      <span></span>
+      <span>Garden's Almanac, 2026</span>
+    </div>
+  </div>
+</aside>
+
+<script>
+  const tab = document.querySelector<HTMLButtonElement>('[data-toc-toggle]');
+  const drawer = document.querySelector<HTMLElement>('[data-toc-drawer]');
+  const backdrop = document.querySelector<HTMLElement>('[data-toc-backdrop]');
+  if (tab && drawer && backdrop) {
+    const setOpen = (open: boolean) => {
+      tab.setAttribute('aria-expanded', String(open));
+      drawer.setAttribute('aria-hidden', String(!open));
+      drawer.classList.toggle('is-open', open);
+      backdrop.toggleAttribute('hidden', !open);
+    };
+    tab.addEventListener('click', () => {
+      setOpen(drawer.getAttribute('aria-hidden') !== 'false');
+    });
+    backdrop.addEventListener('click', () => setOpen(false));
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') setOpen(false);
+    });
+  }
+</script>
