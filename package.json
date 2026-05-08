@@ -9,9 +9,11 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "fetch:papers": "node --experimental-strip-types --no-warnings scripts/fetch-papers.ts"
   },
   "dependencies": {
-    "astro": "^6.1.9"
+    "astro": "^6.1.9",
+    "marked": "^14.1.4"
   }
 }

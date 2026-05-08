@@ -1,8 +1,12 @@
 ---
 import { getCollection, getEntry } from 'astro:content';
+import { marked } from 'marked';
 import Page from '../../layouts/Page.astro';
 import { getRootstockDump, findVerification, cellStateFor, type CellState } from '../../lib/rootstock';
 import { url } from '../../lib/url';
+import { formatBytes, formatMonthYear, yearOf } from '../../lib/format';
+
+const CLUSTER_COL_CAP = 4;
 
 export async function getStaticPaths() {
   const models = await getCollection('models');
@@ -10,19 +14,37 @@ export async function getStaticPaths() {
 }
 
 const { model } = Astro.props;
-const family = await getEntry('architectures', model.data.family.id);
 
-const trainingData = await Promise.all(
-  model.data.trainingData.map(async (t) => ({
-    role: t.role,
-    dataset: await getEntry('datasets', t.dataset.id),
-  })),
+const families = await Promise.all(
+  model.data.families.map((ref) => getEntry('architectures', ref.id)),
+);
+const trainingDatasets = await Promise.all(
+  model.data.trainingData.map((ref) => getEntry('datasets', ref.id)),
+);
+const papers = await Promise.all(
+  model.data.paperRefs.map((ref) => getEntry('papers', ref.id)),
 );
 
-// Per-checkpoint, per-cluster availability. Sophia has no manifest in
-// the current dump — `getCheckpointVerification` returns null, and we
-// render that as "n/a".
-const clusters = (await getCollection('clusters')).sort((a, b) => {
+// Completeness check: any paper referenced by a model must have at minimum
+// title, authors, published, url. Stubs (just doi+source) fail loudly so
+// shipping a model that points at an unfilled stub isn't possible.
+for (const p of papers) {
+  if (!p) continue;
+  const d = p.data;
+  const incomplete = !d.title || !d.authors?.length || !d.published || !d.url;
+  if (incomplete && d.source === 'fetched') {
+    throw new Error(
+      `Paper '${p.id}' is a stub. Run npm run fetch:papers.`,
+    );
+  }
+}
+
+// Resolved release date: explicit override, else first paper's `published`.
+const primaryPaper = papers.find((p) => p?.data.published) ?? null;
+const resolvedDate = model.data.releaseDate ?? primaryPaper?.data.published ?? null;
+const dateLine = formatMonthYear(resolvedDate);
+
+const allClusters = (await getCollection('clusters')).sort((a, b) => {
   const oa = a.data.order ?? 999;
   const ob = b.data.order ?? 999;
   if (oa !== ob) return oa - ob;
@@ -31,141 +53,391 @@ const clusters = (await getCollection('clusters')).sort((a, b) => {
 
 const dump = await getRootstockDump();
 
-const checkpointAvailability = model.data.checkpoints.map((cp) => ({
+// Cluster columns: include only clusters where the model has presence
+// (any checkpoint id appears in any env on that cluster's manifest).
+// Cap at CLUSTER_COL_CAP; the full grid lives at /compatibility.
+const presentClusters = allClusters
+  .filter((c) =>
+    model.data.checkpoints.some((cp) => findVerification(dump, c.id, cp.id) !== null),
+  )
+  .slice(0, CLUSTER_COL_CAP);
+
+const matrix = model.data.checkpoints.map((cp) => ({
   checkpoint: cp,
-  perCluster: clusters.map((c) => {
+  cells: presentClusters.map((c) => {
     const v = findVerification(dump, c.id, cp.id);
     return {
       cluster: c,
-      state: cellStateFor(v),
-      verifiedAt: v?.verifiedAt,
+      state: cellStateFor(v) as CellState,
+      verifiedAt: v?.verifiedAt ?? null,
       lastError: v?.lastError ?? null,
     };
   }),
 }));
 
-const statusHtml = (state: CellState, lastError: string | null): string => {
-  if (state === 'verified') return '<span class="status-verified">●</span> verified';
-  if (state === 'lapsed') return `<span class="status-stale">○</span> ${lastError ? 'errored' : 'lapsed'}`;
-  return '<span style="color: var(--ink-3);">n/a</span>';
+const glyphHtml = (state: CellState): string => {
+  if (state === 'verified') {
+    return '<span class="status-verified" title="Verified within the last 7 days" aria-label="verified">●</span>';
+  }
+  if (state === 'lapsed') {
+    return '<span class="status-stale" title="Installed but not recently verified" aria-label="installed, not recently verified">○</span>';
+  }
+  return '<span class="status-na" title="Not installed on this cluster" aria-label="not installed">—</span>';
 };
+
+const weightsDomainLabel = (u: string): string => {
+  try {
+    const h = new URL(u).hostname.replace(/^www\./, '');
+    if (h.includes('zenodo.org')) return 'Zenodo';
+    if (h.includes('github.com')) return 'GitHub Release';
+    if (h.includes('figshare.com')) return 'Figshare';
+    if (h.includes('huggingface.co')) return 'Hugging Face';
+    return h;
+  } catch {
+    return 'Weights';
+  }
+};
+
+const codeDomainLabel = (u: string): string => {
+  try {
+    const h = new URL(u).hostname.replace(/^www\./, '');
+    if (h.includes('github.com')) return 'GitHub';
+    if (h.includes('gitlab.com')) return 'GitLab';
+    return h;
+  } catch {
+    return 'Code';
+  }
+};
+
+const paperDomainLabel = (u: string): string => {
+  try {
+    const h = new URL(u).hostname.replace(/^www\./, '');
+    if (h.includes('arxiv.org')) return 'arXiv';
+    if (h.includes('doi.org')) return 'DOI';
+    return h;
+  } catch {
+    return 'Paper';
+  }
+};
+
+const paperLink = (() => {
+  // Masthead Paper link: prefer the first paper's URL/DOI, else nothing.
+  const p = papers.find((p) => p?.data.url || p?.data.doi);
+  if (!p) return null;
+  const href = p.data.doi ? `https://doi.org/${p.data.doi}` : p.data.url!;
+  return { href, label: paperDomainLabel(href) };
+})();
+
+const composeCitation = (data: { authors?: string[]; title?: string; venue?: string; published?: string; citation?: string }): string => {
+  if (data.citation) return data.citation;
+  const parts: string[] = [];
+  if (data.authors?.length) parts.push(data.authors.join(', '));
+  if (data.title) parts.push(data.title);
+  if (data.venue) parts.push(data.venue);
+  const y = yearOf(data.published);
+  if (y) parts.push(String(y));
+  return parts.join(', ') + (parts.length ? '.' : '');
+};
+
+const notesHtml = model.data.notes ? marked.parse(model.data.notes) : null;
 ---
 <Page
   title={`${model.data.name} — Garden's Almanac`}
   section="§ Model"
   folioId={`/model/${model.id}`}
 >
-  <p class="sc" style="font-size: 11.5px; letter-spacing: 0.14em;">
-    {family?.data.name ?? 'Unknown family'}
-  </p>
-  <h1>{model.data.name}</h1>
-  {(model.data.year || model.data.leadAuthor) && (
-    <p class="it" style="color: var(--ink-2); font-size: 14px;">
-      {model.data.year}{model.data.year && model.data.leadAuthor && ' · '}{model.data.leadAuthor}
-    </p>
-  )}
-  <hr class="title-rule" />
+  <div class="model-masthead">
+    <h1>{model.data.name}</h1>
+    {dateLine && (
+      <p class="it" style="font-size: 14px; color: var(--ink-2); margin-top: 6px;">
+        {dateLine}
+      </p>
+    )}
 
-  <div class="detail-body">
-    <div>
-      <h2 class="sc" style="font-size: 13px;">Specifications</h2>
-      <table class="almanac" style="margin-top: 6px;">
-        <tbody>
-          <tr><td>Family</td><td><a class="ink-link it" href={url(`/architecture/${model.data.family.id}`)}>{family?.data.name}</a></td></tr>
-          {model.data.year && <tr><td>Year</td><td>{model.data.year}</td></tr>}
+    {(paperLink || model.data.codeUrl || model.data.huggingFaceId || model.data.weightsUrl) && (
+      <div class="masthead-links">
+        {paperLink && (
+          <div class="masthead-link">
+            <span class="sc">Paper</span>
+            <a class="ink-link" href={paperLink.href} target="_blank" rel="noopener">
+              {paperLink.label} <span style="color: var(--ink-3);">↗</span>
+            </a>
+          </div>
+        )}
+        {model.data.codeUrl && (
+          <div class="masthead-link">
+            <span class="sc">Code</span>
+            <a class="ink-link" href={model.data.codeUrl} target="_blank" rel="noopener">
+              {codeDomainLabel(model.data.codeUrl)} <span style="color: var(--ink-3);">↗</span>
+            </a>
+          </div>
+        )}
+        {model.data.huggingFaceId ? (
+          <div class="masthead-link">
+            <span class="sc">Weights</span>
+            <span style="display: inline-flex; align-items: baseline; gap: 6px;">
+              <span aria-hidden="true">🤗</span>
+              <a class="ink-link mono" style="font-size: 12.5px;"
+                 href={`https://huggingface.co/${model.data.huggingFaceId}`}
+                 target="_blank" rel="noopener">{model.data.huggingFaceId}</a>
+            </span>
+          </div>
+        ) : model.data.weightsUrl ? (
+          <div class="masthead-link">
+            <span class="sc">Weights</span>
+            <a class="ink-link" href={model.data.weightsUrl} target="_blank" rel="noopener">
+              {weightsDomainLabel(model.data.weightsUrl)} <span style="color: var(--ink-3);">↗</span>
+            </a>
+          </div>
+        ) : null}
+      </div>
+    )}
+  </div>
+
+  <div style="height: 18px;"></div>
+
+  <section class="checkpoint-matrix">
+    <div style="overflow-x: auto;">
+      <table class="almanac" style="font-size: 13px;">
+        <thead>
           <tr>
-            <td>Checkpoints</td>
-            <td>
-              {model.data.checkpoints.map((cp, i) => (
-                <>
-                  {i > 0 && ', '}
-                  <span class="mono" style="font-size: 11.5px;">{cp.id}</span>
-                  {cp.params && <span class="it" style="color: var(--ink-2);"> · {cp.params}</span>}
-                </>
-              ))}
-            </td>
+            <th>Checkpoint</th>
+            <th style="width: 80px; text-align: right;">Params</th>
+            <th style="width: 80px; text-align: right;">Size</th>
+            {presentClusters.map((c) => (
+              <th style="width: 84px; text-align: center;">
+                <a class="ink-link" href={url(`/cluster/${c.id}`)} style="border-bottom-color: transparent;">
+                  {c.data.name}
+                </a>
+              </th>
+            ))}
           </tr>
+        </thead>
+        <tbody>
+          {matrix.map(({ checkpoint, cells }) => (
+            <tr>
+              <td class="mono" style="font-size: 12.25px;">{checkpoint.id}</td>
+              <td style="text-align: right; font-variant-numeric: tabular-nums;">
+                {checkpoint.params ?? ''}
+              </td>
+              <td style="text-align: right; font-variant-numeric: tabular-nums; color: var(--ink-2);">
+                {formatBytes(checkpoint.weightsBytes)}
+              </td>
+              {cells.map((cell) => (
+                <td
+                  style="text-align: center;"
+                  data-rs-cell={`${cell.cluster.id}:${checkpoint.id}`}
+                  set:html={glyphHtml(cell.state)}
+                />
+              ))}
+            </tr>
+          ))}
         </tbody>
       </table>
-
-      {trainingData.length > 0 && (
-        <>
-          <h2 class="sc" style="font-size: 13px; margin-top: 22px;">Training data</h2>
-          <table class="almanac" style="margin-top: 6px;">
-            <thead><tr><th>Dataset</th><th>Used as</th></tr></thead>
-            <tbody>
-              {trainingData.map(({ dataset, role }) => (
-                <tr>
-                  <td><a class="ink-link it" href={url(`/dataset/${dataset?.id}`)}>{dataset?.data.name}</a></td>
-                  <td class="it">{role}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </>
-      )}
-
-      <h2 class="sc" style="font-size: 13px; margin-top: 22px;">Availability</h2>
-      <p class="it" style="font-size: 12px; color: var(--ink-2); margin-top: 4px;">
-        Per-checkpoint verification, by cluster. Verified within seven days = ●; older or errored = ○; absent = n/a.
-      </p>
-      {checkpointAvailability.map(({ checkpoint, perCluster }) => (
-        <div style="margin-top: 14px;">
-          <div class="mono" style="font-size: 11.5px;">
-            {checkpoint.id}
-            {checkpoint.params && (
-              <span class="it" style="color: var(--ink-2); margin-left: 6px;">· {checkpoint.params}</span>
-            )}
-          </div>
-          <table class="almanac" style="margin-top: 4px;">
-            <thead><tr><th>Cluster</th><th style="width: 80px;">Status</th><th style="width: 110px;">Verified</th></tr></thead>
-            <tbody>
-              {perCluster.map(({ cluster, state, verifiedAt, lastError }) => (
-                <tr data-rs-row={`${cluster.id}:${checkpoint.id}`}>
-                  <td><a class="ink-link it" href={url(`/cluster/${cluster.id}`)}>{cluster.data.name}</a></td>
-                  <td data-rs-status set:html={statusHtml(state, lastError)} />
-                  <td class="mono" data-rs-verified style="font-variant-numeric: tabular-nums;">
-                    {verifiedAt ? verifiedAt.slice(0, 10) : '—'}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      ))}
     </div>
 
-    <aside class="detail-rail">
-      {model.data.notes && (
-        <div class="margin">
-          <span class="label">Notes</span>
-          <p class="it">{model.data.notes}</p>
-        </div>
+    {presentClusters.length > 0 && (
+      <div class="matrix-legend">
+        <span><span class="status-verified">●</span> <span class="it">verified, last 7 days</span></span>
+        <span><span class="status-stale">○</span> <span class="it">installed, not recently verified</span></span>
+        <span><span class="status-na">—</span> <span class="it">not installed</span></span>
+      </div>
+    )}
+    {presentClusters.length === 0 && (
+      <p class="it" style="font-size: 12px; color: var(--ink-2); margin-top: 8px;">
+        No cluster has installed any checkpoint of this model yet.
+      </p>
+    )}
+  </section>
+
+  <hr class="hairline" style="margin: 18px 0 10px;" />
+
+  <div class="model-body">
+    <section>
+      <header>
+        <div class="sc" style="font-size: 11.5px; letter-spacing: 0.10em;">References</div>
+      </header>
+      {papers.length > 0 ? (
+        <ol style="margin: 8px 0 0; padding-left: 24px; font-size: 13px; line-height: 1.5; color: var(--ink-2);">
+          {papers.map((p) => {
+            if (!p) return null;
+            const cite = composeCitation(p.data);
+            const href = p.data.doi ? `https://doi.org/${p.data.doi}` : p.data.url;
+            return (
+              <li style="margin-bottom: 6px; padding-left: 4px;">
+                {href ? (
+                  <a class="ink-link" href={href} target="_blank" rel="noopener">{cite}</a>
+                ) : (
+                  cite
+                )}
+              </li>
+            );
+          })}
+        </ol>
+      ) : (
+        <p class="it" style="font-size: 12.5px; color: var(--ink-3); margin-top: 8px;">
+          — no references catalogued yet —
+        </p>
       )}
+    </section>
+
+    <aside class="spec-rail">
+      <header>
+        <div class="sc" style="font-size: 11.5px; letter-spacing: 0.10em;">Specifications</div>
+      </header>
+      <dl class="spec-list">
+        {families.length > 0 && (
+          <>
+            <dt class="sc">{families.length > 1 ? 'Families' : 'Family'}</dt>
+            <dd>
+              {families.map((f, i) => f && (
+                <>
+                  {i > 0 && <span style="color: var(--ink-3);">, </span>}
+                  <a class="ink-link it" href={url(`/architecture/${f.id}`)}>{f.data.name}</a>
+                </>
+              ))}
+            </dd>
+          </>
+        )}
+        {trainingDatasets.length > 0 && (
+          <>
+            <dt class="sc">Trained on</dt>
+            <dd>
+              {trainingDatasets.map((d, i) => d && (
+                <>
+                  {i > 0 && <span style="color: var(--ink-3);">, </span>}
+                  <a class="ink-link" href={url(`/dataset/${d.id}`)}>{d.data.name}</a>
+                </>
+              ))}
+            </dd>
+          </>
+        )}
+        {model.data.cachePath && (
+          <>
+            <dt class="sc">Cache path</dt>
+            <dd><code class="mono" style="font-size: 12px; color: var(--ink-2); word-break: break-all;">{model.data.cachePath}</code></dd>
+          </>
+        )}
+      </dl>
     </aside>
   </div>
+
+  {notesHtml && (
+    <section class="model-notes">
+      <hr class="hairline" style="margin: 18px 0 10px;" />
+      <div class="sc" style="font-size: 11.5px; letter-spacing: 0.10em;">Notes</div>
+      <div class="notes-body" set:html={notesHtml} />
+    </section>
+  )}
 </Page>
+
+<style>
+  .model-masthead h1 {
+    font-size: 46px;
+    line-height: 1.0;
+    font-weight: 600;
+    letter-spacing: -0.005em;
+    margin-top: 2px;
+  }
+
+  .masthead-links {
+    margin-top: 16px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 28px;
+  }
+  .masthead-link {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+  .masthead-link .sc {
+    font-family: var(--smallcaps);
+    font-size: 10.5px;
+    letter-spacing: 0.12em;
+    color: var(--ink-3);
+  }
+
+  .checkpoint-matrix .matrix-legend {
+    margin-top: 8px;
+    font-size: 12px;
+    color: var(--ink-2);
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+
+  .model-body {
+    display: grid;
+    grid-template-columns: 1fr 240px;
+    column-gap: 32px;
+    align-items: start;
+  }
+  .spec-rail {
+    border-left: 0.5px solid var(--rule);
+    padding-left: 18px;
+  }
+  .spec-list {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    row-gap: 5px;
+    column-gap: 10px;
+    margin: 10px 0 0;
+    font-size: 13px;
+  }
+  .spec-list dt {
+    font-family: var(--smallcaps);
+    font-size: 11px;
+    letter-spacing: 0.10em;
+    color: var(--ink-3);
+    padding-top: 1px;
+    margin: 0;
+  }
+  .spec-list dd { margin: 0; }
+
+  .notes-body {
+    margin-top: 8px;
+    font-size: 13.5px;
+    line-height: 1.55;
+    color: var(--ink);
+    max-width: 720px;
+  }
+  .notes-body p { margin: 0 0 10px; }
+  .notes-body ul { margin: 0 0 10px; padding-left: 18px; }
+  .notes-body li { margin-bottom: 3px; }
+  .notes-body code {
+    font-family: var(--mono);
+    background: rgba(26,22,18,0.05);
+    padding: 0 4px;
+  }
+  .notes-body a { color: var(--oxblood); text-decoration: underline; text-decoration-thickness: 0.5px; text-underline-offset: 2px; }
+
+  @media (max-width: 720px) {
+    .model-body { grid-template-columns: 1fr; }
+    .spec-rail { border-left: 0; padding-left: 0; margin-top: 18px; }
+  }
+</style>
 
 <script>
   import { loadLiveDump } from '../../lib/rootstock-client';
   import { findVerification, cellStateFor, type CellState } from '../../lib/rootstock';
 
-  const statusHtml = (state: CellState, lastError: string | null): string => {
-    if (state === 'verified') return '<span class="status-verified">●</span> verified';
-    if (state === 'lapsed') return `<span class="status-stale">○</span> ${lastError ? 'errored' : 'lapsed'}`;
-    return '<span style="color: var(--ink-3);">n/a</span>';
+  const glyphHtml = (state: CellState): string => {
+    if (state === 'verified') {
+      return '<span class="status-verified" title="Verified within the last 7 days" aria-label="verified">●</span>';
+    }
+    if (state === 'lapsed') {
+      return '<span class="status-stale" title="Installed but not recently verified" aria-label="installed, not recently verified">○</span>';
+    }
+    return '<span class="status-na" title="Not installed on this cluster" aria-label="not installed">—</span>';
   };
 
   loadLiveDump()
     .then((dump) => {
-      document.querySelectorAll<HTMLElement>('[data-rs-row]').forEach((tr) => {
-        const [cluster, checkpoint] = tr.dataset.rsRow!.split(':');
-        const v = findVerification(dump, cluster, checkpoint);
-        const state = cellStateFor(v);
-        const status = tr.querySelector<HTMLElement>('[data-rs-status]');
-        const verified = tr.querySelector<HTMLElement>('[data-rs-verified]');
-        if (status) status.innerHTML = statusHtml(state, v?.lastError ?? null);
-        if (verified) verified.textContent = v?.verifiedAt ? v.verifiedAt.slice(0, 10) : '—';
+      document.querySelectorAll<HTMLElement>('[data-rs-cell]').forEach((td) => {
+        const [cluster, checkpoint] = td.dataset.rsCell!.split(':');
+        const state = cellStateFor(findVerification(dump, cluster, checkpoint));
+        td.innerHTML = glyphHtml(state);
       });
     })
     .catch((err) => console.warn('Rootstock live refresh failed', err));

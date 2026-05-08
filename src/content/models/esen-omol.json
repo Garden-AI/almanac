@@ -1,9 +1,12 @@
 {
   "name": "eSEN (OMol)",
-  "family": "equivariant",
+  "families": ["equivariant"],
+  "codeUrl": "https://github.com/facebookresearch/fairchem",
+  "paperRefs": ["esen"],
   "checkpoints": [
     { "id": "esen-md-direct-all-omol" },
     { "id": "esen-sm-conserving-all-omol" },
     { "id": "esen-sm-direct-all-omol" }
-  ]
+  ],
+  "trainingData": ["omol25"]
 }

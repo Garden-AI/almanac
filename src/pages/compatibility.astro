@@ -55,7 +55,7 @@ const rows = models
     m.data.checkpoints.map((cp) => ({
       pageId: m.id,
       pageName: m.data.name,
-      family: m.data.family.id,
+      family: m.data.families[0]?.id ?? '',
       checkpointId: cp.id,
       params: cp.params,
     })),

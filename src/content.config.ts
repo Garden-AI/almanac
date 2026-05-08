@@ -34,35 +34,55 @@ const models = defineCollection({
   loader: glob({ pattern: '**/*.json', base: './src/content/models' }),
   schema: z.object({
     name: z.string(),
-    family: reference('architectures'),
-    year: z.number().int().optional(),
-    leadAuthor: z.string().optional(),
-    /** Canonical checkpoint identifiers for this model page. The matrix has
-        one row per entry; cluster manifests verify by these same ids. */
+    families: z.array(reference('architectures')).min(1),
+    /** Optional override. If absent, the catalog sort and "Released" line
+     *  use the primary paper's `published` date. Set this when the model
+     *  release predates the paper or no paper exists. ISO YYYY-MM-DD. */
+    releaseDate: z.string().optional(),
+
+    paperRefs: z.array(reference('papers')).default([]),
+    codeUrl: z.string().url().optional(),
+    huggingFaceId: z.string().optional(),
+    weightsUrl: z.string().url().optional(),
+
+    cachePath: z.string().optional(),
+
     checkpoints: z
       .array(
         z.object({
           id: z.string(),
           params: z.string().optional(),
+          weightsBytes: z.number().int().optional(),
         }),
       )
       .min(1),
-    trainingData: z
-      .array(
-        z.object({
-          dataset: reference('datasets'),
-          role: z.enum([
-            'Training data',
-            'Pretraining',
-            'Fine-tuning',
-            'Sole training data',
-            'Joint training',
-            'Auxiliary',
-          ]),
-        }),
-      )
-      .default([]),
+
+    /** Plain list of dataset references — order follows the data. */
+    trainingData: z.array(reference('datasets')).default([]),
+
+    /** Markdown. Free-text gotchas, operator caveats, deprecation/scope
+     *  notes. NOT for performance commentary or "when to use"
+     *  recommendations — those belong to the paper / model card. */
     notes: z.string().optional(),
+  }),
+});
+
+const papers = defineCollection({
+  loader: glob({ pattern: '**/*.json', base: './src/content/papers' }),
+  schema: z.object({
+    doi: z.string().optional(),
+    title: z.string().optional(),
+    authors: z.array(z.string()).default([]),
+    /** ISO date. Pad to first-of-month / first-of-year when finer
+     *  granularity is unknown. Used for catalog reverse-chron sort. */
+    published: z.string().optional(),
+    venue: z.string().optional(),
+    url: z.string().url().optional(),
+    citation: z.string().optional(),
+    /** Distinguishes fetch-script output from hand-written entries.
+     *  Fetched entries can be overwritten by re-running the fetcher;
+     *  manual ones never are. */
+    source: z.enum(['fetched', 'manual']).default('manual'),
   }),
 });
 
@@ -85,5 +105,5 @@ const clusters = defineCollection({
   }),
 });
 
-export const collections = { architectures, datasets, models, clusters };
+export const collections = { architectures, datasets, models, clusters, papers };
 export { FAMILY_KEY };
