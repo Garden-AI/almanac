@@ -1,0 +1,9 @@
+.venv/
+__pycache__/
+*.pyc
+.DS_Store
+
+# Pre-computed pairwise metrics from the upstream embedding study.
+# Excluded while the paper is under review; only the derived UMAP layouts
+# under src/content/embeddings/ are tracked.
+_data/
