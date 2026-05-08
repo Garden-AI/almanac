@@ -1,6 +1,7 @@
 {
   "name": "MACE-MP-0",
   "families": ["ace"],
+  "codeUrl": "https://github.com/ACEsuit/mace-mp",
   "paperRefs": ["mace-mp-0"],
   "checkpoints": [
     { "id": "mace-mp-0-small" },
