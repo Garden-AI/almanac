@@ -1,0 +1,194 @@
+---
+import { url } from '../lib/url';
+import type { CollectionEntry } from 'astro:content';
+
+type Props = {
+  layout: CollectionEntry<'embeddings'>;
+  width?: number;
+  height?: number;
+  active?: boolean;
+};
+
+const { layout, width: W = 740, height: H = 700, active = true } = Astro.props;
+const PAD_X = 36;
+const PAD_Y = 44;
+
+const px = (p: { x: number; y: number }) => ({
+  x: PAD_X + p.x * (W - 2 * PAD_X),
+  y: PAD_Y + (1 - p.y) * (H - 2 * PAD_Y),
+});
+
+const sizeFor = (m?: number) => {
+  if (!m) return 3.2;
+  return Math.max(2.4, Math.min(7.5, 1.8 + Math.log10(m + 1) * 1.4));
+};
+
+type Pt = (typeof layout.data.points)[number];
+const byFamily = new Map<string, Pt[]>();
+for (const p of layout.data.points) {
+  if (!byFamily.has(p.family)) byFamily.set(p.family, []);
+  byFamily.get(p.family)!.push(p);
+}
+
+const constellations = [...byFamily.entries()]
+  .filter(([, pts]) => pts.length >= 2)
+  .map(([family, pts]) => {
+    const xs = pts.map((p) => px(p).x);
+    const ys = pts.map((p) => px(p).y);
+    const minx = Math.min(...xs), maxx = Math.max(...xs);
+    const miny = Math.min(...ys), maxy = Math.max(...ys);
+    return {
+      family,
+      cx: (minx + maxx) / 2,
+      cy: (miny + maxy) / 2,
+      rx: Math.max(40, (maxx - minx) / 2 + 30),
+      ry: Math.max(28, (maxy - miny) / 2 + 22),
+    };
+  });
+
+const HOLLOW_VARIANTS = new Set(['dens', 'direct', 'invariant']);
+
+// Crowded labels alternate above/below their dot.
+const ordered = [...layout.data.points]
+  .map((p) => ({ p, ...px(p) }))
+  .sort((a, b) => a.x - b.x || a.y - b.y);
+const labelOffsets = new Map<string, number>();
+ordered.forEach((row, idx) => {
+  labelOffsets.set(row.p.modelName, idx % 2 === 0 ? -10 : 14);
+});
+
+// Pattern id must be unique per stage so CSS-toggled siblings don't collide.
+const patternId = `dotgrid-${layout.id}`;
+
+const familyCount = [...byFamily.keys()].length;
+---
+
+<figure class={`map-stage${active ? ' is-active' : ''}`} data-ds={layout.data.dataset}>
+  <svg
+    width="100%"
+    viewBox={`0 0 ${W} ${H}`}
+    style="background: var(--paper-2); border: 1px solid var(--ink); display: block;"
+  >
+    <defs>
+      <pattern id={patternId} width="32" height="32" patternUnits="userSpaceOnUse">
+        <circle cx="0" cy="0" r="0.5" fill="var(--ink)" opacity="0.30" />
+      </pattern>
+    </defs>
+
+    <rect x="0" y="0" width={W} height={H} fill={`url(#${patternId})`} />
+
+    {[0.25, 0.5, 0.75].map((t) => (
+      <>
+        <line x1="0" y1={t * H} x2={W} y2={t * H} stroke="var(--ink)" stroke-width="0.3" stroke-dasharray="1 4" opacity="0.7" />
+        <line y1="0" x1={t * W} y2={H} x2={t * W} stroke="var(--ink)" stroke-width="0.3" stroke-dasharray="1 4" opacity="0.7" />
+      </>
+    ))}
+
+    {constellations.map((h) => (
+      <g>
+        <ellipse cx={h.cx} cy={h.cy} rx={h.rx} ry={h.ry} fill="none" stroke="var(--ink)" stroke-width="0.5" stroke-dasharray="2 3" opacity="0.55" />
+        <text
+          x={h.cx}
+          y={h.cy - h.ry - 6}
+          text-anchor="middle"
+          font-family="var(--smallcaps)"
+          font-size="11"
+          letter-spacing="2"
+          fill="var(--ink)"
+        >
+          {h.family.toUpperCase()}
+        </text>
+      </g>
+    ))}
+
+    {layout.data.points.map((m) => {
+      const p = px(m);
+      const r = sizeFor(m.sizeM);
+      const hollow = HOLLOW_VARIANTS.has(m.variant ?? '');
+      const dy = labelOffsets.get(m.modelName) ?? -10;
+      const linked = !!m.slug;
+      const href = linked ? url(`/model/${m.slug!.id}`) : undefined;
+      const dot = (
+        <g>
+          {r >= 4 && !hollow && (
+            <g stroke="var(--ink)" stroke-width="0.6">
+              <line x1={p.x - r - 2} y1={p.y} x2={p.x + r + 2} y2={p.y} />
+              <line x1={p.x} y1={p.y - r - 2} x2={p.x} y2={p.y + r + 2} />
+            </g>
+          )}
+          <circle
+            cx={p.x}
+            cy={p.y}
+            r={r}
+            fill={hollow ? 'var(--paper)' : 'var(--ink)'}
+            stroke="var(--ink)"
+            stroke-width={hollow ? 1.0 : 0}
+          />
+          <text
+            x={p.x}
+            y={p.y + dy}
+            text-anchor="middle"
+            font-family="var(--serif)"
+            font-size="10.5"
+            font-style={linked ? 'italic' : 'normal'}
+            fill={linked ? 'var(--ink)' : 'var(--ink-2)'}
+            style="paint-order: stroke; stroke: var(--paper); stroke-width: 3; stroke-linejoin: round;"
+          >
+            {m.label}
+          </text>
+        </g>
+      );
+      return href ? (
+        <a href={href} style="cursor: pointer;">{dot}</a>
+      ) : (
+        dot
+      );
+    })}
+  </svg>
+
+  <figcaption class="map-caption">
+    <span class="it">
+      Layout: {layout.data.method.toLowerCase()} on the {layout.data.metric.toLowerCase()}
+      across {layout.data.n} foundation models. Marker area scales with parameter count;
+      hollow markers indicate a <span class="sc-inline">dens</span>,
+      <span class="sc-inline">direct</span>, or
+      <span class="sc-inline">invariant</span> variant.
+      Italic labels link to a catalogued model page.
+    </span>
+    <span class="sc map-counts">
+      {layout.data.n} models · {familyCount} families
+    </span>
+  </figcaption>
+</figure>
+
+<style>
+  .map-stage {
+    margin: 0;
+    display: none;
+  }
+  .map-stage.is-active {
+    display: block;
+  }
+  .map-caption {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-top: 8px;
+    font-size: 12px;
+    color: var(--ink-2);
+    gap: 16px;
+  }
+  .map-caption .it {
+    max-width: 60ch;
+  }
+  .map-caption .sc-inline {
+    font-family: var(--smallcaps);
+    font-size: 11px;
+    letter-spacing: 0.10em;
+  }
+  .map-counts {
+    font-size: 10.5px;
+    letter-spacing: 0.10em;
+    white-space: nowrap;
+  }
+</style>

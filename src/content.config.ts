@@ -105,5 +105,35 @@ const clusters = defineCollection({
   }),
 });
 
-export const collections = { architectures, datasets, models, clusters, papers };
+/**
+ * Pre-computed UMAP layouts of CKNNA distances, exported from
+ * `almanac_embeddings/export_layouts.py`. One file per reference dataset.
+ * Points may or may not link to an almanac model — many of the models in
+ * the embedding study (LLMs, off-domain controls) aren't catalogued here.
+ */
+const embeddings = defineCollection({
+  loader: glob({ pattern: '**/*.json', base: './src/content/embeddings' }),
+  schema: z.object({
+    dataset: z.string(),
+    metric: z.string(),
+    method: z.string(),
+    n: z.number().int(),
+    points: z.array(
+      z.object({
+        modelName: z.string(),
+        label: z.string(),
+        family: z.string(),
+        variant: z.string().optional(),
+        datasetTag: z.string().optional(),
+        sizeM: z.number().optional(),
+        numParams: z.number().int().optional(),
+        x: z.number(),
+        y: z.number(),
+        slug: reference('models').optional(),
+      }),
+    ),
+  }),
+});
+
+export const collections = { architectures, datasets, models, clusters, papers, embeddings };
 export { FAMILY_KEY };
