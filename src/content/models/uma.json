@@ -3,7 +3,7 @@
   "families": ["equivariant"],
   "huggingFaceId": "facebook/UMA",
   "codeUrl": "https://github.com/facebookresearch/fairchem",
-  "paperRefs": [],
+  "paperRefs": ["uma"],
   "checkpoints": [
     {
       "id": "uma-s-1p1",

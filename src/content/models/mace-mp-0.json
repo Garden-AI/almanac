@@ -1,7 +1,7 @@
 {
   "name": "MACE-MP-0",
   "families": ["ace"],
-  "paperRefs": [],
+  "paperRefs": ["mace-mp-0"],
   "checkpoints": [
     { "id": "mace-mp-0-small" },
     { "id": "mace-mp-0-medium", "params": "4.7M" },

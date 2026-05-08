@@ -1,7 +1,7 @@
 {
   "name": "MACE-OFF23",
   "families": ["ace"],
-  "paperRefs": [],
+  "paperRefs": ["mace-off23"],
   "checkpoints": [
     { "id": "mace-off23-small" },
     { "id": "mace-off23-medium", "params": "4.7M" },
