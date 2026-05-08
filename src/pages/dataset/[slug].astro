@@ -10,12 +10,9 @@ export async function getStaticPaths() {
     params: { slug: d.id },
     props: {
       dataset: d,
-      modelsTrainedOn: models
-        .map((m) => ({
-          model: m,
-          uses: m.data.trainingData.filter((t) => t.dataset.id === d.id),
-        }))
-        .filter((x) => x.uses.length > 0),
+      modelsTrainedOn: models.filter((m) =>
+        m.data.trainingData.some((ref) => ref.id === d.id),
+      ),
     },
   }));
 }
@@ -64,16 +61,13 @@ const d = dataset.data;
         <>
           <h2 class="sc" style="font-size: 13px; margin-top: 22px;">Models trained on {d.name}</h2>
           <table class="almanac" style="margin-top: 6px;">
-            <thead><tr><th>Model</th><th>Used as</th></tr></thead>
+            <thead><tr><th>Model</th></tr></thead>
             <tbody>
-              {modelsTrainedOn.map(({ model, uses }) =>
-                uses.map((u) => (
-                  <tr>
-                    <td><a class="ink-link it" href={url(`/model/${model.id}`)}>{model.data.name}</a></td>
-                    <td class="it">{u.role}</td>
-                  </tr>
-                ))
-              )}
+              {modelsTrainedOn.map((model) => (
+                <tr>
+                  <td><a class="ink-link it" href={url(`/model/${model.id}`)}>{model.data.name}</a></td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </>

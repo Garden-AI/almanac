@@ -1,19 +1,36 @@
 ---
-import { getCollection } from 'astro:content';
+import { getCollection, getEntry } from 'astro:content';
 import Page from '../../layouts/Page.astro';
 import { url } from '../../lib/url';
 import { displayParams } from '../../lib/params';
+import { yearOf } from '../../lib/format';
 
 export async function getStaticPaths() {
   const architectures = await getCollection('architectures');
-  const models = await getCollection('models');
-  return architectures.map((a) => ({
-    params: { slug: a.id },
-    props: {
-      architecture: a,
-      models: models.filter((m) => m.data.family.id === a.id),
-    },
-  }));
+  const allModels = await getCollection('models');
+  return Promise.all(
+    architectures.map(async (a) => {
+      const matching = allModels.filter((m) =>
+        m.data.families.some((ref) => ref.id === a.id),
+      );
+      const enriched = await Promise.all(
+        matching.map(async (m) => {
+          let resolvedDate = m.data.releaseDate ?? null;
+          if (!resolvedDate) {
+            for (const ref of m.data.paperRefs) {
+              const p = await getEntry('papers', ref.id);
+              if (p?.data.published) { resolvedDate = p.data.published; break; }
+            }
+          }
+          return { model: m, year: yearOf(resolvedDate) };
+        }),
+      );
+      return {
+        params: { slug: a.id },
+        props: { architecture: a, models: enriched },
+      };
+    }),
+  );
 }
 
 const { architecture, models } = Astro.props;
@@ -39,10 +56,10 @@ const a = architecture.data;
         {models.length > 0 ? (
           <table class="almanac fam-table" style="margin-top: 4px;">
             <tbody>
-              {models.map((m) => (
+              {models.map(({ model: m, year }) => (
                 <tr>
                   <td><a class="ink-link it" href={url(`/model/${m.id}`)}>{m.data.name}</a></td>
-                  <td style="text-align: right;">{m.data.year ?? '—'}</td>
+                  <td style="text-align: right;">{year ?? '—'}</td>
                   <td style="text-align: right; font-variant-numeric: tabular-nums;">{displayParams(m.data.checkpoints)}</td>
                 </tr>
               ))}

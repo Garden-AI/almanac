@@ -59,5 +59,5 @@ Each is currently scaffolded with one example record (UMA Medium, OMat24, Della,
 - **No shadows, no border-radius, no gradients.** The almanac aesthetic is paper-and-ink — hairline rules only.
 - **Tabular-nums on every numeric column.**
 - **Anchor every cross-reference.** Model/dataset/cluster names in tables render as `<a class="ink-link" />`.
-- **Status glyphs are Unicode**: `●` verified, `◐` stale, `○` n/a.
+- **Status glyphs are Unicode**: `●` verified within seven days, `○` installed but not recently verified (covers stale and errored), `—` not installed. Half-moon (`◐`) is removed.
 - **Don't invent new colors.** Tokens in `almanac.css` were tuned for the paper feel.

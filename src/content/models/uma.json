@@ -1,14 +1,14 @@
 {
   "name": "UMA",
-  "family": "equivariant",
-  "year": 2026,
-  "leadAuthor": "Meta FAIR-Chem (UMA collaboration)",
+  "families": ["equivariant"],
+  "huggingFaceId": "facebook/UMA",
+  "codeUrl": "https://github.com/facebookresearch/fairchem",
+  "paperRefs": [],
   "checkpoints": [
-    { "id": "uma-s-1p1", "params": "420M" }
+    {
+      "id": "uma-s-1p1",
+      "params": "150M"
+    }
   ],
-  "trainingData": [
-    { "dataset": "omat24", "role": "Pretraining" },
-    { "dataset": "salex", "role": "Pretraining" },
-    { "dataset": "omol25", "role": "Joint training" }
-  ]
+  "trainingData": ["omol25", "oc20", "omat24", "odac25", "omc25"]
 }

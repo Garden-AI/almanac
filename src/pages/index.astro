@@ -5,8 +5,8 @@ import { url } from '../lib/url';
 
 const toc = [
   { num: '01', title: 'About this Almanac', href: url('/about') },
-  { num: '02', title: 'The Map', href: url('/map') },
-  { num: '03', title: 'Model Catalog', href: url('/catalog'), note: 'A–Z, all 22 entries' },
+  { num: '02', title: 'Browse by Embedding Similarity', href: url('/map') },
+  { num: '03', title: 'Browse by Name', href: url('/catalog'), note: 'A–Z, all 22 entries' },
   { num: '04', title: 'Where to Run on HPC', href: url('/compatibility') },
   { num: '05', title: 'Datasets', href: url('/datasets') },
   { num: '06', title: 'Architectures', href: url('/architectures') },
@@ -27,7 +27,7 @@ const toc = [
     </div>
     <div class="sc" style="font-size: 12px; letter-spacing: 0.16em; margin-top: 8px;">2026 Edition</div>
     <div style="font-style: italic; font-size: 13px; color: var(--ink-2); margin-top: 1px;">
-      22 models, with notes on how to install them and how they compare
+      (22?) models, with notes on how to install them and how they compare
     </div>
   </div>
 
@@ -41,10 +41,7 @@ const toc = [
     </div>
 
     <p style="font-size: 13.75px; line-height: 1.55; color: var(--ink); margin: 12px auto 0; max-width: 560px; text-align: center;">
-      The Almanac charts the present generation of MLIPs by the similarity of their internal representations,
-      lists where they run on shared HPC, and notes which datasets and architectures they descend from. It is
-      intended as a companion to Hugging Face and the public leaderboards — a chart of the territory, not a
-      replacement for them.
+      This Almanac is a guide to the current landsape of MLIPs and how to run them on academic and government supercomputing clusters.
     </p>
 
     <div style="display: flex; justify-content: center; margin-top: 16px;">
@@ -91,9 +88,7 @@ const toc = [
         style="width: 230px; height: auto; display: block; mix-blend-mode: multiply;"
       />
       <p class="it" style="font-size: 13px; line-height: 1.5; color: var(--ink-2); margin: 0;">
-        Future editions of the Almanac may extend to protein foundation models — ESM, ESM3, ProstT5, and their kin.
-        The methodology that organizes the MLIP almanac applies equally to protein representation; the curatorial
-        work is ongoing.
+        Future editions of the Almanac will extend to protein foundation models, generative materials models, and so on. Please email willengler@uchicago.edu if you would like to help.
       </p>
     </div>
   </div>

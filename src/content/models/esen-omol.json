@@ -1,6 +1,7 @@
 {
   "name": "eSEN (OMol)",
-  "family": "equivariant",
+  "families": ["equivariant"],
+  "paperRefs": [],
   "checkpoints": [
     { "id": "esen-md-direct-all-omol" },
     { "id": "esen-sm-conserving-all-omol" },

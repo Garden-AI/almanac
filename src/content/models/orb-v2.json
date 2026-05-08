@@ -1,11 +1,9 @@
 {
   "name": "Orb-v2",
-  "family": "vanilla",
-  "year": 2024,
+  "families": ["vanilla"],
+  "paperRefs": [],
   "checkpoints": [
     { "id": "orb-v2", "params": "25M" }
   ],
-  "trainingData": [
-    { "dataset": "mptrj", "role": "Training data" }
-  ]
+  "trainingData": ["mptrj"]
 }

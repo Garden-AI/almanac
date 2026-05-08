@@ -1,8 +1,19 @@
 ---
 import { getCollection } from 'astro:content';
 import Page from '../../layouts/Page.astro';
-import { getRootstockDump, findManifest, envGroupsForCluster } from '../../lib/rootstock';
+import { getRootstockDump, findManifest, envGroupsForCluster, cellStateFor } from '../../lib/rootstock';
 import { url } from '../../lib/url';
+
+// New status convention: ● verified within 7 days, ○ installed but not
+// recently verified (stale or errored), — not installed (won't appear in
+// per-cluster listings since we only enumerate installed checkpoints).
+const rowStatusHtml = (cp: { verifiedAt: string | null; lastError: string | null }): string => {
+  const state = cellStateFor({
+    env: '', verifiedAt: cp.verifiedAt, verifiedDevice: null, lastError: cp.lastError,
+  });
+  if (state === 'verified') return '<span class="status-verified">●</span> verified';
+  return `<span class="status-stale">○</span> ${cp.lastError ? 'errored' : 'not recent'}`;
+};
 
 export async function getStaticPaths() {
   const clusters = await getCollection('clusters');
@@ -104,13 +115,7 @@ const day = (s: string | null | undefined) => (s ? s.slice(0, 10) : '—');
                             <td class="mono" style="font-variant-numeric: tabular-nums;">
                               {day(cp.verifiedAt)}
                             </td>
-                            <td>
-                              {cp.lastError ? (
-                                <><span class="status-stale">○</span> errored</>
-                              ) : (
-                                <><span class="status-verified">●</span> verified</>
-                              )}
-                            </td>
+                            <td set:html={rowStatusHtml(cp)} />
                           </tr>
                         );
                       })}
@@ -170,7 +175,7 @@ const day = (s: string | null | undefined) => (s ? s.slice(0, 10) : '—');
 
 <script>
   import { loadLiveDump } from '../../lib/rootstock-client';
-  import { findManifest, envGroupsForCluster } from '../../lib/rootstock';
+  import { findManifest, envGroupsForCluster, cellStateFor } from '../../lib/rootstock';
 
   type PageRef = { pageId: string; pageName: string };
   const escape = (s: string) =>
@@ -211,9 +216,12 @@ const day = (s: string | null | undefined) => (s ? s.slice(0, 10) : '—');
                 const pageCell = page
                   ? `<a class="ink-link it" href="${escape(url_(`/model/${page.pageId}`))}">${escape(page.pageName)}</a>`
                   : `<span class="it" style="color: var(--ink-3);">— no catalog entry</span>`;
-                const statusCell = cp.lastError
-                  ? `<span class="status-stale">○</span> errored`
-                  : `<span class="status-verified">●</span> verified`;
+                const statusState = cellStateFor({
+                  env: '', verifiedAt: cp.verifiedAt, verifiedDevice: null, lastError: cp.lastError,
+                });
+                const statusCell = statusState === 'verified'
+                  ? `<span class="status-verified">●</span> verified`
+                  : `<span class="status-stale">○</span> ${cp.lastError ? 'errored' : 'not recent'}`;
                 return `<tr>
                   <td class="mono" style="font-size: 11.5px;">${escape(cp.id)}</td>
                   <td>${pageCell}</td>

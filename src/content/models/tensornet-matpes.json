@@ -1,6 +1,7 @@
 {
   "name": "TensorNet (MatPES)",
-  "family": "equivariant",
+  "families": ["equivariant"],
+  "paperRefs": [],
   "checkpoints": [
     { "id": "tensornet-matpes-pbe-2025-2" }
   ]
