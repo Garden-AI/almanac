@@ -2,6 +2,7 @@
 import { getCollection, getEntry } from 'astro:content';
 import { marked } from 'marked';
 import Page from '../../layouts/Page.astro';
+import MapStage from '../../components/MapStage.astro';
 import { getRootstockDump, findVerification, cellStateFor, type CellState } from '../../lib/rootstock';
 import { url } from '../../lib/url';
 import { formatBytes, formatMonthYear, yearOf } from '../../lib/format';
@@ -55,7 +56,7 @@ const dump = await getRootstockDump();
 
 // Cluster columns: include only clusters where the model has presence
 // (any checkpoint id appears in any env on that cluster's manifest).
-// Cap at CLUSTER_COL_CAP; the full grid lives at /compatibility.
+// Cap at CLUSTER_COL_CAP; the full grid lives on the landing page.
 const presentClusters = allClusters
   .filter((c) =>
     model.data.checkpoints.some((cp) => findVerification(dump, c.id, cp.id) !== null),
@@ -140,12 +141,37 @@ const composeCitation = (data: { authors?: string[]; title?: string; venue?: str
 };
 
 const notesHtml = model.data.notes ? marked.parse(model.data.notes) : null;
+
+// Similarity-map setup. Each map layout's id follows `map-<dataset-id>`,
+// so the model's first training dataset picks its primary reference layout.
+const MAP_DISPLAY_ORDER = ['map-omol25', 'map-omat24', 'map-qm9', 'map-salex'];
+const allLayouts = await getCollection('embeddings');
+const orderedLayouts = MAP_DISPLAY_ORDER
+  .map((id) => allLayouts.find((e) => e.id === id))
+  .filter((e): e is NonNullable<typeof e> => Boolean(e));
+
+const primaryDatasetId = model.data.trainingData[0]?.id;
+const primaryLayoutId = primaryDatasetId ? `map-${primaryDatasetId}` : null;
+// Only consider layouts that actually contain this model as the "default."
+const layoutsWithModel = orderedLayouts.filter((l) =>
+  l.data.points.some((p) => p.slug?.id === model.id),
+);
+const defaultLayoutId =
+  (primaryLayoutId && layoutsWithModel.find((l) => l.id === primaryLayoutId)?.id) ??
+  layoutsWithModel[0]?.id ??
+  orderedLayouts[0]?.id ??
+  null;
+
+const mapTabs = orderedLayouts.map((l) => ({
+  id: l.id,
+  inputId: `model-ds-${l.id}`,
+  label: l.data.dataset,
+  layout: l,
+  isDefault: l.id === defaultLayoutId,
+}));
+const showMap = orderedLayouts.length > 0 && defaultLayoutId !== null;
 ---
-<Page
-  title={`${model.data.name} — Garden's Almanac`}
-  section="§ Model"
-  folioId={`/model/${model.id}`}
->
+<Page title={`${model.data.name} — Garden's Almanac`}>
   <div class="model-masthead">
     <h1>{model.data.name}</h1>
     {dateLine && (
@@ -329,6 +355,45 @@ const notesHtml = model.data.notes ? marked.parse(model.data.notes) : null;
       <div class="notes-body" set:html={notesHtml} />
     </section>
   )}
+
+  {showMap && (
+    <section class="model-map">
+      <hr class="hairline" style="margin: 24px 0 12px;" />
+      <header class="model-map-head">
+        <div>
+          <div class="sc" style="font-size: 11.5px; letter-spacing: 0.10em;">Position on the similarity map</div>
+          <p class="it" style="margin: 4px 0 0; font-size: 13px; color: var(--ink-2); max-width: 56ch;">
+            {model.data.name} is highlighted. Neighbors are nearest-by-CKNNA on the selected reference dataset.
+            Click any italic label to jump to that model.
+          </p>
+        </div>
+        <fieldset class="map-toggle">
+          <legend class="sc map-toggle-legend">Reference dataset</legend>
+          <div class="map-toggle-tabs">
+            {mapTabs.map((t) => (
+              <>
+                <input
+                  class="map-toggle-input"
+                  type="radio"
+                  name="model-ds"
+                  id={t.inputId}
+                  value={t.id}
+                  data-ds={t.label}
+                  checked={t.isDefault}
+                />
+                <label for={t.inputId} class="sc map-toggle-tab">{t.label}</label>
+              </>
+            ))}
+          </div>
+        </fieldset>
+      </header>
+      <div class="map-stages">
+        {mapTabs.map((t) => (
+          <MapStage layout={t.layout} active={t.isDefault} highlightSlug={model.id} />
+        ))}
+      </div>
+    </section>
+  )}
 </Page>
 
 <style>
@@ -416,6 +481,49 @@ const notesHtml = model.data.notes ? marked.parse(model.data.notes) : null;
     .model-body { grid-template-columns: 1fr; }
     .spec-rail { border-left: 0; padding-left: 0; margin-top: 18px; }
   }
+
+  /* Embedded similarity map */
+  .model-map { margin-top: 18px; }
+  .model-map-head {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 24px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+  }
+  .map-toggle { border: none; margin: 0; padding: 0; flex: 0 0 auto; margin-left: auto; }
+  .map-toggle-legend {
+    display: block;
+    font-size: 10.5px;
+    letter-spacing: 0.10em;
+    color: var(--ink-2);
+    margin: 0 0 6px;
+    padding: 0;
+    text-align: right;
+  }
+  .map-toggle-tabs {
+    display: flex;
+    align-items: baseline;
+    border-top: 0.5px solid var(--ink);
+    border-bottom: 0.5px solid var(--ink);
+    padding: 4px 0 3px;
+  }
+  .map-toggle-input { position: absolute; opacity: 0; pointer-events: none; width: 0; height: 0; }
+  .map-toggle-tab {
+    display: inline-block;
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    color: var(--ink-2);
+    padding: 4px 12px;
+    cursor: pointer;
+    user-select: none;
+    border-left: 0.5px solid var(--ink-2);
+    transition: color 0.12s;
+  }
+  .map-toggle-tab:first-of-type { border-left: none; }
+  .map-toggle-tab:hover { color: var(--ink); }
+  .map-toggle-input:checked + .map-toggle-tab { color: var(--paper); background: var(--ink); }
 </style>
 
 <script>
@@ -441,4 +549,17 @@ const notesHtml = model.data.notes ? marked.parse(model.data.notes) : null;
       });
     })
     .catch((err) => console.warn('Rootstock live refresh failed', err));
+
+  // Reference-dataset toggle for the embedded similarity map.
+  const dsInputs = document.querySelectorAll<HTMLInputElement>('.map-toggle-input[name="model-ds"]');
+  const stages = document.querySelectorAll<HTMLElement>('.model-map .map-stage');
+  const showStage = (ds: string | undefined) => {
+    if (!ds) return;
+    stages.forEach((s) => s.classList.toggle('is-active', s.dataset.ds === ds));
+  };
+  dsInputs.forEach((input) =>
+    input.addEventListener('change', () => {
+      if (input.checked) showStage(input.dataset.ds);
+    }),
+  );
 </script>

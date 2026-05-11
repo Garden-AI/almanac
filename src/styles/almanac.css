@@ -122,27 +122,109 @@ table.fam-table th, table.fam-table td { padding: 2.5px 8px; }
 /* Tighter rows for the Compatibility Matrix to leave room for the How-To block. */
 .cm-tight table.almanac th, .cm-tight table.almanac td { padding: 1.5px 6px; }
 
-.folio {
-  display: flex; justify-content: space-between; align-items: center;
-  font-family: var(--smallcaps);
-  font-size: 11px;
-  letter-spacing: 0.08em;
-  color: var(--ink-2);
-  border-top: 0.5px solid var(--rule);
-  padding-top: 8px;
-  margin-top: 24px;
-}
-.folio .num { font-family: var(--serif); font-size: 13px; }
-
-.running-head {
-  display: flex; justify-content: space-between; align-items: baseline;
-  font-family: var(--smallcaps);
-  font-size: 11px;
-  letter-spacing: 0.10em;
-  color: var(--ink-2);
+/* Site chrome — paper-and-ink newspaper masthead. Wordmark + home glyph
+   on the left, primary nav on the right, single hairline beneath both.
+   On the home page the wordmark slot is blank (the H1 carries it) but the
+   nav still anchors the top. */
+.site-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 24px;
   border-bottom: 0.5px solid var(--rule);
-  padding-bottom: 6px;
-  margin-bottom: 18px;
+  padding-bottom: 12px;
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+}
+.site-head-mark {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--ink);
+  text-decoration: none;
+  min-height: 20px;
+}
+.site-head-mark--blank { visibility: hidden; }
+.site-head .home-glyph {
+  color: var(--ink-2);
+  transition: color 0.15s;
+}
+.site-head .home-link:hover { color: var(--oxblood); }
+.site-head .home-link:hover .home-glyph { color: var(--oxblood); }
+.site-head .home-wordmark {
+  font-family: var(--smallcaps);
+  font-size: 12.5px;
+  letter-spacing: 0.12em;
+  transition: color 0.15s;
+}
+.site-head-nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 22px;
+  font-family: var(--smallcaps);
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  margin-left: auto;
+}
+.site-head-nav a {
+  color: var(--ink);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  padding: 2px 0;
+  transition: color 0.15s, border-color 0.15s;
+}
+.site-head-nav a:hover {
+  color: var(--oxblood);
+  border-bottom-color: var(--oxblood);
+}
+.site-head-nav a[aria-current='page'] {
+  color: var(--oxblood);
+  border-bottom-color: var(--oxblood);
+}
+
+.site-foot {
+  border-top: 0.5px solid var(--rule);
+  padding-top: 16px;
+  margin-top: 40px;
+}
+.site-foot nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 28px;
+  font-family: var(--smallcaps);
+  font-size: 12px;
+  letter-spacing: 0.12em;
+}
+.site-foot nav a {
+  color: var(--ink);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  padding: 2px 0;
+  transition: color 0.15s, border-color 0.15s;
+}
+.site-foot nav a:hover { color: var(--oxblood); border-bottom-color: var(--oxblood); }
+.site-foot nav a[aria-current='page'] {
+  color: var(--oxblood);
+  border-bottom-color: var(--oxblood);
+}
+
+@media (max-width: 720px) {
+  .site-head {
+    margin-bottom: 18px;
+    padding-bottom: 8px;
+    gap: 10px 16px;
+  }
+  .site-head .home-wordmark { display: none; } /* glyph only on phones */
+  .site-head-nav {
+    font-size: 11px;
+    letter-spacing: 0.10em;
+    gap: 2px 14px;
+    margin-left: 0;
+  }
+  .site-head-mark--blank { display: none; } /* don't reserve empty slot */
+  .site-foot { margin-top: 28px; padding-top: 12px; }
+  .site-foot nav { gap: 2px 18px; }
 }
 
 a.ink-link {

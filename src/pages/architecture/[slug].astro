@@ -36,11 +36,7 @@ export async function getStaticPaths() {
 const { architecture, models } = Astro.props;
 const a = architecture.data;
 ---
-<Page
-  title={`${a.name} — Garden's Almanac`}
-  section="§ Architecture"
-  folioId={`/architecture/${architecture.id}`}
->
+<Page title={`${a.name} — Garden's Almanac`}>
   <p class="sc" style="font-size: 11.5px; letter-spacing: 0.14em;">Architecture family</p>
   <h1>{a.name}</h1>
   <p class="it" style="color: var(--ink-2); font-size: 14px;">{a.descriptor}</p>

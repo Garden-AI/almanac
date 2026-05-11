@@ -20,11 +20,7 @@ export async function getStaticPaths() {
 const { dataset, modelsTrainedOn } = Astro.props;
 const d = dataset.data;
 ---
-<Page
-  title={`${d.name} — Garden's Almanac`}
-  section="§ Dataset"
-  folioId={`/dataset/${dataset.id}`}
->
+<Page title={`${d.name} — Garden's Almanac`}>
   <p class="sc" style="font-size: 11.5px; letter-spacing: 0.14em;">
     {d.domain}
   </p>
