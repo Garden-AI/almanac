@@ -7,9 +7,13 @@ type Props = {
   width?: number;
   height?: number;
   active?: boolean;
+  /** Model id (collection slug) to render emphasized. The marker is filled
+   *  oxblood and its label is bold; the link is suppressed so callers on a
+   *  model detail page don't link back to themselves. */
+  highlightSlug?: string;
 };
 
-const { layout, width: W = 740, height: H = 700, active = true } = Astro.props;
+const { layout, width: W = 740, height: H = 700, active = true, highlightSlug } = Astro.props;
 const PAD_X = 36;
 const PAD_Y = 44;
 
@@ -107,10 +111,22 @@ const familyCount = [...byFamily.keys()].length;
       const hollow = HOLLOW_VARIANTS.has(m.variant ?? '');
       const dy = labelOffsets.get(m.modelName) ?? -10;
       const linked = !!m.slug;
-      const href = linked ? url(`/model/${m.slug!.id}`) : undefined;
+      const isHighlight = !!highlightSlug && m.slug?.id === highlightSlug;
+      const href = linked && !isHighlight ? url(`/model/${m.slug!.id}`) : undefined;
       const dot = (
         <g>
-          {r >= 4 && !hollow && (
+          {isHighlight && (
+            <circle
+              cx={p.x}
+              cy={p.y}
+              r={r + 5}
+              fill="none"
+              stroke="var(--oxblood)"
+              stroke-width="0.6"
+              opacity="0.55"
+            />
+          )}
+          {r >= 4 && !hollow && !isHighlight && (
             <g stroke="var(--ink)" stroke-width="0.6">
               <line x1={p.x - r - 2} y1={p.y} x2={p.x + r + 2} y2={p.y} />
               <line x1={p.x} y1={p.y - r - 2} x2={p.x} y2={p.y + r + 2} />
@@ -119,19 +135,20 @@ const familyCount = [...byFamily.keys()].length;
           <circle
             cx={p.x}
             cy={p.y}
-            r={r}
-            fill={hollow ? 'var(--paper)' : 'var(--ink)'}
-            stroke="var(--ink)"
-            stroke-width={hollow ? 1.0 : 0}
+            r={isHighlight ? Math.max(r + 1.5, 4.5) : r}
+            fill={isHighlight ? 'var(--oxblood)' : hollow ? 'var(--paper)' : 'var(--ink)'}
+            stroke={isHighlight ? 'var(--oxblood)' : 'var(--ink)'}
+            stroke-width={hollow && !isHighlight ? 1.0 : 0}
           />
           <text
             x={p.x}
-            y={p.y + dy}
+            y={p.y + (isHighlight ? (dy < 0 ? dy - 2 : dy + 2) : dy)}
             text-anchor="middle"
             font-family="var(--serif)"
-            font-size="10.5"
-            font-style={linked ? 'italic' : 'normal'}
-            fill={linked ? 'var(--ink)' : 'var(--ink-2)'}
+            font-size={isHighlight ? '12.5' : '10.5'}
+            font-style={linked && !isHighlight ? 'italic' : 'normal'}
+            font-weight={isHighlight ? '700' : '400'}
+            fill={isHighlight ? 'var(--oxblood)' : linked ? 'var(--ink)' : 'var(--ink-2)'}
             style="paint-order: stroke; stroke: var(--paper); stroke-width: 3; stroke-linejoin: round;"
           >
             {m.label}

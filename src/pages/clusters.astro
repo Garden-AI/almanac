@@ -1,0 +1,71 @@
+---
+import { getCollection } from 'astro:content';
+import Page from '../layouts/Page.astro';
+import {
+  getRootstockDump,
+  findVerification,
+  cellStateFor,
+  type CellState,
+} from '../lib/rootstock';
+import { url } from '../lib/url';
+
+const clusters = (await getCollection('clusters')).sort((a, b) => {
+  const oa = a.data.order ?? 999;
+  const ob = b.data.order ?? 999;
+  if (oa !== ob) return oa - ob;
+  return a.data.name.localeCompare(b.data.name);
+});
+const models = await getCollection('models');
+const dump = await getRootstockDump();
+
+const rows = clusters.map((c) => {
+  const counts = { verified: 0, lapsed: 0, na: 0 } as Record<CellState, number>;
+  for (const m of models) {
+    for (const cp of m.data.checkpoints) {
+      const state = cellStateFor(findVerification(dump, c.id, cp.id));
+      counts[state]++;
+    }
+  }
+  return {
+    id: c.id,
+    name: c.data.name,
+    inst: c.data.institution,
+    instShort: c.data.institutionShort ?? c.data.institution.split('·')[0].trim(),
+    gpu: c.data.gpu ?? '—',
+    counts,
+  };
+});
+---
+<Page title="Clusters — Garden's Almanac">
+  <h1 style="margin-top: 3px;">Clusters</h1>
+  <p class="it" style="margin-top: 4px; font-size: 14px; color: var(--ink-2); max-width: 640px;">
+    HPC clusters covered by the Almanac. Each cluster page shows live Rootstock status for every
+    installed checkpoint.
+  </p>
+  <hr class="hairline" style="margin-top: 14px;" />
+
+  <table class="almanac" style="margin-top: 14px; font-size: 13px;">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Institution</th>
+        <th>GPU</th>
+        <th style="text-align: right; width: 80px;">Verified</th>
+        <th style="text-align: right; width: 70px;">Lapsed</th>
+        <th style="text-align: right; width: 60px;">N/A</th>
+      </tr>
+    </thead>
+    <tbody>
+      {rows.map((r) => (
+        <tr>
+          <td><a class="ink-link it" href={url(`/cluster/${r.id}`)}>{r.name}</a></td>
+          <td>{r.inst}</td>
+          <td class="mono" style="font-size: 11.5px; color: var(--ink-2);">{r.gpu}</td>
+          <td style="text-align: right; font-variant-numeric: tabular-nums;">{r.counts.verified}</td>
+          <td style="text-align: right; font-variant-numeric: tabular-nums; color: var(--ink-2);">{r.counts.lapsed}</td>
+          <td style="text-align: right; font-variant-numeric: tabular-nums; color: var(--ink-3);">{r.counts.na}</td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</Page>

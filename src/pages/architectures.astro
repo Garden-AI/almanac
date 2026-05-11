@@ -2,7 +2,6 @@
 import { getCollection, getEntry } from 'astro:content';
 import Page from '../layouts/Page.astro';
 import OrnamentRule from '../components/OrnamentRule.astro';
-import LatticeCartouche from '../components/LatticeCartouche.astro';
 import { url } from '../lib/url';
 import { displayParams } from '../lib/params';
 import { yearOf } from '../lib/format';
@@ -37,26 +36,30 @@ for (const f of families) {
   modelsByFamily[f.id] = enriched.map((e) => ({ model: e.model, year: yearOf(e.resolvedDate) }));
 }
 ---
-<Page title="Architectures — Garden's Almanac" section="Architectures" folioId="§06">
-  <div style="display: grid; grid-template-columns: 1fr 72px; gap: 14px; align-items: end;">
-    <div>
-      <p class="sc" style="font-size: 11.5px; letter-spacing: 0.14em; color: var(--ink-2);">§06</p>
-      <h1 style="margin-top: 3px;">Architectures</h1>
-      <p class="it" style="margin-top: 4px; font-size: 14px; color: var(--ink-2);">
-        A short field guide to the families of models in the catalog.
-      </p>
-    </div>
-    <LatticeCartouche />
-  </div>
-  <div style="margin-top: 8px;"><OrnamentRule width={220} /></div>
+<Page title="Architectures — Garden's Almanac">
+  <figure class="frontispiece">
+    <img
+      src={url('/adsorption.png')}
+      alt="Adsorbate on surface, set among flowers"
+    />
+  </figure>
 
-  <p style="max-width: 640px; font-size: 13px; line-height: 1.5; margin-top: 10px;">
+  <header style="text-align: center;">
+    <h1 style="margin-top: 6px;">Architectures</h1>
+    <p class="it" style="margin-top: 4px; font-size: 14px; color: var(--ink-2);">
+      A short field guide to the families of models in the catalog.
+    </p>
+    <div style="margin: 12px auto 0; width: 220px;"><OrnamentRule width={220} /></div>
+  </header>
+
+  <p style="max-width: 640px; font-size: 13px; line-height: 1.5; margin: 16px auto 0;">
     A working vocabulary for reading the rest of the Almanac, not a tutorial. Representational similarity
-    tracks training data more reliably than architecture (per <a class="ink-link" href={url('/map')}>§02</a>), but
-    architecture still shapes what a model can learn. The five families below are the ones the catalog uses.
+    tracks training data more reliably than architecture (per the
+    <a class="ink-link" href={url('/models')}>similarity map</a>), but architecture still shapes what a model
+    can learn. The five families below are the ones the catalog uses.
   </p>
 
-  <hr class="hairline" style="margin: 14px 0 0;" />
+  <hr class="hairline" style="margin: 18px 0 0;" />
 
   {families.map((f, idx) => {
     const rows = modelsByFamily[f.id] ?? [];
@@ -97,3 +100,20 @@ for (const f of families) {
     );
   })}
 </Page>
+
+<style>
+  .frontispiece {
+    margin: 4px 0 0;
+    display: flex;
+    justify-content: center;
+  }
+  .frontispiece img {
+    width: 320px;
+    max-width: 70%;
+    height: auto;
+    mix-blend-mode: multiply;
+  }
+  @media (max-width: 720px) {
+    .frontispiece img { width: 240px; }
+  }
+</style>

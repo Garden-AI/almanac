@@ -1,106 +1,430 @@
 ---
+import { getCollection } from 'astro:content';
+import { Code } from 'astro:components';
 import Page from '../layouts/Page.astro';
-import OrnamentRule from '../components/OrnamentRule.astro';
+import {
+  getRootstockDump,
+  findVerification,
+  cellStateFor,
+  type CellState,
+} from '../lib/rootstock';
 import { url } from '../lib/url';
 
-const toc = [
-  { num: '01', title: 'About this Almanac', href: url('/about') },
-  { num: '02', title: 'Browse by Embedding Similarity', href: url('/map') },
-  { num: '03', title: 'Browse by Name', href: url('/catalog'), note: 'A–Z, all 22 entries' },
-  { num: '04', title: 'Where to Run on HPC', href: url('/compatibility') },
-  { num: '05', title: 'Datasets', href: url('/datasets') },
-  { num: '06', title: 'Architectures', href: url('/architectures') },
-];
+// Paper-and-ink syntax theme for the How-To snippet. Ported from
+// compatibility.astro. Keeping the colorway aligned with the page tokens.
+const almanacCodeTheme = {
+  name: 'almanac',
+  type: 'light' as const,
+  bg: 'rgba(26,22,18,0.035)',
+  fg: '#1f1c18',
+  settings: [
+    { settings: { foreground: '#1f1c18', background: 'rgba(26,22,18,0.035)' } },
+    { scope: ['comment', 'comment.line', 'comment.block', 'punctuation.definition.comment'],
+      settings: { foreground: '#7a7268', fontStyle: 'italic' } },
+    { scope: ['keyword', 'keyword.control', 'keyword.operator.expression', 'storage.type', 'storage.modifier'],
+      settings: { foreground: '#7a1f1f' } },
+    { scope: ['string', 'string.quoted', 'string.quoted.single', 'string.quoted.double', 'punctuation.definition.string'],
+      settings: { foreground: '#5a1414' } },
+    { scope: ['constant.numeric', 'constant.language'],
+      settings: { foreground: '#5a1414' } },
+    { scope: ['entity.name.function', 'support.function', 'meta.function-call.generic'],
+      settings: { foreground: '#1f1c18', fontStyle: 'bold' } },
+    { scope: ['entity.name.class', 'support.class'],
+      settings: { foreground: '#1f1c18', fontStyle: 'bold' } },
+    { scope: ['variable.parameter.function-call', 'variable.parameter'],
+      settings: { foreground: '#4a4540' } },
+    { scope: ['punctuation', 'meta.brace', 'punctuation.separator'],
+      settings: { foreground: '#4a4540' } },
+  ],
+};
+
+const clusters = (await getCollection('clusters')).sort((a, b) => {
+  const oa = a.data.order ?? 999;
+  const ob = b.data.order ?? 999;
+  if (oa !== ob) return oa - ob;
+  return a.data.name.localeCompare(b.data.name);
+});
+
+const models = await getCollection('models');
+
+const parseParams = (p: string | undefined): number => {
+  if (!p) return -1;
+  const n = parseFloat(p);
+  if (Number.isNaN(n)) return -1;
+  return n * (p.endsWith('B') ? 1000 : 1);
+};
+const rows = models
+  .flatMap((m) =>
+    m.data.checkpoints.map((cp) => ({
+      pageId: m.id,
+      pageName: m.data.name,
+      family: m.data.families[0]?.id ?? '',
+      checkpointId: cp.id,
+      params: cp.params,
+    })),
+  )
+  .sort((a, b) => {
+    const fam = a.family.localeCompare(b.family);
+    if (fam !== 0) return fam;
+    const page = a.pageId.localeCompare(b.pageId);
+    if (page !== 0) return page;
+    const pa = parseParams(a.params);
+    const pb = parseParams(b.params);
+    if (pa !== pb) return pb - pa;
+    return a.checkpointId.localeCompare(b.checkpointId);
+  });
+
+const dump = await getRootstockDump();
+
+const cellSvg = (state: CellState): string => {
+  if (state === 'verified') {
+    return '<svg width="14" height="14" viewBox="0 0 14 14" aria-label="verified"><circle cx="7" cy="7" r="3.6" fill="var(--oxblood)" /></svg>';
+  }
+  if (state === 'lapsed') {
+    return '<svg width="14" height="14" viewBox="0 0 14 14" aria-label="lapsed"><circle cx="7" cy="7" r="3.4" fill="none" stroke="var(--oxblood)" stroke-width="1" /></svg>';
+  }
+  return '<svg width="100%" height="14" viewBox="0 0 40 14" preserveAspectRatio="none" aria-label="not applicable" style="display: block;"><defs><pattern id="na-hatch" patternUnits="userSpaceOnUse" width="5" height="5" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="5" stroke="var(--ink)" stroke-width="0.5" opacity="0.35" /></pattern></defs><rect x="0" y="3" width="40" height="8" fill="url(#na-hatch)" /></svg>';
+};
+
+let counts = { verified: 0, lapsed: 0, na: 0 };
+type PerCluster = { verified: number; lapsed: number; na: number };
+const perCluster: Record<string, PerCluster> = {};
+for (const c of clusters) perCluster[c.id] = { verified: 0, lapsed: 0, na: 0 };
+
+const grid = rows.map((row) => ({
+  row,
+  cells: clusters.map((c) => {
+    const state: CellState = cellStateFor(findVerification(dump, c.id, row.checkpointId));
+    counts[state]++;
+    perCluster[c.id][state]++;
+    return { cluster: c, state };
+  }),
+}));
+
+const clusterCards = clusters.map((c) => ({
+  id: c.id,
+  name: c.data.name,
+  inst: c.data.institutionShort ?? c.data.institution.split('·')[0].trim(),
+  gpus: c.data.gpu ?? '—',
+  counts: perCluster[c.id],
+}));
+
+const codeSnippet = `from ase.build import bulk
+from rootstock import RootstockCalculator
+
+atoms = bulk("Cu", "fcc", a=3.6) * (5, 5, 5)
+
+with RootstockCalculator(
+    cluster="perlmutter",
+    checkpoint="mace-mp-0-medium",
+    device="cuda",
+) as calc:
+    atoms.calc = calc
+    print(atoms.get_potential_energy())`;
 ---
-<Page title="Garden's Almanac of Matter Models — 2026 Edition" section="2026 Edition" folioId="Cover · i">
-  <div style="text-align: center; margin-top: 8px;">
-    <div class="sc" style="font-size: 13px; letter-spacing: 0.18em; color: var(--ink-2);">Garden's</div>
-    <div style="height: 4px;"></div>
-    <h1 style="font-family: var(--serif); font-size: 50px; line-height: 1.0; font-weight: 600; letter-spacing: -0.005em;">
-      Almanac of Matter Models
-    </h1>
-    <div style="margin-top: 10px; font-style: italic; font-size: 17.5px; color: var(--ink-2); line-height: 1.35;">
-      A guide to foundation models for<br />molecules, materials, and proteins
-    </div>
-    <div style="margin: 14px auto 0; width: 240px;">
-      <OrnamentRule width={240} />
-    </div>
-    <div class="sc" style="font-size: 12px; letter-spacing: 0.16em; margin-top: 8px;">2026 Edition</div>
-    <div style="font-style: italic; font-size: 13px; color: var(--ink-2); margin-top: 1px;">
-      (22?) models, with notes on how to install them and how they compare
-    </div>
-  </div>
-
-  <div style="margin-top: 22px;">
-    <div class="ornament">
-      <hr />
-      <span class="sc glyph" style="font-family: var(--smallcaps); font-size: 11.5px; letter-spacing: 0.10em;">
-        Machine Learning Interatomic Potentials
-      </span>
-      <hr />
-    </div>
-
-    <p style="font-size: 13.75px; line-height: 1.55; color: var(--ink); margin: 12px auto 0; max-width: 560px; text-align: center;">
-      This Almanac is a guide to the current landsape of MLIPs and how to run them on academic and government supercomputing clusters.
+<Page title="Garden's Almanac of Matter Models — 2026 Edition" wide>
+  <section class="landing-title">
+    <p class="sc landing-eyebrow">Garden's</p>
+    <h1 class="landing-h1">Almanac of Matter Models</h1>
+    <p class="it landing-subtitle">
+      A guide to foundation models for molecules, materials, and proteins.
     </p>
+  </section>
 
-    <div style="display: flex; justify-content: center; margin-top: 16px;">
-      <img
-        src={url('/adsorption.png')}
-        alt="Adsorbate on surface, set among flowers"
-        style="width: 380px; height: auto; display: block; mix-blend-mode: multiply;"
-      />
-    </div>
+  <p class="landing-framing">
+    The Almanac lists which model checkpoints are installed and verified on shared HPC clusters via
+    Rootstock. A
+    {' '}<span aria-hidden="true"><svg width="11" height="11" viewBox="0 0 14 14" style="vertical-align: -1px;"><circle cx="7" cy="7" r="3.4" fill="var(--oxblood)" /></svg></span>
+    {' '}<span class="it" style="color: var(--ink-2);">filled circle</span> means verified in the last seven days; an
+    {' '}<span aria-hidden="true"><svg width="11" height="11" viewBox="0 0 14 14" style="vertical-align: -1px;"><circle cx="7" cy="7" r="3" fill="none" stroke="var(--oxblood)" stroke-width="1" /></svg></span>
+    {' '}<span class="it" style="color: var(--ink-2);">open circle</span> means the check has lapsed; a hatched
+    cell means the model isn't supported on that cluster.
+  </p>
 
-    <table class="almanac" style="margin-top: 24px; max-width: 560px; margin-left: auto; margin-right: auto;">
+  {/* MOBILE: per-cluster cards stand in for the matrix below 720px. */}
+  <section class="cluster-cards" aria-label="Clusters">
+    {clusterCards.map((c) => (
+      <a class="cluster-card" href={url(`/cluster/${c.id}`)}>
+        <span class="cc-arrow" aria-hidden="true">→</span>
+        <div class="cc-name">{c.name}</div>
+        <span class="cc-inst">{c.inst}</span>
+        <dl class="cc-row">
+          <dt>GPU types</dt>
+          <dd>{c.gpus}</dd>
+        </dl>
+        <div class="cc-status">
+          <span><span style="color: var(--oxblood);">●</span> {c.counts.verified} verified</span>
+          <span style="color: var(--ink-2);">○ {c.counts.lapsed} lapsed</span>
+          <span class="it">// {c.counts.na} not applicable</span>
+        </div>
+      </a>
+    ))}
+  </section>
+
+  {/* DESKTOP: the matrix is the centrepiece. */}
+  <section class="matrix-wrap cm-tight">
+    <table class="almanac matrix-table">
+      <colgroup>
+        <col style="width: 24px;" />
+        <col style="width: 160px;" />
+        <col style="width: 180px;" />
+        <col style="width: 60px;" />
+        {clusters.map(() => <col />)}
+      </colgroup>
+      <thead>
+        <tr>
+          <th>№</th>
+          <th>Model</th>
+          <th>Checkpoint</th>
+          <th style="text-align: right;">Size</th>
+          {clusters.map((c) => (
+            <th class="cluster-h">
+              <div style="font-family: var(--smallcaps); font-size: 12.5px; letter-spacing: 0.06em;">
+                <a class="ink-link" href={url(`/cluster/${c.id}`)}>{c.data.name}</a>
+              </div>
+              <div class="sc" style="font-size: 9.5px; letter-spacing: 0.10em; color: var(--ink-2);">
+                {c.data.institutionShort ?? c.data.institution.split('·')[0].trim()}
+              </div>
+              <div class="mono" style="font-size: 9px; color: var(--ink-3); letter-spacing: 0.02em;">
+                {c.data.gpu ?? '—'}
+              </div>
+            </th>
+          ))}
+        </tr>
+      </thead>
       <tbody>
-        {toc.map((row) => (
+        {grid.map(({ row, cells }, i) => (
           <tr>
-            <td style="width: 42px; font-variant-numeric: tabular-nums; color: var(--ink-2);">{row.num}</td>
-            <td>
-              <a class="ink-link" href={row.href}>{row.title}</a>
-              {row.note && <span class="it" style="color: var(--ink-3);"> · {row.note}</span>}
-            </td>
+            <td style="font-variant-numeric: tabular-nums; color: var(--ink-2);">{String(i + 1).padStart(2, '0')}</td>
+            <td><a class="ink-link" href={url(`/model/${row.pageId}`)} style="font-weight: 600;">{row.pageName}</a></td>
+            <td class="checkpoint-id">{row.checkpointId}</td>
+            <td style="text-align: right; font-variant-numeric: tabular-nums;">{row.params ?? '—'}</td>
+            {cells.map(({ cluster, state }) => (
+              <td class="cell" data-rs-cell={`${cluster.id}:${row.checkpointId}`} set:html={cellSvg(state)} />
+            ))}
           </tr>
         ))}
       </tbody>
     </table>
-  </div>
 
-  <div style="display: flex; align-items: center; justify-content: center; gap: 14px; margin-top: 36px; color: var(--ink);">
-    <span style="flex: 1; border-top: 0.5px solid var(--rule);"></span>
-    <span style="font-family: var(--serif); font-size: 18px; line-height: 1; color: var(--ink);">❦</span>
-    <span style="flex: 0 0 90px; border-top: 1.5px solid var(--ink); border-bottom: 0.5px solid var(--ink); height: 3px;"></span>
-    <span style="font-family: var(--serif); font-size: 18px; line-height: 1; color: var(--ink);">❦</span>
-    <span style="flex: 1; border-top: 0.5px solid var(--rule);"></span>
-  </div>
+    <p class="it matrix-caption">
+      {rows.length} checkpoints · {clusters.length} clusters ·
+      {' '}<span data-rs-count="verified">{counts.verified}</span> verified,
+      {' '}<span data-rs-count="lapsed">{counts.lapsed}</span> lapsed,
+      {' '}<span data-rs-count="na">{counts.na}</span> not applicable
+    </p>
+  </section>
 
-  <div style="margin-top: 14px;">
-    <div class="ornament" style="justify-content: center;">
-      <span class="sc glyph" style="font-family: var(--smallcaps); font-size: 11px; letter-spacing: 0.12em; color: var(--ink-2);">
-        Forthcoming
-      </span>
+  <section class="howto">
+    <div class="sc howto-head">How do I use these models?</div>
+    <div class="howto-grid">
+      <div class="howto-prose">
+        <p>
+          Install <code class="mono">rootstock</code> with <code class="mono">pip</code> or
+          {' '}<code class="mono">uv</code>, then plug a
+          {' '}<code class="mono">RootstockCalculator</code> in wherever you'd reach for an ASE calculator.
+        </p>
+        <p>
+          <span class="sc howto-further">Further →</span>
+        </p>
+        <p>
+          <a class="ink-link" href="https://garden-ai.github.io/rootstock/">Rootstock docs</a>
+          <span class="it" style="color: var(--ink-2);"> — LAMMPS integration and fine-tuning notes.</span>
+        </p>
+        <p>
+          <a class="ink-link" href="https://gitlab.osti.gov/genesis/genesis-skills/-/tree/main/skills/modcon-skills">DOE agent skills</a>
+          <span class="it" style="color: var(--ink-2);"> — skills to run on DOE clusters with agents (incl. Academy).</span>
+        </p>
+      </div>
+      <Code code={codeSnippet} lang="python" theme={almanacCodeTheme} />
     </div>
-    <div style="display: grid; grid-template-columns: auto 1fr; gap: 18px; align-items: center; margin: 10px auto 0; max-width: 620px;">
-      <img
-        src={url('/proteins.png')}
-        alt="Protein ribbon diagram, set among flowers"
-        style="width: 230px; height: auto; display: block; mix-blend-mode: multiply;"
-      />
-      <p class="it" style="font-size: 13px; line-height: 1.5; color: var(--ink-2); margin: 0;">
-        Future editions of the Almanac will extend to protein foundation models, generative materials models, and so on. Please email willengler@uchicago.edu if you would like to help.
-      </p>
-    </div>
-  </div>
-
-  <div style="margin-top: 48px; padding-top: 18px; display: grid; grid-template-columns: 1fr 1fr; gap: 24px; font-size: 12.5px; color: var(--ink-2);">
-    <div>
-      <span class="sc" style="font-size: 10.5px; letter-spacing: 0.10em; color: var(--ink);">Published by</span><br />
-      Globus Labs
-    </div>
-    <div style="text-align: right;">
-      <span class="sc" style="font-size: 10.5px; letter-spacing: 0.10em; color: var(--ink);">Cite as</span><br />
-      <span class="mono" style="font-size: 11px;">10.26311/almanac-2026</span>
-    </div>
-  </div>
+  </section>
 </Page>
+
+<style>
+  /* Title block — left-aligned, single column, no woodcut. */
+  .landing-title { margin-top: 8px; }
+  .landing-eyebrow {
+    font-size: 12.5px;
+    letter-spacing: 0.16em;
+    color: var(--ink-2);
+    margin: 0 0 4px;
+  }
+  .landing-h1 {
+    font-family: var(--serif);
+    font-size: 52px;
+    line-height: 1.02;
+    letter-spacing: -0.012em;
+    font-weight: 600;
+    margin: 0;
+    text-wrap: balance;
+    max-width: 720px;
+  }
+  .landing-subtitle {
+    font-size: 18px;
+    line-height: 1.4;
+    color: var(--ink-2);
+    margin: 8px 0 0;
+    max-width: 640px;
+  }
+
+  .landing-framing {
+    font-size: 14.5px;
+    line-height: 1.55;
+    color: var(--ink);
+    margin: 22px 0 0;
+    max-width: 820px;
+  }
+
+  /* Matrix — keep the existing tight rows. */
+  .matrix-wrap { margin-top: 24px; }
+  .matrix-table { table-layout: fixed; width: 100%; }
+  .matrix-table th.cluster-h { text-align: center; vertical-align: bottom; padding: 6px 4px; line-height: 1.2; }
+  .matrix-table td.cell { text-align: center; padding: 4px 0; }
+  .matrix-table td.checkpoint-id { font-family: var(--mono); font-size: 11px; color: var(--ink-2); }
+  .matrix-caption {
+    margin-top: 8px;
+    font-size: 11.5px;
+    color: var(--ink-2);
+  }
+
+  /* How-to block — full width below the matrix; two-column on desktop. */
+  .howto { margin-top: 32px; }
+  .howto-head {
+    font-size: 11.5px;
+    letter-spacing: 0.14em;
+    color: var(--ink);
+    margin-bottom: 10px;
+  }
+  .howto-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 28px;
+    align-items: start;
+  }
+  .howto-prose {
+    font-size: 13.5px;
+    line-height: 1.55;
+    color: var(--ink);
+  }
+  .howto-prose p { margin: 0 0 8px; }
+  .howto-prose p:last-child { margin-bottom: 0; }
+  .howto-further {
+    font-size: 10.5px;
+    letter-spacing: 0.10em;
+    color: var(--ink-2);
+  }
+  .howto :global(pre) {
+    margin: 0;
+    font-family: var(--mono);
+    font-size: 10.75px;
+    line-height: 1.5;
+    padding: 10px 12px;
+    overflow-x: auto;
+    white-space: pre;
+    background: rgba(26, 22, 18, 0.035);
+    border-left: 1.5px solid var(--oxblood);
+  }
+
+  /* Mobile cluster cards (≤720px) — net-new component. */
+  .cluster-cards { display: none; margin-top: 22px; }
+  .cluster-card {
+    display: block;
+    text-decoration: none;
+    color: var(--ink);
+    border-top: 1.5px solid var(--ink);
+    border-bottom: 0.5px solid var(--ink);
+    padding: 18px 4px 16px;
+    background: transparent;
+    position: relative;
+  }
+  .cluster-card + .cluster-card { border-top: 0.5px solid var(--rule); }
+  .cluster-card .cc-name {
+    font-family: var(--serif);
+    font-size: 26px;
+    line-height: 1.0;
+    font-weight: 600;
+    letter-spacing: -0.005em;
+  }
+  .cluster-card .cc-inst {
+    font-family: var(--smallcaps);
+    font-size: 11px;
+    letter-spacing: 0.10em;
+    color: var(--ink-2);
+    margin-top: 6px;
+    display: block;
+  }
+  .cluster-card .cc-row {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    column-gap: 10px;
+    row-gap: 3px;
+    margin: 10px 0 0;
+    font-size: 13.5px;
+  }
+  .cluster-card .cc-row dt {
+    font-family: var(--smallcaps);
+    font-size: 10.5px;
+    letter-spacing: 0.10em;
+    color: var(--ink-3);
+    padding-top: 2px;
+    margin: 0;
+  }
+  .cluster-card .cc-row dd { margin: 0; color: var(--ink); }
+  .cluster-card .cc-status {
+    margin-top: 12px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 14px;
+    font-size: 12.5px;
+  }
+  .cluster-card .cc-status .it { color: var(--ink-2); }
+  .cluster-card .cc-arrow {
+    position: absolute;
+    right: 4px;
+    top: 18px;
+    color: var(--oxblood);
+    font-family: var(--serif);
+    font-size: 18px;
+  }
+  .cluster-card:hover .cc-name { color: var(--oxblood); }
+
+  @media (max-width: 720px) {
+    .matrix-wrap { display: none; }
+    .cluster-cards { display: block; }
+    .landing-h1 { font-size: 34px; }
+    .landing-subtitle { font-size: 16px; }
+    .howto-grid { grid-template-columns: 1fr; gap: 16px; }
+  }
+</style>
+
+<script>
+  import { loadLiveDump } from '../lib/rootstock-client';
+  import { findVerification, cellStateFor, type CellState } from '../lib/rootstock';
+
+  const cellSvg = (state: CellState): string => {
+    if (state === 'verified') {
+      return '<svg width="14" height="14" viewBox="0 0 14 14" aria-label="verified"><circle cx="7" cy="7" r="3.6" fill="var(--oxblood)" /></svg>';
+    }
+    if (state === 'lapsed') {
+      return '<svg width="14" height="14" viewBox="0 0 14 14" aria-label="lapsed"><circle cx="7" cy="7" r="3.4" fill="none" stroke="var(--oxblood)" stroke-width="1" /></svg>';
+    }
+    return '<svg width="100%" height="14" viewBox="0 0 40 14" preserveAspectRatio="none" aria-label="not applicable" style="display: block;"><defs><pattern id="na-hatch" patternUnits="userSpaceOnUse" width="5" height="5" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="5" stroke="var(--ink)" stroke-width="0.5" opacity="0.35" /></pattern></defs><rect x="0" y="3" width="40" height="8" fill="url(#na-hatch)" /></svg>';
+  };
+
+  loadLiveDump()
+    .then((dump) => {
+      const counts = { verified: 0, lapsed: 0, na: 0 };
+      document.querySelectorAll<HTMLElement>('[data-rs-cell]').forEach((td) => {
+        const [cluster, checkpoint] = td.dataset.rsCell!.split(':');
+        const state = cellStateFor(findVerification(dump, cluster, checkpoint));
+        td.innerHTML = cellSvg(state);
+        counts[state]++;
+      });
+      document.querySelectorAll<HTMLElement>('[data-rs-count]').forEach((el) => {
+        const k = el.dataset.rsCount as keyof typeof counts;
+        el.textContent = String(counts[k]);
+      });
+    })
+    .catch((err) => console.warn('Rootstock live refresh failed', err));
+</script>

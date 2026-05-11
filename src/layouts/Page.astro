@@ -1,23 +1,31 @@
 ---
 import '../styles/almanac.css';
-import '../styles/nav.css';
-import Nav from '../components/Nav.astro';
 import { url } from '../lib/url';
 
 interface Props {
   title: string;
-  section?: string;
-  folioId?: string;
   wide?: boolean;
 }
 
-const { title, section = "Garden's Almanac", folioId = '', wide = false } = Astro.props;
+const { title, wide = false } = Astro.props;
 const rootstockUrl = import.meta.env.PUBLIC_ROOTSTOCK_URL;
 
 const homeHref = url('/');
 const path = Astro.url.pathname.replace(/\/$/, '') || '/';
-const isHome = path === (homeHref.replace(/\/$/, '') || '/');
+const homePath = homeHref.replace(/\/$/, '') || '/';
+const isHome = path === homePath;
 const wordmark = "Garden's Almanac of Matter Models";
+
+const footerNav = [
+  { href: url('/'), label: 'Home' },
+  { href: url('/models'), label: 'Models' },
+  { href: url('/clusters'), label: 'Clusters' },
+  { href: url('/datasets'), label: 'Datasets' },
+  { href: url('/architectures'), label: 'Architectures' },
+];
+
+const norm = (h: string) => (h.replace(/\/$/, '') || '/');
+const isCurrent = (href: string) => norm(href) === norm(path);
 ---
 <!doctype html>
 <html lang="en">
@@ -35,11 +43,11 @@ const wordmark = "Garden's Almanac of Matter Models";
   </head>
   <body>
     <article class:list={['page', { 'page--wide': wide }]}>
-      <header class="running-head">
+      <header class="site-head">
         {isHome ? (
-          <span>{wordmark}</span>
+          <span class="site-head-mark site-head-mark--blank" aria-hidden="true" />
         ) : (
-          <a class="home-link" href={homeHref} title="Return to cover">
+          <a class="home-link site-head-mark" href={homeHref} aria-label={`${wordmark} — home`}>
             <svg class="home-glyph" width="13" height="13" viewBox="0 0 16 16" aria-hidden="true">
               <path
                 d="M2 7.5L8 2.5l6 5V13.5a.5.5 0 0 1-.5.5H10v-4H6v4H2.5a.5.5 0 0 1-.5-.5V7.5z"
@@ -49,20 +57,23 @@ const wordmark = "Garden's Almanac of Matter Models";
                 stroke-linejoin="round"
               />
             </svg>
-            <span class="home-label">Home</span>
-            <span class="home-sep" aria-hidden="true">·</span>
             <span class="home-wordmark">{wordmark}</span>
           </a>
         )}
-        <span>{section}</span>
+        <nav class="site-head-nav" aria-label="Primary">
+          {footerNav.map((l) => (
+            <a href={l.href} aria-current={isCurrent(l.href) ? 'page' : undefined}>{l.label}</a>
+          ))}
+        </nav>
       </header>
       <slot />
-      <footer class="folio">
-        <span>{folioId}</span>
-        <span class="num">·</span>
-        <span>Garden's Almanac, 2026</span>
+      <footer class="site-foot">
+        <nav aria-label="Primary">
+          {footerNav.map((l) => (
+            <a href={l.href} aria-current={isCurrent(l.href) ? 'page' : undefined}>{l.label}</a>
+          ))}
+        </nav>
       </footer>
     </article>
-    <Nav />
   </body>
 </html>
