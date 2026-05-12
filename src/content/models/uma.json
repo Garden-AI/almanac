@@ -6,7 +6,7 @@
   "paperRefs": ["uma"],
   "checkpoints": [
     { "id": "uma-s-1p1", "params": "150M" },
-    { "id": "uma-m-1p1" }
+    { "id": "uma-m-1p1", "params": "1.4B" }
   ],
   "trainingData": ["omol25", "oc20", "omat24", "odac25", "omc25"]
 }

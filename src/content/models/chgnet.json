@@ -4,7 +4,7 @@
   "codeUrl": "https://github.com/CederGroupHub/chgnet",
   "paperRefs": ["chgnet"],
   "checkpoints": [
-    { "id": "chgnet-default" }
+    { "id": "chgnet-default", "params": "0.4M" }
   ],
   "trainingData": ["mptrj"]
 }

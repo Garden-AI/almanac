@@ -4,10 +4,10 @@
   "codeUrl": "https://github.com/facebookresearch/fairchem",
   "paperRefs": ["dimenet-pp"],
   "checkpoints": [
-    { "id": "dimenet-plus-plus-s2ef-oc20-all" },
-    { "id": "dimenet-plus-plus-s2ef-oc20-20m" },
-    { "id": "dimenet-plus-plus-s2ef-oc20-2m" },
-    { "id": "dimenet-plus-plus-s2ef-oc20-200k" }
+    { "id": "dimenet-plus-plus-s2ef-oc20-all", "params": "1.8M" },
+    { "id": "dimenet-plus-plus-s2ef-oc20-20m", "params": "1.8M" },
+    { "id": "dimenet-plus-plus-s2ef-oc20-2m", "params": "1.8M" },
+    { "id": "dimenet-plus-plus-s2ef-oc20-200k", "params": "1.8M" }
   ],
   "trainingData": ["oc20"]
 }

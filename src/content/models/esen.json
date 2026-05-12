@@ -7,9 +7,9 @@
     { "id": "esen-30m-mptrj", "params": "30M" },
     { "id": "esen-30m-oam", "params": "30M" },
     { "id": "esen-30m-omat", "params": "30M" },
-    { "id": "esen-md-direct-all-omol" },
-    { "id": "esen-sm-conserving-all-omol" },
-    { "id": "esen-sm-direct-all-omol" }
+    { "id": "esen-md-direct-all-omol", "params": "50.7M" },
+    { "id": "esen-sm-conserving-all-omol", "params": "6.3M" },
+    { "id": "esen-sm-direct-all-omol", "params": "6.3M" }
   ],
   "trainingData": ["omol25", "mptrj", "omat24"]
 }
