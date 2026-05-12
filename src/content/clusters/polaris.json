@@ -3,7 +3,7 @@
   "institution": "Argonne Leadership Computing Facility",
   "institutionShort": "ALCF",
   "gpu": "NVIDIA A100",
-  "order": 5,
+  "order": 1,
   "subtitle": "Developed in collaboration with HPE, ALCF’s Polaris supercomputer provides researchers with powerful capabilities for complex scientific workloads, including large-scale simulations, AI, and data analysis.",
   "specs": {
     "Architecture": "x86_64",
