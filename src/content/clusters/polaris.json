@@ -1,0 +1,17 @@
+{
+  "name": "Polaris",
+  "institution": "Argonne Leadership Computing Facility",
+  "institutionShort": "ALCF",
+  "gpu": "NVIDIA A100",
+  "order": 5,
+  "subtitle": "Developed in collaboration with HPE, ALCF’s Polaris supercomputer provides researchers with powerful capabilities for complex scientific workloads, including large-scale simulations, AI, and data analysis.",
+  "specs": {
+    "Architecture": "x86_64",
+    "GPU types": "NVIDIA A100 40GB",
+    "Scheduler": "PBS Pro",
+    "Operating institution": "Argonne National Laboratory",
+    "Allocation model": "ALCC and Director's Discretionary; INCITE for production work",
+    "Documentation": "https://docs.alcf.anl.gov/polairs/"
+  },
+  "runningOn": "Polaris uses PBS rather than Slurm — translate `sbatch` examples accordingly. Rootstock is preinstalled at `/soft/rootstock` on Sophia and exposes the same `rootstock` CLI as Della. Cluster-local model caches live under `/eagle/garden-cache`; set `GARDEN_CACHE` to that path or run `module load rootstock` to pick it up automatically.\n\nSophia carries a wider set of environments than Della — including `orb_env`, `sevennet_env`, and `esen_env` in addition to the FAIR-Chem and MACE stacks — because it serves as the primary fine-tuning host for newer architectures."
+}
