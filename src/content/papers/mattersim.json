@@ -1,0 +1,32 @@
+{
+  "doi": "10.48550/arXiv.2405.04967",
+  "source": "fetched",
+  "title": "MatterSim: A Deep Learning Atomistic Model Across Elements, Temperatures and Pressures",
+  "authors": [
+    "Yang, Han",
+    "Hu, Chenxi",
+    "Zhou, Yichi",
+    "Liu, Xixian",
+    "Shi, Yu",
+    "Li, Jielan",
+    "Li, Guanzhi",
+    "Chen, Zekun",
+    "Chen, Shuizhou",
+    "Zeni, Claudio",
+    "Horton, Matthew",
+    "Pinsler, Robert",
+    "Fowler, Andrew",
+    "Zügner, Daniel",
+    "Xie, Tian",
+    "Smith, Jake",
+    "Sun, Lixin",
+    "Wang, Qian",
+    "Kong, Lingyu",
+    "Liu, Chang",
+    "Hao, Hongxia",
+    "Lu, Ziheng"
+  ],
+  "published": "2024-01-01",
+  "venue": "arXiv",
+  "url": "https://arxiv.org/abs/2405.04967"
+}

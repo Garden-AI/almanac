@@ -1,0 +1,10 @@
+{
+  "name": "CHGNet",
+  "families": ["mpnn"],
+  "codeUrl": "https://github.com/CederGroupHub/chgnet",
+  "paperRefs": ["chgnet"],
+  "checkpoints": [
+    { "id": "chgnet-default" }
+  ],
+  "trainingData": ["mptrj"]
+}

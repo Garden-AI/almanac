@@ -1,0 +1,11 @@
+{
+  "name": "TorchMD-Net",
+  "families": ["equivariant"],
+  "codeUrl": "https://github.com/torchmd/torchmd-net",
+  "huggingFaceId": "tensorfield/ET-OC20",
+  "paperRefs": ["torchmdnet"],
+  "checkpoints": [
+    { "id": "torchmdnet-et-oc20" }
+  ],
+  "trainingData": ["oc20"]
+}

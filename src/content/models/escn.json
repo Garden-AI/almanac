@@ -1,0 +1,13 @@
+{
+  "name": "eSCN",
+  "families": ["equivariant"],
+  "codeUrl": "https://github.com/facebookresearch/fairchem",
+  "paperRefs": ["escn"],
+  "checkpoints": [
+    { "id": "escn-l6-m2-lay12-s2ef-oc20-all-md" },
+    { "id": "escn-l6-m3-lay20-s2ef-oc20-all-md" },
+    { "id": "escn-l6-m2-lay12-s2ef-oc20-2m" },
+    { "id": "escn-l4-m2-lay12-s2ef-oc20-2m" }
+  ],
+  "trainingData": ["oc20"]
+}

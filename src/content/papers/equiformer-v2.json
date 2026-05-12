@@ -1,0 +1,14 @@
+{
+  "doi": "10.48550/arXiv.2306.12059",
+  "source": "fetched",
+  "title": "EquiformerV2: Improved Equivariant Transformer for Scaling to Higher-Degree Representations",
+  "authors": [
+    "Liao, Yi-Lun",
+    "Wood, Brandon",
+    "Das, Abhishek",
+    "Smidt, Tess"
+  ],
+  "published": "2023-01-01",
+  "venue": "arXiv",
+  "url": "https://arxiv.org/abs/2306.12059"
+}

@@ -1,0 +1,22 @@
+{
+  "name": "EquiformerV2",
+  "families": ["equivariant"],
+  "codeUrl": "https://github.com/facebookresearch/fairchem",
+  "paperRefs": ["equiformer-v2"],
+  "checkpoints": [
+    { "id": "equiformer-v2-153m-s2ef-oc20-all-md", "params": "153M" },
+    { "id": "equiformer-v2-31m-s2ef-oc20-all-md", "params": "31M" },
+    { "id": "equiformer-v2-83m-s2ef-oc20-2m", "params": "83M" },
+    { "id": "eqv2-31m-mp", "params": "31M" },
+    { "id": "eqv2-31m-omat", "params": "31M" },
+    { "id": "eqv2-86m-omat", "params": "86M" },
+    { "id": "eqv2-153m-omat", "params": "153M" },
+    { "id": "eqv2-31m-omat-mp-salex", "params": "31M" },
+    { "id": "eqv2-86m-omat-mp-salex", "params": "86M" },
+    { "id": "eqv2-153m-omat-mp-salex", "params": "153M" },
+    { "id": "eqv2-dens-31m-mp", "params": "31M" },
+    { "id": "eqv2-dens-86m-mp", "params": "86M" },
+    { "id": "eqv2-dens-153m-mp", "params": "153M" }
+  ],
+  "trainingData": ["oc20", "omat24", "mptrj", "salex"]
+}

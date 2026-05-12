@@ -1,0 +1,17 @@
+{
+  "name": "Orb-v3",
+  "families": ["vanilla"],
+  "codeUrl": "https://github.com/orbital-materials/orb-models",
+  "paperRefs": ["orb-v3"],
+  "checkpoints": [
+    { "id": "orb-v3-conservative-20-omat" },
+    { "id": "orb-v3-conservative-20-mpa" },
+    { "id": "orb-v3-conservative-inf-omat" },
+    { "id": "orb-v3-conservative-inf-mpa" },
+    { "id": "orb-v3-direct-20-omat" },
+    { "id": "orb-v3-direct-20-mpa" },
+    { "id": "orb-v3-direct-inf-omat" },
+    { "id": "orb-v3-direct-inf-mpa" }
+  ],
+  "trainingData": ["omat24"]
+}

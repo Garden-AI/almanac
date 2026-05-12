@@ -1,0 +1,12 @@
+{
+  "name": "SCN",
+  "families": ["equivariant"],
+  "codeUrl": "https://github.com/facebookresearch/fairchem",
+  "paperRefs": ["scn"],
+  "checkpoints": [
+    { "id": "scn-s2ef-oc20-all-md" },
+    { "id": "scn-t4-b2-s2ef-oc20-2m" },
+    { "id": "scn-s2ef-oc20-2m" }
+  ],
+  "trainingData": ["oc20"]
+}

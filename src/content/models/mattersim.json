@@ -1,0 +1,12 @@
+{
+  "name": "MatterSim",
+  "families": ["mpnn"],
+  "codeUrl": "https://github.com/microsoft/mattersim",
+  "huggingFaceId": "microsoft/mattersim",
+  "paperRefs": ["mattersim"],
+  "checkpoints": [
+    { "id": "mattersim-v1-0-0-5m", "params": "5M" },
+    { "id": "mattersim-v1-0-0-1m", "params": "1M" }
+  ],
+  "trainingData": []
+}

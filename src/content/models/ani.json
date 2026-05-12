@@ -1,0 +1,12 @@
+{
+  "name": "ANI",
+  "families": ["vanilla"],
+  "codeUrl": "https://github.com/aiqm/torchani",
+  "paperRefs": ["ani"],
+  "checkpoints": [
+    { "id": "ani-2x" },
+    { "id": "ani-1ccx" },
+    { "id": "ani-1x" }
+  ],
+  "trainingData": ["ani1x"]
+}

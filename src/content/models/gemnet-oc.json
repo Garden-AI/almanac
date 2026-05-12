@@ -1,0 +1,13 @@
+{
+  "name": "GemNet",
+  "families": ["mpnn"],
+  "codeUrl": "https://github.com/facebookresearch/fairchem",
+  "paperRefs": ["gemnet-oc"],
+  "checkpoints": [
+    { "id": "gemnet-oc-large-s2ef-oc20-all-md" },
+    { "id": "gemnet-oc-s2ef-oc20-all-md" },
+    { "id": "gemnet-oc-s2ef-oc20-all" },
+    { "id": "gemnet-dt-s2ef-oc20-all" }
+  ],
+  "trainingData": ["oc20"]
+}
