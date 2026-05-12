@@ -46,44 +46,52 @@ const clusters = (await getCollection('clusters')).sort((a, b) => {
 });
 
 const models = await getCollection('models');
+const architectures = await getCollection('architectures');
+const archName = (id: string): string | null =>
+  architectures.find((a) => a.id === id)?.data.name ?? null;
 
 const parseParams = (p: string | undefined): number => {
-  if (!p) return -1;
+  if (!p) return NaN;
   const n = parseFloat(p);
-  if (Number.isNaN(n)) return -1;
+  if (Number.isNaN(n)) return NaN;
   return n * (p.endsWith('B') ? 1000 : 1);
 };
-const rows = models
-  .flatMap((m) =>
-    m.data.checkpoints.map((cp) => ({
-      pageId: m.id,
-      pageName: m.data.name,
-      family: m.data.families[0]?.id ?? '',
-      checkpointId: cp.id,
-      params: cp.params,
-    })),
-  )
-  .sort((a, b) => {
-    const fam = a.family.localeCompare(b.family);
-    if (fam !== 0) return fam;
-    const page = a.pageId.localeCompare(b.pageId);
-    if (page !== 0) return page;
-    const pa = parseParams(a.params);
-    const pb = parseParams(b.params);
-    if (pa !== pb) return pb - pa;
-    return a.checkpointId.localeCompare(b.checkpointId);
-  });
 
 const dump = await getRootstockDump();
 
-const cellSvg = (state: CellState): string => {
+// Cell SVG — keeps the existing app's 14×14 status-mark sizing and hatch
+// geometry. The new `dim` flag (for fully-unsupported rows) softens the
+// stroke and drops hatch opacity per the handoff's dim treatment.
+const cellSvg = (state: CellState, dim: boolean): string => {
+  const stroke = dim ? '#a67878' : 'var(--oxblood)';
   if (state === 'verified') {
-    return '<svg width="14" height="14" viewBox="0 0 14 14" aria-label="verified"><circle cx="7" cy="7" r="3.6" fill="var(--oxblood)" /></svg>';
+    return `<svg width="14" height="14" viewBox="0 0 14 14" aria-label="verified"><circle cx="7" cy="7" r="3.6" fill="${stroke}" /></svg>`;
   }
   if (state === 'lapsed') {
-    return '<svg width="14" height="14" viewBox="0 0 14 14" aria-label="lapsed"><circle cx="7" cy="7" r="3.4" fill="none" stroke="var(--oxblood)" stroke-width="1" /></svg>';
+    return `<svg width="14" height="14" viewBox="0 0 14 14" aria-label="lapsed"><circle cx="7" cy="7" r="3.4" fill="none" stroke="${stroke}" stroke-width="1" /></svg>`;
   }
-  return '<svg width="100%" height="14" viewBox="0 0 40 14" preserveAspectRatio="none" aria-label="not applicable" style="display: block;"><defs><pattern id="na-hatch" patternUnits="userSpaceOnUse" width="5" height="5" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="5" stroke="var(--ink)" stroke-width="0.5" opacity="0.35" /></pattern></defs><rect x="0" y="3" width="40" height="8" fill="url(#na-hatch)" /></svg>';
+  const id = dim ? 'am-hatch-d' : 'am-hatch-n';
+  const op = dim ? 0.18 : 0.35;
+  return `<svg width="100%" height="14" viewBox="0 0 40 14" preserveAspectRatio="none" aria-label="not applicable" style="display: block;"><defs><pattern id="${id}" patternUnits="userSpaceOnUse" width="5" height="5" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="5" stroke="var(--ink)" stroke-width="0.5" opacity="${op}" /></pattern></defs><rect x="0" y="3" width="40" height="8" fill="url(#${id})" /></svg>`;
+};
+
+// Group: one row per checkpoint, families = one section per model. Families
+// sorted alphabetical case-insensitive by display name (per the brief);
+// within a family, checkpoint order is the source order from the JSON.
+type FamilyRow = {
+  checkpointId: string;
+  params: string | undefined;
+  cells: Array<{ cluster: typeof clusters[number]; state: CellState }>;
+  dim: boolean;
+};
+type FamilyGroup = {
+  modelId: string;
+  name: string;
+  href: string;
+  arch: string | null;
+  count: number;
+  range: string | null;
+  rows: FamilyRow[];
 };
 
 let counts = { verified: 0, lapsed: 0, na: 0 };
@@ -91,15 +99,48 @@ type PerCluster = { verified: number; lapsed: number; na: number };
 const perCluster: Record<string, PerCluster> = {};
 for (const c of clusters) perCluster[c.id] = { verified: 0, lapsed: 0, na: 0 };
 
-const grid = rows.map((row) => ({
-  row,
-  cells: clusters.map((c) => {
-    const state: CellState = cellStateFor(findVerification(dump, c.id, row.checkpointId));
-    counts[state]++;
-    perCluster[c.id][state]++;
-    return { cluster: c, state };
-  }),
-}));
+const families: FamilyGroup[] = models
+  .map((m): FamilyGroup => {
+    const rows: FamilyRow[] = m.data.checkpoints.map((cp) => {
+      const cells = clusters.map((c) => {
+        const state: CellState = cellStateFor(findVerification(dump, c.id, cp.id));
+        counts[state]++;
+        perCluster[c.id][state]++;
+        return { cluster: c, state };
+      });
+      return {
+        checkpointId: cp.id,
+        params: cp.params,
+        cells,
+        dim: cells.every((x) => x.state === 'na'),
+      };
+    });
+    const sizes = m.data.checkpoints
+      .map((cp) => cp.params)
+      .filter((s): s is string => !!s);
+    let range: string | null = null;
+    if (sizes.length) {
+      const nums = sizes.map((s) => ({ s, n: parseParams(s) })).filter((x) => !Number.isNaN(x.n));
+      if (nums.length) {
+        const lo = nums.reduce((a, b) => (a.n <= b.n ? a : b));
+        const hi = nums.reduce((a, b) => (a.n >= b.n ? a : b));
+        range = lo.s === hi.s ? lo.s : `${lo.s} – ${hi.s}`;
+      }
+    }
+    return {
+      modelId: m.id,
+      name: m.data.name,
+      href: url(`/model/${m.id}`),
+      arch: archName(m.data.families[0]?.id ?? ''),
+      count: m.data.checkpoints.length,
+      range,
+      rows,
+    };
+  })
+  .sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()));
+
+const totalCheckpoints = families.reduce((acc, f) => acc + f.count, 0);
+const colSpan = 2 + clusters.length;
 
 const clusterCards = clusters.map((c) => ({
   id: c.id,
@@ -162,30 +203,26 @@ with RootstockCalculator(
   </section>
 
   {/* DESKTOP: the matrix is the centrepiece. */}
-  <section class="matrix-wrap cm-tight">
-    <table class="almanac matrix-table">
+  <section class="am-wrap">
+    <table class="almanac am-table" aria-label="Availability matrix">
       <colgroup>
-        <col style="width: 24px;" />
-        <col style="width: 160px;" />
-        <col style="width: 180px;" />
-        <col style="width: 60px;" />
-        {clusters.map(() => <col />)}
+        <col class="am-col-slug" />
+        <col class="am-col-size" />
+        {clusters.map((c) => <col class="am-col-cluster" data-cluster={c.id} />)}
       </colgroup>
       <thead>
         <tr>
-          <th>№</th>
-          <th>Model</th>
-          <th>Checkpoint</th>
-          <th style="text-align: right;">Size</th>
+          <th class="am-th-slug">Checkpoint</th>
+          <th class="am-th-size">Size</th>
           {clusters.map((c) => (
-            <th class="cluster-h">
-              <div style="font-family: var(--smallcaps); font-size: 12.5px; letter-spacing: 0.06em;">
+            <th class="am-th-cluster">
+              <div class="am-th-cluster-name">
                 <a class="ink-link" href={url(`/cluster/${c.id}`)}>{c.data.name}</a>
               </div>
-              <div class="sc" style="font-size: 9.5px; letter-spacing: 0.10em; color: var(--ink-2);">
+              <div class="sc am-th-cluster-inst">
                 {c.data.institutionShort ?? c.data.institution.split('·')[0].trim()}
               </div>
-              <div class="mono" style="font-size: 9px; color: var(--ink-3); letter-spacing: 0.02em;">
+              <div class="mono am-th-cluster-gpu">
                 {c.data.gpu ?? '—'}
               </div>
             </th>
@@ -193,26 +230,68 @@ with RootstockCalculator(
         </tr>
       </thead>
       <tbody>
-        {grid.map(({ row, cells }, i) => (
-          <tr>
-            <td style="font-variant-numeric: tabular-nums; color: var(--ink-2);">{String(i + 1).padStart(2, '0')}</td>
-            <td><a class="ink-link" href={url(`/model/${row.pageId}`)} style="font-weight: 600;">{row.pageName}</a></td>
-            <td class="checkpoint-id">{row.checkpointId}</td>
-            <td style="text-align: right; font-variant-numeric: tabular-nums;">{row.params ?? '—'}</td>
-            {cells.map(({ cluster, state }) => (
-              <td class="cell" data-rs-cell={`${cluster.id}:${row.checkpointId}`} set:html={cellSvg(state)} />
+        {families.map((fam) => (
+          <>
+            <tr class="am-fhead">
+              <td colspan={colSpan}>
+                <div class="am-fhead-inner">
+                  <a class="am-fhead-name" href={fam.href}>
+                    <span class="am-fhead-name-text">{fam.name}</span>
+                    <span class="am-fhead-arrow" aria-hidden="true">→</span>
+                  </a>
+                  <span class="am-fhead-meta">
+                    <span>{fam.count} checkpoint{fam.count === 1 ? '' : 's'}</span>
+                    {fam.range ? (<><span class="am-dot">·</span><span class="mono">{fam.range}</span></>) : null}
+                    {fam.arch ? (<><span class="am-dot">·</span><span class="it">{fam.arch}</span></>) : null}
+                  </span>
+                </div>
+              </td>
+            </tr>
+            {fam.rows.map((r) => (
+              <tr class:list={["am-row", r.dim && "am-row--dim"]} data-rs-row={r.checkpointId}>
+                <td class="am-slug">
+                  <a class="am-slug-link" href={`${fam.href}#${r.checkpointId}`}>{r.checkpointId}</a>
+                </td>
+                <td class="am-size">{r.params ?? '—'}</td>
+                {r.cells.map(({ cluster, state }) => (
+                  <td class="am-cell" data-rs-cell={`${cluster.id}:${r.checkpointId}`} set:html={cellSvg(state, r.dim)} />
+                ))}
+              </tr>
             ))}
-          </tr>
+          </>
         ))}
       </tbody>
     </table>
 
-    <p class="it matrix-caption">
-      {rows.length} checkpoints · {clusters.length} clusters ·
-      {' '}<span data-rs-count="verified">{counts.verified}</span> verified,
-      {' '}<span data-rs-count="lapsed">{counts.lapsed}</span> lapsed,
-      {' '}<span data-rs-count="na">{counts.na}</span> not applicable
-    </p>
+    <div class="am-caption">
+      <span class="it">
+        <span data-rs-count="total">{totalCheckpoints}</span> checkpoints · {clusters.length} clusters ·
+        {' '}<span data-rs-count="verified">{counts.verified}</span> verified,
+        {' '}<span data-rs-count="lapsed">{counts.lapsed}</span> lapsed,
+        {' '}<span data-rs-count="na">{counts.na}</span> not applicable
+      </span>
+      <span class="am-legend">
+        <span class="am-legend-item">
+          <svg width="12" height="12" viewBox="0 0 14 14"><circle cx="7" cy="7" r="3.6" fill="var(--oxblood)" /></svg>
+          <span class="sc">Verified</span>
+        </span>
+        <span class="am-legend-item">
+          <svg width="12" height="12" viewBox="0 0 14 14"><circle cx="7" cy="7" r="3.4" fill="none" stroke="var(--oxblood)" stroke-width="1" /></svg>
+          <span class="sc">Lapsed</span>
+        </span>
+        <span class="am-legend-item">
+          <svg width="14" height="6" viewBox="0 0 14 6">
+            <defs>
+              <pattern id="am-lg-hatch" patternUnits="userSpaceOnUse" width="5" height="5" patternTransform="rotate(45)">
+                <line x1="0" y1="0" x2="0" y2="5" stroke="#1f1c18" stroke-width="0.5" opacity="0.45" />
+              </pattern>
+            </defs>
+            <rect x="0" y="0" width="14" height="6" fill="url(#am-lg-hatch)" />
+          </svg>
+          <span class="sc">Not supported</span>
+        </span>
+      </span>
+    </div>
   </section>
 
   <section class="howto">
@@ -276,17 +355,131 @@ with RootstockCalculator(
     max-width: 820px;
   }
 
-  /* Matrix — keep the existing tight rows. */
-  .matrix-wrap { margin-top: 24px; }
-  .matrix-table { table-layout: fixed; width: 100%; }
-  .matrix-table th.cluster-h { text-align: center; vertical-align: bottom; padding: 6px 4px; line-height: 1.2; }
-  .matrix-table td.cell { text-align: center; padding: 4px 0; }
-  .matrix-table td.checkpoint-id { font-family: var(--mono); font-size: 11px; color: var(--ink-2); }
-  .matrix-caption {
-    margin-top: 8px;
-    font-size: 11.5px;
+  /* Availability matrix — one row per checkpoint, grouped by family section header.
+   * Ported from design_handoff_availability_table/availability-matrix.css; sizing
+   * for the slug column, status marks, and cluster headers stays at the existing
+   * app's values where this overlaps with prior matrix styling. */
+  .am-wrap { margin-top: 24px; }
+  .am-table { table-layout: auto; width: 100%; }
+  .am-table thead th { padding-top: 8px; padding-bottom: 6px; }
+  /* Body rows use the existing app's tight row height; the family-header row
+     (`.am-fhead td`) needs a more-specific selector to escape this rule. */
+  .am-table tbody td { padding-top: 3px; padding-bottom: 3px; }
+  .am-col-size { width: 64px; }
+  .am-col-cluster { width: 1%; }
+  .am-table thead th.am-th-cluster { min-width: 140px; text-align: center; vertical-align: bottom; padding: 6px 4px; line-height: 1.2; }
+  .am-th-cluster-name { font-family: var(--smallcaps); font-size: 12.5px; letter-spacing: 0.06em; color: var(--ink); }
+  .am-th-cluster-inst { font-size: 9.5px; letter-spacing: 0.10em; color: var(--ink-2); margin-top: 1px; }
+  .am-th-cluster-gpu { font-size: 9px; color: var(--ink-3); margin-top: 2px; letter-spacing: 0.02em; }
+  .am-th-slug { text-align: left; }
+  .am-th-size { text-align: right; }
+
+  .am-row .am-slug {
+    font-family: var(--mono);
+    font-size: 11px;
+    padding-left: 12px;
+    color: var(--ink);
+    word-break: break-all;
+  }
+  .am-slug-link {
+    color: inherit;
+    text-decoration: none;
+    border-bottom: 0.5px solid transparent;
+    transition: color .12s, border-color .12s;
+  }
+  .am-row:hover .am-slug-link {
+    color: var(--oxblood);
+    border-bottom-color: var(--oxblood);
+  }
+  .am-row .am-size {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    font-size: 12px;
     color: var(--ink-2);
   }
+  .am-row .am-cell {
+    text-align: center;
+    padding: 3px 0;
+    position: relative;
+  }
+
+  /* Fully-unsupported rows still list but recede so the eye lands on what's deployed. */
+  .am-row--dim .am-slug,
+  .am-row--dim .am-size {
+    color: var(--ink-3);
+    font-size: 10.5px;
+  }
+  .am-row--dim td {
+    padding-top: 2px;
+    padding-bottom: 2px;
+  }
+  .am-row--dim:hover .am-slug-link {
+    color: var(--oxblood);
+    border-bottom-color: var(--oxblood);
+  }
+
+  /* Family section header — one TD spanning all columns, hairline above and below.
+     `tbody tr.am-fhead td` beats the `tbody td` body-row padding rule above. */
+  .am-table tbody tr.am-fhead td {
+    border-right: 0;
+    background: transparent;
+    padding: 12px 8px 5px;
+    border-bottom: 0.5px solid var(--rule);
+    border-top: 0.5px solid var(--rule);
+  }
+  .am-fhead-inner {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .am-fhead-name {
+    font-family: var(--smallcaps);
+    font-size: 14px;
+    letter-spacing: 0.10em;
+    color: var(--ink);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: baseline;
+    gap: 8px;
+    white-space: nowrap;
+  }
+  .am-fhead-name:hover,
+  .am-fhead-name:hover .am-fhead-arrow { color: var(--oxblood); }
+  .am-fhead-arrow {
+    color: var(--ink-3);
+    font-family: var(--serif);
+    letter-spacing: 0;
+    font-size: 14px;
+  }
+  .am-fhead-meta {
+    font-family: var(--serif);
+    font-size: 12px;
+    color: var(--ink-3);
+    display: inline-flex;
+    align-items: baseline;
+    gap: 6px;
+    white-space: nowrap;
+  }
+  .am-fhead-meta .am-dot { color: var(--ink-3); opacity: 0.6; }
+  .am-fhead-meta .mono   { font-size: 11px; color: var(--ink-2); }
+  .am-fhead-meta .it     { color: var(--ink-2); }
+
+  /* Caption + legend on one baseline. */
+  .am-caption {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-top: 10px;
+    font-size: 11.5px;
+    color: var(--ink-2);
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .am-legend { display: inline-flex; align-items: center; white-space: nowrap; }
+  .am-legend-item { display: inline-flex; align-items: center; gap: 5px; margin-left: 14px; }
+  .am-legend-item .sc { font-size: 10.5px; letter-spacing: 0.08em; color: var(--ink-2); }
 
   /* How-to block — full width below the matrix; two-column on desktop. */
   .howto { margin-top: 32px; }
@@ -390,7 +583,7 @@ with RootstockCalculator(
   .cluster-card:hover .cc-name { color: var(--oxblood); }
 
   @media (max-width: 720px) {
-    .matrix-wrap { display: none; }
+    .am-wrap { display: none; }
     .cluster-cards { display: block; }
     .landing-h1 { font-size: 34px; }
     .landing-subtitle { font-size: 16px; }
@@ -402,27 +595,41 @@ with RootstockCalculator(
   import { loadLiveDump } from '../lib/rootstock-client';
   import { findVerification, cellStateFor, type CellState } from '../lib/rootstock';
 
-  const cellSvg = (state: CellState): string => {
+  const cellSvg = (state: CellState, dim: boolean): string => {
+    const stroke = dim ? '#a67878' : 'var(--oxblood)';
     if (state === 'verified') {
-      return '<svg width="14" height="14" viewBox="0 0 14 14" aria-label="verified"><circle cx="7" cy="7" r="3.6" fill="var(--oxblood)" /></svg>';
+      return `<svg width="14" height="14" viewBox="0 0 14 14" aria-label="verified"><circle cx="7" cy="7" r="3.6" fill="${stroke}" /></svg>`;
     }
     if (state === 'lapsed') {
-      return '<svg width="14" height="14" viewBox="0 0 14 14" aria-label="lapsed"><circle cx="7" cy="7" r="3.4" fill="none" stroke="var(--oxblood)" stroke-width="1" /></svg>';
+      return `<svg width="14" height="14" viewBox="0 0 14 14" aria-label="lapsed"><circle cx="7" cy="7" r="3.4" fill="none" stroke="${stroke}" stroke-width="1" /></svg>`;
     }
-    return '<svg width="100%" height="14" viewBox="0 0 40 14" preserveAspectRatio="none" aria-label="not applicable" style="display: block;"><defs><pattern id="na-hatch" patternUnits="userSpaceOnUse" width="5" height="5" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="5" stroke="var(--ink)" stroke-width="0.5" opacity="0.35" /></pattern></defs><rect x="0" y="3" width="40" height="8" fill="url(#na-hatch)" /></svg>';
+    const id = dim ? 'am-hatch-d' : 'am-hatch-n';
+    const op = dim ? 0.18 : 0.35;
+    return `<svg width="100%" height="14" viewBox="0 0 40 14" preserveAspectRatio="none" aria-label="not applicable" style="display: block;"><defs><pattern id="${id}" patternUnits="userSpaceOnUse" width="5" height="5" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="5" stroke="var(--ink)" stroke-width="0.5" opacity="${op}" /></pattern></defs><rect x="0" y="3" width="40" height="8" fill="url(#${id})" /></svg>`;
   };
 
   loadLiveDump()
     .then((dump) => {
       const counts = { verified: 0, lapsed: 0, na: 0 };
-      document.querySelectorAll<HTMLElement>('[data-rs-cell]').forEach((td) => {
-        const [cluster, checkpoint] = td.dataset.rsCell!.split(':');
-        const state = cellStateFor(findVerification(dump, cluster, checkpoint));
-        td.innerHTML = cellSvg(state);
-        counts[state]++;
+      // Pass 1: state per (cluster, checkpoint) cell, grouped by row so we can
+      // recompute the dim treatment once all cells settle.
+      const rows = document.querySelectorAll<HTMLElement>('[data-rs-row]');
+      rows.forEach((tr) => {
+        const tdCells = tr.querySelectorAll<HTMLElement>('[data-rs-cell]');
+        const states: CellState[] = [];
+        tdCells.forEach((td) => {
+          const [cluster, checkpoint] = td.dataset.rsCell!.split(':');
+          const s = cellStateFor(findVerification(dump, cluster, checkpoint));
+          states.push(s);
+          counts[s]++;
+        });
+        const dim = states.every((s) => s === 'na');
+        tr.classList.toggle('am-row--dim', dim);
+        tdCells.forEach((td, i) => { td.innerHTML = cellSvg(states[i], dim); });
       });
       document.querySelectorAll<HTMLElement>('[data-rs-count]').forEach((el) => {
-        const k = el.dataset.rsCount as keyof typeof counts;
+        const k = el.dataset.rsCount as keyof typeof counts | 'total';
+        if (k === 'total') return;
         el.textContent = String(counts[k]);
       });
     })

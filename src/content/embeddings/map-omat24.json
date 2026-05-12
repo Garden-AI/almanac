@@ -84,7 +84,8 @@
       "x": 0.5121,
       "y": 0.8868,
       "sizeM": 25.5,
-      "numParams": 25510582
+      "numParams": 25510582,
+      "slug": "orb-v3"
     },
     {
       "modelName": "orb_v3_conservative_20_omat",
@@ -95,7 +96,8 @@
       "x": 0.6525,
       "y": 0.8786,
       "sizeM": 25.5,
-      "numParams": 25510582
+      "numParams": 25510582,
+      "slug": "orb-v3"
     },
     {
       "modelName": "orb_v3_conservative_inf_mpa",
@@ -106,7 +108,8 @@
       "x": 0.5262,
       "y": 0.8059,
       "sizeM": 25.5,
-      "numParams": 25510582
+      "numParams": 25510582,
+      "slug": "orb-v3"
     },
     {
       "modelName": "orb_v3_conservative_inf_omat",
@@ -117,7 +120,8 @@
       "x": 0.5642,
       "y": 0.95,
       "sizeM": 25.5,
-      "numParams": 25510582
+      "numParams": 25510582,
+      "slug": "orb-v3"
     },
     {
       "modelName": "orb_v3_direct_20_mpa",
@@ -128,7 +132,8 @@
       "x": 0.8777,
       "y": 0.8775,
       "sizeM": 25.6,
-      "numParams": 25644479
+      "numParams": 25644479,
+      "slug": "orb-v3"
     },
     {
       "modelName": "orb_v3_direct_20_omat",
@@ -139,7 +144,8 @@
       "x": 0.7894,
       "y": 0.8456,
       "sizeM": 25.6,
-      "numParams": 25644479
+      "numParams": 25644479,
+      "slug": "orb-v3"
     },
     {
       "modelName": "orb_v3_direct_inf_mpa",
@@ -150,7 +156,8 @@
       "x": 0.8027,
       "y": 0.9157,
       "sizeM": 25.6,
-      "numParams": 25644479
+      "numParams": 25644479,
+      "slug": "orb-v3"
     },
     {
       "modelName": "orb_v3_direct_inf_omat",
@@ -161,7 +168,8 @@
       "x": 0.7906,
       "y": 0.7919,
       "sizeM": 25.6,
-      "numParams": 25644479
+      "numParams": 25644479,
+      "slug": "orb-v3"
     },
     {
       "modelName": "orbv2",
@@ -184,7 +192,8 @@
       "x": 0.2347,
       "y": 0.2816,
       "sizeM": 1396.7,
-      "numParams": 1396669089
+      "numParams": 1396669089,
+      "slug": "uma"
     },
     {
       "modelName": "uma-s-1p1",
@@ -207,7 +216,8 @@
       "x": 0.4212,
       "y": 0.0639,
       "sizeM": 30.1,
-      "numParams": 30086018
+      "numParams": 30086018,
+      "slug": "esen"
     },
     {
       "modelName": "esen_30m_oam",
@@ -218,7 +228,8 @@
       "x": 0.2839,
       "y": 0.1289,
       "sizeM": 30.2,
-      "numParams": 30161153
+      "numParams": 30161153,
+      "slug": "esen"
     },
     {
       "modelName": "esen_30m_omat",
@@ -229,7 +240,8 @@
       "x": 0.178,
       "y": 0.2246,
       "sizeM": 30.2,
-      "numParams": 30161410
+      "numParams": 30161410,
+      "slug": "esen"
     },
     {
       "modelName": "eqV2_153M_omat",
@@ -240,7 +252,8 @@
       "x": 0.4199,
       "y": 0.2771,
       "sizeM": 153.8,
-      "numParams": 153769868
+      "numParams": 153769868,
+      "slug": "equiformer-v2"
     },
     {
       "modelName": "eqV2_153M_omat_mp_salex",
@@ -251,7 +264,8 @@
       "x": 0.5671,
       "y": 0.2343,
       "sizeM": 153.8,
-      "numParams": 153769868
+      "numParams": 153769868,
+      "slug": "equiformer-v2"
     },
     {
       "modelName": "eqV2_31M_mp",
@@ -262,7 +276,8 @@
       "x": 0.6839,
       "y": 0.1536,
       "sizeM": 31.2,
-      "numParams": 31207434
+      "numParams": 31207434,
+      "slug": "equiformer-v2"
     },
     {
       "modelName": "eqV2_31M_omat",
@@ -273,7 +288,8 @@
       "x": 0.3322,
       "y": 0.2357,
       "sizeM": 31.2,
-      "numParams": 31207434
+      "numParams": 31207434,
+      "slug": "equiformer-v2"
     },
     {
       "modelName": "eqV2_31M_omat_mp_salex",
@@ -284,7 +300,8 @@
       "x": 0.4359,
       "y": 0.1925,
       "sizeM": 31.2,
-      "numParams": 31207434
+      "numParams": 31207434,
+      "slug": "equiformer-v2"
     },
     {
       "modelName": "eqV2_86M_omat",
@@ -295,7 +312,8 @@
       "x": 0.3782,
       "y": 0.3315,
       "sizeM": 86.6,
-      "numParams": 86589068
+      "numParams": 86589068,
+      "slug": "equiformer-v2"
     },
     {
       "modelName": "eqV2_86M_omat_mp_salex",
@@ -306,7 +324,8 @@
       "x": 0.5455,
       "y": 0.3004,
       "sizeM": 86.6,
-      "numParams": 86589068
+      "numParams": 86589068,
+      "slug": "equiformer-v2"
     },
     {
       "modelName": "eqV2_dens_153M_mp",
@@ -317,7 +336,8 @@
       "x": 0.6302,
       "y": 0.1089,
       "sizeM": 160.7,
-      "numParams": 160673293
+      "numParams": 160673293,
+      "slug": "equiformer-v2"
     },
     {
       "modelName": "eqV2_dens_31M_mp",
@@ -328,7 +348,8 @@
       "x": 0.5461,
       "y": 0.1339,
       "sizeM": 34.3,
-      "numParams": 34339083
+      "numParams": 34339083,
+      "slug": "equiformer-v2"
     },
     {
       "modelName": "eqV2_dens_86M_mp",
@@ -339,7 +360,8 @@
       "x": 0.577,
       "y": 0.05,
       "sizeM": 94.0,
-      "numParams": 94033933
+      "numParams": 94033933,
+      "slug": "equiformer-v2"
     }
   ]
 }

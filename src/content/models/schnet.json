@@ -1,0 +1,13 @@
+{
+  "name": "SchNet",
+  "families": ["mpnn"],
+  "codeUrl": "https://github.com/facebookresearch/fairchem",
+  "paperRefs": ["schnet"],
+  "checkpoints": [
+    { "id": "schnet-s2ef-oc20-all", "params": "9.1M" },
+    { "id": "schnet-s2ef-oc20-20m" },
+    { "id": "schnet-s2ef-oc20-2m" },
+    { "id": "schnet-s2ef-oc20-200k" }
+  ],
+  "trainingData": ["oc20"]
+}

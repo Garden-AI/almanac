@@ -4,9 +4,9 @@
   "codeUrl": "https://github.com/ACEsuit/mace-mp",
   "paperRefs": ["mace-mp-0"],
   "checkpoints": [
-    { "id": "mace-mp-0-small" },
+    { "id": "mace-mp-0-small", "params": "3.8M" },
     { "id": "mace-mp-0-medium", "params": "4.7M" },
-    { "id": "mace-mp-0-large", "params": "15.6M" }
+    { "id": "mace-mp-0-large", "params": "5.7M" }
   ],
   "trainingData": ["mptrj"]
 }

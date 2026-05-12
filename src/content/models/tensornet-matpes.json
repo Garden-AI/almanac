@@ -1,9 +1,9 @@
 {
-  "name": "TensorNet (MatPES)",
+  "name": "TensorNet",
   "families": ["equivariant"],
   "codeUrl": "https://github.com/torchmd/torchmd-net",
   "paperRefs": ["tensornet"],
   "checkpoints": [
-    { "id": "tensornet-matpes-pbe-2025-2" }
+    { "id": "tensornet-matpes-pbe-2025-2", "params": "0.8M" }
   ]
 }
