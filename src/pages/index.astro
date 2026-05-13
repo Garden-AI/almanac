@@ -183,13 +183,23 @@ with RootstockCalculator(
 
   <p class="landing-framing">
     The Almanac lists which model checkpoints are installed and verified on shared HPC clusters via
-    Rootstock. A
-    {' '}<span aria-hidden="true"><svg width="11" height="11" viewBox="0 0 14 14" style="vertical-align: -1px;"><circle cx="7" cy="7" r="3.4" fill="var(--oxblood)" /></svg></span>
-    {' '}<span class="it" style="color: var(--ink-2);">filled circle</span> means verified in the last seven days; an
-    {' '}<span aria-hidden="true"><svg width="11" height="11" viewBox="0 0 14 14" style="vertical-align: -1px;"><circle cx="7" cy="7" r="3" fill="none" stroke="var(--oxblood)" stroke-width="1" /></svg></span>
-    {' '}<span class="it" style="color: var(--ink-2);">open circle</span> means the check has lapsed; a hatched
-    cell means the model isn't supported on that cluster.
+    <a class="ink-link" href="https://garden-ai.github.io/rootstock/">Rootstock</a>.
   </p>
+
+  <div class="status-key" aria-label="Availability key">
+    <span class="status-key-item">
+      <svg width="11" height="11" viewBox="0 0 14 14" aria-hidden="true"><circle cx="7" cy="7" r="3.4" fill="var(--oxblood)" /></svg>
+      <span>verified</span>
+    </span>
+    <span class="status-key-item">
+      <svg width="11" height="11" viewBox="0 0 14 14" aria-hidden="true"><circle cx="7" cy="7" r="3" fill="none" stroke="var(--oxblood)" stroke-width="1" /></svg>
+      <span>lapsed</span>
+    </span>
+    <span class="status-key-item">
+      <span aria-hidden="true">—</span>
+      <span>not supported</span>
+    </span>
+  </div>
 
   {/* MOBILE: per-cluster cards stand in for the matrix below 720px. */}
   <section class="cluster-cards" aria-label="Clusters">
@@ -213,6 +223,25 @@ with RootstockCalculator(
 
   {/* DESKTOP: the matrix is the centrepiece. */}
   <section class="am-wrap">
+    <div class="am-controls" role="search" aria-label="Search availability matrix">
+      <label class="am-search-wrap">
+        <span class="am-control-icon" aria-hidden="true">
+          <svg width="14" height="14" viewBox="0 0 16 16">
+            <circle cx="7" cy="7" r="4.25" fill="none" stroke="currentColor" stroke-width="1.2" />
+            <path d="M10.2 10.2L13.2 13.2" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" />
+          </svg>
+        </span>
+        <input
+          class="am-search"
+          data-am-search
+          type="search"
+          aria-label="Search models"
+          placeholder="Search models, e.g., equiformer, escn..."
+          autocomplete="off"
+        />
+      </label>
+    </div>
+
     <table class="almanac am-table" aria-label="Availability matrix">
       <colgroup>
         <col class="am-col-slug" />
@@ -221,7 +250,7 @@ with RootstockCalculator(
       </colgroup>
       <thead>
         <tr>
-          <th class="am-th-slug">Checkpoint</th>
+          <th class="am-th-slug">Model family / Checkpoint</th>
           <th class="am-th-size">Size</th>
           {clusters.map((c) => (
             <th class="am-th-cluster">
@@ -241,7 +270,11 @@ with RootstockCalculator(
       <tbody>
         {families.map((fam) => (
           <>
-            <tr class:list={["am-fhead", fam.count === 0 && "am-hidden"]} data-rs-family={fam.modelId}>
+            <tr
+              class:list={["am-fhead", fam.count === 0 && "am-hidden"]}
+              data-rs-family={fam.modelId}
+              data-am-family={fam.modelId}
+            >
               <td colspan={colSpan}>
                 <div class="am-fhead-inner">
                   <a class="am-fhead-name" href={fam.href}>
@@ -260,13 +293,23 @@ with RootstockCalculator(
               </td>
             </tr>
             {fam.rows.map((r) => (
-              <tr class:list={["am-row", r.dim && "am-hidden"]} data-rs-row={r.checkpointId} data-rs-family-id={fam.modelId}>
+              <tr
+                class:list={["am-row", r.dim && "am-hidden"]}
+                data-rs-row={r.checkpointId}
+                data-rs-family-id={fam.modelId}
+                data-am-family={fam.modelId}
+                data-am-search={`${fam.name} ${r.checkpointId} ${r.params ?? ''} ${fam.arch ?? ''}`.toLowerCase()}
+              >
                 <td class="am-slug">
                   <a class="am-slug-link" href={`${fam.href}#${r.checkpointId}`}>{r.checkpointId}</a>
                 </td>
                 <td class="am-size">{r.params ?? '—'}</td>
                 {r.cells.map(({ cluster, state }) => (
-                  <td class="am-cell" data-rs-cell={`${cluster.id}:${r.checkpointId}`} set:html={cellSvg(state, r.dim)} />
+                  <td
+                    class="am-cell"
+                    data-rs-cell={`${cluster.id}:${r.checkpointId}`}
+                    set:html={cellSvg(state, r.dim)}
+                  />
                 ))}
               </tr>
             ))}
@@ -281,27 +324,6 @@ with RootstockCalculator(
         {' '}<span data-rs-count="verified">{counts.verified}</span> verified,
         {' '}<span data-rs-count="lapsed">{counts.lapsed}</span> lapsed,
         {' '}<span data-rs-count="na">{counts.na}</span> not applicable
-      </span>
-      <span class="am-legend">
-        <span class="am-legend-item">
-          <svg width="12" height="12" viewBox="0 0 14 14"><circle cx="7" cy="7" r="3.6" fill="var(--oxblood)" /></svg>
-          <span class="sc">Verified</span>
-        </span>
-        <span class="am-legend-item">
-          <svg width="12" height="12" viewBox="0 0 14 14"><circle cx="7" cy="7" r="3.4" fill="none" stroke="var(--oxblood)" stroke-width="1" /></svg>
-          <span class="sc">Lapsed</span>
-        </span>
-        <span class="am-legend-item">
-          <svg width="14" height="6" viewBox="0 0 14 6">
-            <defs>
-              <pattern id="am-lg-hatch" patternUnits="userSpaceOnUse" width="5" height="5" patternTransform="rotate(45)">
-                <line x1="0" y1="0" x2="0" y2="5" stroke="#1f1c18" stroke-width="0.5" opacity="0.45" />
-              </pattern>
-            </defs>
-            <rect x="0" y="0" width="14" height="6" fill="url(#am-lg-hatch)" />
-          </svg>
-          <span class="sc">Not supported</span>
-        </span>
       </span>
     </div>
   </section>
@@ -345,7 +367,7 @@ with RootstockCalculator(
     font-family: var(--serif);
     font-size: 52px;
     line-height: 1.02;
-    letter-spacing: -0.012em;
+    letter-spacing: 0;
     font-weight: 600;
     margin: 0;
     text-wrap: balance;
@@ -366,13 +388,77 @@ with RootstockCalculator(
     margin: 22px 0 0;
     max-width: 820px;
   }
+  .status-key {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px 18px;
+    margin-top: 9px;
+    font-size: 13px;
+    line-height: 1.25;
+    color: var(--ink-2);
+  }
+  .status-key-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
 
   /* Availability matrix — one row per checkpoint, grouped by family section header.
    * Ported from design_handoff_availability_table/availability-matrix.css; sizing
    * for the slug column, status marks, and cluster headers stays at the existing
    * app's values where this overlaps with prior matrix styling. */
   .am-wrap { margin-top: 24px; }
+  .am-controls {
+    margin-bottom: 18px;
+  }
+  .am-search-wrap {
+    display: block;
+    position: relative;
+    min-width: 0;
+  }
+  .am-search {
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 38px;
+    padding: 9px 12px 9px 34px;
+    border: 0.5px solid var(--rule-soft);
+    border-radius: 4px;
+    background: rgba(250, 247, 241, 0.72);
+    color: var(--ink);
+    font-family: var(--serif);
+    font-size: 13px;
+    line-height: 1.2;
+    transition: border-color 0.14s, background 0.14s;
+  }
+  .am-search::placeholder {
+    color: var(--ink-3);
+    opacity: 0.78;
+  }
+  .am-control-icon {
+    color: var(--ink-3);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+  }
+  .am-search-wrap .am-control-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+  }
+  .am-search:focus {
+    outline: 0;
+    border-color: rgba(122, 31, 31, 0.62);
+    background: rgba(250, 247, 241, 0.96);
+  }
   .am-table { table-layout: auto; width: 100%; }
+  .am-table [hidden],
+  .am-table tr[hidden] {
+    display: none !important;
+  }
   .am-table thead th { padding-top: 8px; padding-bottom: 6px; }
   /* Body rows use the existing app's tight row height; the family-header row
      (`.am-fhead td`) needs a more-specific selector to escape this rule. */
@@ -445,7 +531,7 @@ with RootstockCalculator(
     text-decoration: none;
     display: inline-flex;
     align-items: baseline;
-    gap: 8px;
+    gap: 7px;
     white-space: nowrap;
   }
   .am-fhead-name:hover,
@@ -469,20 +555,11 @@ with RootstockCalculator(
   .am-fhead-meta .mono   { font-size: 11px; color: var(--ink-2); }
   .am-fhead-meta .it     { color: var(--ink-2); }
 
-  /* Caption + legend on one baseline. */
   .am-caption {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
     margin-top: 10px;
     font-size: 11.5px;
     color: var(--ink-2);
-    gap: 12px;
-    flex-wrap: wrap;
   }
-  .am-legend { display: inline-flex; align-items: center; white-space: nowrap; }
-  .am-legend-item { display: inline-flex; align-items: center; gap: 5px; margin-left: 14px; }
-  .am-legend-item .sc { font-size: 10.5px; letter-spacing: 0.08em; color: var(--ink-2); }
 
   /* How-to block — full width below the matrix; two-column on desktop. */
   .howto { margin-top: 32px; }
@@ -608,6 +685,34 @@ with RootstockCalculator(
     return `<svg width="100%" height="14" viewBox="0 0 40 14" preserveAspectRatio="none" aria-label="not applicable" style="display: block;"><defs><pattern id="am-hatch-n" patternUnits="userSpaceOnUse" width="5" height="5" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="5" stroke="var(--ink)" stroke-width="0.5" opacity="0.35" /></pattern></defs><rect x="0" y="3" width="40" height="8" fill="url(#am-hatch-n)" /></svg>`;
   };
 
+  // Text search composes with the live-data hide: search hides rows that
+  // don't match the query via the `hidden` attribute, but never *un*hides a
+  // row that the live script has marked `am-hidden` (no current support).
+  // Family head shows iff at least one row is both search-matched and
+  // live-supported.
+  const searchInput = document.querySelector<HTMLInputElement>('[data-am-search]');
+  const familyHeads = Array.from(document.querySelectorAll<HTMLTableRowElement>('.am-fhead[data-am-family]'));
+  const dataRows = Array.from(document.querySelectorAll<HTMLTableRowElement>('.am-row[data-am-family]'));
+
+  const applySearch = () => {
+    const q = searchInput?.value.trim().toLowerCase() ?? '';
+    familyHeads.forEach((head) => {
+      const family = head.dataset.amFamily;
+      let hasVisibleRow = false;
+      dataRows
+        .filter((row) => row.dataset.amFamily === family)
+        .forEach((row) => {
+          const textMatch = !q || (row.dataset.amSearch ?? '').includes(q);
+          row.hidden = !textMatch;
+          if (textMatch && !row.classList.contains('am-hidden')) hasVisibleRow = true;
+        });
+      head.hidden = !hasVisibleRow;
+    });
+  };
+
+  searchInput?.addEventListener('input', applySearch);
+  applySearch();
+
   // Re-derive visibility purely from live data. Whatever the build baked in
   // gets overwritten — that's the point. A stale build can't strand rows.
   loadLiveDump()
@@ -660,6 +765,7 @@ with RootstockCalculator(
         }
         el.textContent = String(counts[k]);
       });
+      applySearch();
     })
     .catch((err) => console.warn('Rootstock live refresh failed', err));
 </script>
