@@ -214,7 +214,7 @@ with RootstockCalculator(
 
   {/* DESKTOP: the matrix is the centrepiece. */}
   <section class="am-wrap">
-    <div class="am-controls" role="search" aria-label="Filter availability matrix">
+    <div class="am-controls" role="search" aria-label="Search availability matrix">
       <label class="am-search-wrap">
         <span class="am-control-icon" aria-hidden="true">
           <svg width="14" height="14" viewBox="0 0 16 16">
@@ -231,23 +231,6 @@ with RootstockCalculator(
           autocomplete="off"
         />
       </label>
-
-      <details class="am-filter">
-        <summary class="am-filter-summary">
-          <span class="am-control-icon" aria-hidden="true">
-            <svg width="14" height="14" viewBox="0 0 16 16">
-              <path d="M3 4.5h10M5 8h6M7 11.5h2" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" />
-            </svg>
-          </span>
-          <span>Filters</span>
-          <span class="am-filter-caret" aria-hidden="true">⌄</span>
-        </summary>
-        <div class="am-filter-menu">
-          <label><input type="checkbox" data-am-state value="verified" checked /> verified</label>
-          <label><input type="checkbox" data-am-state value="lapsed" checked /> lapsed</label>
-          <label><input type="checkbox" data-am-state value="na" checked /> not supported</label>
-        </div>
-      </details>
     </div>
 
     <table class="almanac am-table" aria-label="Availability matrix">
@@ -308,7 +291,6 @@ with RootstockCalculator(
                   <td
                     class="am-cell"
                     data-rs-cell={`${cluster.id}:${r.checkpointId}`}
-                    data-rs-state={state}
                     set:html={cellSvg(state, r.dim)}
                   />
                 ))}
@@ -411,24 +393,18 @@ with RootstockCalculator(
    * app's values where this overlaps with prior matrix styling. */
   .am-wrap { margin-top: 24px; }
   .am-controls {
-    display: grid;
-    grid-template-columns: minmax(260px, 1fr) auto;
-    gap: 14px;
-    align-items: center;
     margin-bottom: 18px;
-  }
-  .am-search-wrap,
-  .am-filter {
-    min-width: 0;
   }
   .am-search-wrap {
     display: block;
     position: relative;
+    min-width: 0;
   }
-  .am-search,
-  .am-filter-summary {
+  .am-search {
     box-sizing: border-box;
+    width: 100%;
     min-height: 38px;
+    padding: 9px 12px 9px 34px;
     border: 0.5px solid var(--rule-soft);
     border-radius: 4px;
     background: rgba(250, 247, 241, 0.72);
@@ -437,10 +413,6 @@ with RootstockCalculator(
     font-size: 13px;
     line-height: 1.2;
     transition: border-color 0.14s, background 0.14s;
-  }
-  .am-search {
-    width: 100%;
-    padding: 9px 12px 9px 34px;
   }
   .am-search::placeholder {
     color: var(--ink-3);
@@ -460,59 +432,10 @@ with RootstockCalculator(
     transform: translateY(-50%);
     pointer-events: none;
   }
-  .am-search:focus,
-  .am-filter-summary:focus-visible {
+  .am-search:focus {
     outline: 0;
     border-color: rgba(122, 31, 31, 0.62);
     background: rgba(250, 247, 241, 0.96);
-  }
-  .am-filter {
-    position: relative;
-  }
-  .am-filter-summary {
-    list-style: none;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    gap: 7px;
-    padding: 9px 12px;
-    white-space: nowrap;
-  }
-  .am-filter-summary::-webkit-details-marker {
-    display: none;
-  }
-  .am-filter-caret {
-    color: var(--ink-3);
-    font-size: 14px;
-    line-height: 1;
-    margin-left: 2px;
-  }
-  .am-filter-menu {
-    position: absolute;
-    right: 0;
-    top: calc(100% + 6px);
-    z-index: 5;
-    min-width: 160px;
-    padding: 9px 10px;
-    border: 0.5px solid var(--rule);
-    border-radius: 4px;
-    background: var(--paper);
-    box-shadow: 0 12px 26px rgba(31, 28, 24, 0.10);
-  }
-  .am-filter-menu label {
-    display: flex;
-    align-items: center;
-    gap: 7px;
-    color: var(--ink-2);
-    font-size: 12.5px;
-    line-height: 1.45;
-    white-space: nowrap;
-  }
-  .am-filter-menu label + label {
-    margin-top: 5px;
-  }
-  .am-filter-menu input {
-    accent-color: var(--oxblood);
   }
   .am-table { table-layout: auto; width: 100%; }
   .am-table [hidden],
@@ -758,31 +681,18 @@ with RootstockCalculator(
   };
 
   const searchInput = document.querySelector<HTMLInputElement>('[data-am-search]');
-  const stateInputs = Array.from(document.querySelectorAll<HTMLInputElement>('[data-am-state]'));
   const familyHeads = Array.from(document.querySelectorAll<HTMLTableRowElement>('.am-fhead[data-am-family]'));
   const dataRows = Array.from(document.querySelectorAll<HTMLTableRowElement>('.am-row[data-am-family]'));
 
-  const applyMatrixFilters = () => {
+  const applySearch = () => {
     const q = searchInput?.value.trim().toLowerCase() ?? '';
-    const activeStates = new Set<CellState>(
-      stateInputs
-        .filter((input) => input.checked)
-        .map((input) => input.value as CellState),
-    );
-
     familyHeads.forEach((head) => {
       const family = head.dataset.amFamily;
       let hasVisibleRow = false;
       dataRows
         .filter((row) => row.dataset.amFamily === family)
         .forEach((row) => {
-          const text = row.dataset.amSearch ?? '';
-          const textMatch = !q || text.includes(q);
-          const statusMatch = Array.from(row.querySelectorAll<HTMLElement>('[data-rs-state]')).some((cell) => {
-            const state = cell.dataset.rsState as CellState | undefined;
-            return !!state && activeStates.has(state);
-          });
-          const visible = textMatch && statusMatch;
+          const visible = !q || (row.dataset.amSearch ?? '').includes(q);
           row.hidden = !visible;
           hasVisibleRow ||= visible;
         });
@@ -790,9 +700,8 @@ with RootstockCalculator(
     });
   };
 
-  searchInput?.addEventListener('input', applyMatrixFilters);
-  stateInputs.forEach((input) => input.addEventListener('change', applyMatrixFilters));
-  applyMatrixFilters();
+  searchInput?.addEventListener('input', applySearch);
+  applySearch();
 
   loadLiveDump()
     .then((dump) => {
@@ -814,7 +723,6 @@ with RootstockCalculator(
         tdCells.forEach((td, i) => {
           const state = states[i];
           if (!state) return;
-          td.dataset.rsState = state;
           td.innerHTML = cellSvg(state, dim);
         });
       });
@@ -823,7 +731,7 @@ with RootstockCalculator(
         if (k === 'total') return;
         el.textContent = String(counts[k]);
       });
-      applyMatrixFilters();
+      applySearch();
     })
     .catch((err) => console.warn('Rootstock live refresh failed', err));
 </script>
