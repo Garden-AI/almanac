@@ -101,11 +101,9 @@ for (const c of clusters) perCluster[c.id] = { verified: 0, lapsed: 0, na: 0 };
 
 const families: FamilyGroup[] = models
   .map((m): FamilyGroup => {
-    const rows: FamilyRow[] = m.data.checkpoints.map((cp) => {
+    const allRows: FamilyRow[] = m.data.checkpoints.map((cp) => {
       const cells = clusters.map((c) => {
         const state: CellState = cellStateFor(findVerification(dump, c.id, cp.id));
-        counts[state]++;
-        perCluster[c.id][state]++;
         return { cluster: c, state };
       });
       return {
@@ -115,8 +113,18 @@ const families: FamilyGroup[] = models
         dim: cells.every((x) => x.state === 'na'),
       };
     });
-    const sizes = m.data.checkpoints
-      .map((cp) => cp.params)
+    // Hide checkpoints with no cluster support on the landing table — they
+    // still live on the model detail page. Family meta and totals reflect
+    // only what's shown.
+    const rows = allRows.filter((r) => !r.dim);
+    for (const r of rows) {
+      for (const { cluster, state } of r.cells) {
+        counts[state]++;
+        perCluster[cluster.id][state]++;
+      }
+    }
+    const sizes = rows
+      .map((r) => r.params)
       .filter((s): s is string => !!s);
     let range: string | null = null;
     if (sizes.length) {
@@ -132,11 +140,12 @@ const families: FamilyGroup[] = models
       name: m.data.name,
       href: url(`/model/${m.id}`),
       arch: archName(m.data.families[0]?.id ?? ''),
-      count: m.data.checkpoints.length,
+      count: rows.length,
       range,
       rows,
     };
   })
+  .filter((f) => f.rows.length > 0)
   .sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()));
 
 const totalCheckpoints = families.reduce((acc, f) => acc + f.count, 0);
@@ -232,7 +241,7 @@ with RootstockCalculator(
       <tbody>
         {families.map((fam) => (
           <>
-            <tr class="am-fhead">
+            <tr class="am-fhead" data-rs-family={fam.modelId}>
               <td colspan={colSpan}>
                 <div class="am-fhead-inner">
                   <a class="am-fhead-name" href={fam.href}>
@@ -248,7 +257,7 @@ with RootstockCalculator(
               </td>
             </tr>
             {fam.rows.map((r) => (
-              <tr class:list={["am-row", r.dim && "am-row--dim"]} data-rs-row={r.checkpointId}>
+              <tr class:list={["am-row", r.dim && "am-row--dim"]} data-rs-row={r.checkpointId} data-rs-family-id={fam.modelId}>
                 <td class="am-slug">
                   <a class="am-slug-link" href={`${fam.href}#${r.checkpointId}`}>{r.checkpointId}</a>
                 </td>
@@ -611,8 +620,9 @@ with RootstockCalculator(
   loadLiveDump()
     .then((dump) => {
       const counts = { verified: 0, lapsed: 0, na: 0 };
-      // Pass 1: state per (cluster, checkpoint) cell, grouped by row so we can
-      // recompute the dim treatment once all cells settle.
+      // Track which families still have at least one supported row after live
+      // refresh, so we can hide the family header when none remain.
+      const familyHasRows: Record<string, boolean> = {};
       const rows = document.querySelectorAll<HTMLElement>('[data-rs-row]');
       rows.forEach((tr) => {
         const tdCells = tr.querySelectorAll<HTMLElement>('[data-rs-cell]');
@@ -621,15 +631,28 @@ with RootstockCalculator(
           const [cluster, checkpoint] = td.dataset.rsCell!.split(':');
           const s = cellStateFor(findVerification(dump, cluster, checkpoint));
           states.push(s);
-          counts[s]++;
         });
-        const dim = states.every((s) => s === 'na');
-        tr.classList.toggle('am-row--dim', dim);
-        tdCells.forEach((td, i) => { td.innerHTML = cellSvg(states[i], dim); });
+        const allNa = states.every((s) => s === 'na');
+        const famId = tr.dataset.rsFamilyId ?? '';
+        if (allNa) {
+          tr.style.display = 'none';
+        } else {
+          tr.style.display = '';
+          familyHasRows[famId] = true;
+          states.forEach((s) => { counts[s]++; });
+          tdCells.forEach((td, i) => { td.innerHTML = cellSvg(states[i], false); });
+        }
+      });
+      document.querySelectorAll<HTMLElement>('[data-rs-family]').forEach((tr) => {
+        const famId = tr.dataset.rsFamily ?? '';
+        (tr as HTMLElement).style.display = familyHasRows[famId] ? '' : 'none';
       });
       document.querySelectorAll<HTMLElement>('[data-rs-count]').forEach((el) => {
         const k = el.dataset.rsCount as keyof typeof counts | 'total';
-        if (k === 'total') return;
+        if (k === 'total') {
+          el.textContent = String(counts.verified + counts.lapsed + counts.na);
+          return;
+        }
         el.textContent = String(counts[k]);
       });
     })
