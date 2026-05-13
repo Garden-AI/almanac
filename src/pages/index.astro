@@ -174,13 +174,23 @@ with RootstockCalculator(
 
   <p class="landing-framing">
     The Almanac lists which model checkpoints are installed and verified on shared HPC clusters via
-    Rootstock. A
-    {' '}<span aria-hidden="true"><svg width="11" height="11" viewBox="0 0 14 14" style="vertical-align: -1px;"><circle cx="7" cy="7" r="3.4" fill="var(--oxblood)" /></svg></span>
-    {' '}<span class="it" style="color: var(--ink-2);">filled circle</span> means verified in the last seven days; an
-    {' '}<span aria-hidden="true"><svg width="11" height="11" viewBox="0 0 14 14" style="vertical-align: -1px;"><circle cx="7" cy="7" r="3" fill="none" stroke="var(--oxblood)" stroke-width="1" /></svg></span>
-    {' '}<span class="it" style="color: var(--ink-2);">open circle</span> means the check has lapsed; a hatched
-    cell means the model isn't supported on that cluster.
+    <a class="ink-link" href="https://garden-ai.github.io/rootstock/">Rootstock</a>.
   </p>
+
+  <div class="status-key" aria-label="Availability key">
+    <span class="status-key-item">
+      <svg width="11" height="11" viewBox="0 0 14 14" aria-hidden="true"><circle cx="7" cy="7" r="3.4" fill="var(--oxblood)" /></svg>
+      <span>verified</span>
+    </span>
+    <span class="status-key-item">
+      <svg width="11" height="11" viewBox="0 0 14 14" aria-hidden="true"><circle cx="7" cy="7" r="3" fill="none" stroke="var(--oxblood)" stroke-width="1" /></svg>
+      <span>lapsed</span>
+    </span>
+    <span class="status-key-item">
+      <span aria-hidden="true">—</span>
+      <span>not supported</span>
+    </span>
+  </div>
 
   {/* MOBILE: per-cluster cards stand in for the matrix below 720px. */}
   <section class="cluster-cards" aria-label="Clusters">
@@ -204,6 +214,42 @@ with RootstockCalculator(
 
   {/* DESKTOP: the matrix is the centrepiece. */}
   <section class="am-wrap">
+    <div class="am-controls" role="search" aria-label="Filter availability matrix">
+      <label class="am-search-wrap">
+        <span class="am-control-icon" aria-hidden="true">
+          <svg width="14" height="14" viewBox="0 0 16 16">
+            <circle cx="7" cy="7" r="4.25" fill="none" stroke="currentColor" stroke-width="1.2" />
+            <path d="M10.2 10.2L13.2 13.2" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" />
+          </svg>
+        </span>
+        <input
+          class="am-search"
+          data-am-search
+          type="search"
+          aria-label="Search models"
+          placeholder="Search models, e.g., equiformer, escn..."
+          autocomplete="off"
+        />
+      </label>
+
+      <details class="am-filter">
+        <summary class="am-filter-summary">
+          <span class="am-control-icon" aria-hidden="true">
+            <svg width="14" height="14" viewBox="0 0 16 16">
+              <path d="M3 4.5h10M5 8h6M7 11.5h2" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" />
+            </svg>
+          </span>
+          <span>Filters</span>
+          <span class="am-filter-caret" aria-hidden="true">⌄</span>
+        </summary>
+        <div class="am-filter-menu">
+          <label><input type="checkbox" data-am-state value="verified" checked /> verified</label>
+          <label><input type="checkbox" data-am-state value="lapsed" checked /> lapsed</label>
+          <label><input type="checkbox" data-am-state value="na" checked /> not supported</label>
+        </div>
+      </details>
+    </div>
+
     <table class="almanac am-table" aria-label="Availability matrix">
       <colgroup>
         <col class="am-col-slug" />
@@ -212,7 +258,7 @@ with RootstockCalculator(
       </colgroup>
       <thead>
         <tr>
-          <th class="am-th-slug">Checkpoint</th>
+          <th class="am-th-slug">Model family / Checkpoint</th>
           <th class="am-th-size">Size</th>
           {clusters.map((c) => (
             <th class="am-th-cluster">
@@ -232,7 +278,7 @@ with RootstockCalculator(
       <tbody>
         {families.map((fam) => (
           <>
-            <tr class="am-fhead">
+            <tr class="am-fhead" data-am-family={fam.modelId}>
               <td colspan={colSpan}>
                 <div class="am-fhead-inner">
                   <a class="am-fhead-name" href={fam.href}>
@@ -248,13 +294,23 @@ with RootstockCalculator(
               </td>
             </tr>
             {fam.rows.map((r) => (
-              <tr class:list={["am-row", r.dim && "am-row--dim"]} data-rs-row={r.checkpointId}>
+              <tr
+                class:list={["am-row", r.dim && "am-row--dim"]}
+                data-rs-row={r.checkpointId}
+                data-am-family={fam.modelId}
+                data-am-search={`${fam.name} ${r.checkpointId} ${r.params ?? ''} ${fam.arch ?? ''}`.toLowerCase()}
+              >
                 <td class="am-slug">
                   <a class="am-slug-link" href={`${fam.href}#${r.checkpointId}`}>{r.checkpointId}</a>
                 </td>
                 <td class="am-size">{r.params ?? '—'}</td>
                 {r.cells.map(({ cluster, state }) => (
-                  <td class="am-cell" data-rs-cell={`${cluster.id}:${r.checkpointId}`} set:html={cellSvg(state, r.dim)} />
+                  <td
+                    class="am-cell"
+                    data-rs-cell={`${cluster.id}:${r.checkpointId}`}
+                    data-rs-state={state}
+                    set:html={cellSvg(state, r.dim)}
+                  />
                 ))}
               </tr>
             ))}
@@ -269,27 +325,6 @@ with RootstockCalculator(
         {' '}<span data-rs-count="verified">{counts.verified}</span> verified,
         {' '}<span data-rs-count="lapsed">{counts.lapsed}</span> lapsed,
         {' '}<span data-rs-count="na">{counts.na}</span> not applicable
-      </span>
-      <span class="am-legend">
-        <span class="am-legend-item">
-          <svg width="12" height="12" viewBox="0 0 14 14"><circle cx="7" cy="7" r="3.6" fill="var(--oxblood)" /></svg>
-          <span class="sc">Verified</span>
-        </span>
-        <span class="am-legend-item">
-          <svg width="12" height="12" viewBox="0 0 14 14"><circle cx="7" cy="7" r="3.4" fill="none" stroke="var(--oxblood)" stroke-width="1" /></svg>
-          <span class="sc">Lapsed</span>
-        </span>
-        <span class="am-legend-item">
-          <svg width="14" height="6" viewBox="0 0 14 6">
-            <defs>
-              <pattern id="am-lg-hatch" patternUnits="userSpaceOnUse" width="5" height="5" patternTransform="rotate(45)">
-                <line x1="0" y1="0" x2="0" y2="5" stroke="#1f1c18" stroke-width="0.5" opacity="0.45" />
-              </pattern>
-            </defs>
-            <rect x="0" y="0" width="14" height="6" fill="url(#am-lg-hatch)" />
-          </svg>
-          <span class="sc">Not supported</span>
-        </span>
       </span>
     </div>
   </section>
@@ -333,7 +368,7 @@ with RootstockCalculator(
     font-family: var(--serif);
     font-size: 52px;
     line-height: 1.02;
-    letter-spacing: -0.012em;
+    letter-spacing: 0;
     font-weight: 600;
     margin: 0;
     text-wrap: balance;
@@ -354,13 +389,136 @@ with RootstockCalculator(
     margin: 22px 0 0;
     max-width: 820px;
   }
+  .status-key {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px 18px;
+    margin-top: 9px;
+    font-size: 13px;
+    line-height: 1.25;
+    color: var(--ink-2);
+  }
+  .status-key-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
 
   /* Availability matrix — one row per checkpoint, grouped by family section header.
    * Ported from design_handoff_availability_table/availability-matrix.css; sizing
    * for the slug column, status marks, and cluster headers stays at the existing
    * app's values where this overlaps with prior matrix styling. */
   .am-wrap { margin-top: 24px; }
+  .am-controls {
+    display: grid;
+    grid-template-columns: minmax(260px, 1fr) auto;
+    gap: 14px;
+    align-items: center;
+    margin-bottom: 18px;
+  }
+  .am-search-wrap,
+  .am-filter {
+    min-width: 0;
+  }
+  .am-search-wrap {
+    display: block;
+    position: relative;
+  }
+  .am-search,
+  .am-filter-summary {
+    box-sizing: border-box;
+    min-height: 38px;
+    border: 0.5px solid var(--rule-soft);
+    border-radius: 4px;
+    background: rgba(250, 247, 241, 0.72);
+    color: var(--ink);
+    font-family: var(--serif);
+    font-size: 13px;
+    line-height: 1.2;
+    transition: border-color 0.14s, background 0.14s;
+  }
+  .am-search {
+    width: 100%;
+    padding: 9px 12px 9px 34px;
+  }
+  .am-search::placeholder {
+    color: var(--ink-3);
+    opacity: 0.78;
+  }
+  .am-control-icon {
+    color: var(--ink-3);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+  }
+  .am-search-wrap .am-control-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+  }
+  .am-search:focus,
+  .am-filter-summary:focus-visible {
+    outline: 0;
+    border-color: rgba(122, 31, 31, 0.62);
+    background: rgba(250, 247, 241, 0.96);
+  }
+  .am-filter {
+    position: relative;
+  }
+  .am-filter-summary {
+    list-style: none;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 9px 12px;
+    white-space: nowrap;
+  }
+  .am-filter-summary::-webkit-details-marker {
+    display: none;
+  }
+  .am-filter-caret {
+    color: var(--ink-3);
+    font-size: 14px;
+    line-height: 1;
+    margin-left: 2px;
+  }
+  .am-filter-menu {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 6px);
+    z-index: 5;
+    min-width: 160px;
+    padding: 9px 10px;
+    border: 0.5px solid var(--rule);
+    border-radius: 4px;
+    background: var(--paper);
+    box-shadow: 0 12px 26px rgba(31, 28, 24, 0.10);
+  }
+  .am-filter-menu label {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    color: var(--ink-2);
+    font-size: 12.5px;
+    line-height: 1.45;
+    white-space: nowrap;
+  }
+  .am-filter-menu label + label {
+    margin-top: 5px;
+  }
+  .am-filter-menu input {
+    accent-color: var(--oxblood);
+  }
   .am-table { table-layout: auto; width: 100%; }
+  .am-table [hidden],
+  .am-table tr[hidden] {
+    display: none !important;
+  }
   .am-table thead th { padding-top: 8px; padding-bottom: 6px; }
   /* Body rows use the existing app's tight row height; the family-header row
      (`.am-fhead td`) needs a more-specific selector to escape this rule. */
@@ -442,7 +600,7 @@ with RootstockCalculator(
     text-decoration: none;
     display: inline-flex;
     align-items: baseline;
-    gap: 8px;
+    gap: 7px;
     white-space: nowrap;
   }
   .am-fhead-name:hover,
@@ -466,20 +624,11 @@ with RootstockCalculator(
   .am-fhead-meta .mono   { font-size: 11px; color: var(--ink-2); }
   .am-fhead-meta .it     { color: var(--ink-2); }
 
-  /* Caption + legend on one baseline. */
   .am-caption {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
     margin-top: 10px;
     font-size: 11.5px;
     color: var(--ink-2);
-    gap: 12px;
-    flex-wrap: wrap;
   }
-  .am-legend { display: inline-flex; align-items: center; white-space: nowrap; }
-  .am-legend-item { display: inline-flex; align-items: center; gap: 5px; margin-left: 14px; }
-  .am-legend-item .sc { font-size: 10.5px; letter-spacing: 0.08em; color: var(--ink-2); }
 
   /* How-to block — full width below the matrix; two-column on desktop. */
   .howto { margin-top: 32px; }
@@ -608,6 +757,43 @@ with RootstockCalculator(
     return `<svg width="100%" height="14" viewBox="0 0 40 14" preserveAspectRatio="none" aria-label="not applicable" style="display: block;"><defs><pattern id="${id}" patternUnits="userSpaceOnUse" width="5" height="5" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="5" stroke="var(--ink)" stroke-width="0.5" opacity="${op}" /></pattern></defs><rect x="0" y="3" width="40" height="8" fill="url(#${id})" /></svg>`;
   };
 
+  const searchInput = document.querySelector<HTMLInputElement>('[data-am-search]');
+  const stateInputs = Array.from(document.querySelectorAll<HTMLInputElement>('[data-am-state]'));
+  const familyHeads = Array.from(document.querySelectorAll<HTMLTableRowElement>('.am-fhead[data-am-family]'));
+  const dataRows = Array.from(document.querySelectorAll<HTMLTableRowElement>('.am-row[data-am-family]'));
+
+  const applyMatrixFilters = () => {
+    const q = searchInput?.value.trim().toLowerCase() ?? '';
+    const activeStates = new Set<CellState>(
+      stateInputs
+        .filter((input) => input.checked)
+        .map((input) => input.value as CellState),
+    );
+
+    familyHeads.forEach((head) => {
+      const family = head.dataset.amFamily;
+      let hasVisibleRow = false;
+      dataRows
+        .filter((row) => row.dataset.amFamily === family)
+        .forEach((row) => {
+          const text = row.dataset.amSearch ?? '';
+          const textMatch = !q || text.includes(q);
+          const statusMatch = Array.from(row.querySelectorAll<HTMLElement>('[data-rs-state]')).some((cell) => {
+            const state = cell.dataset.rsState as CellState | undefined;
+            return !!state && activeStates.has(state);
+          });
+          const visible = textMatch && statusMatch;
+          row.hidden = !visible;
+          hasVisibleRow ||= visible;
+        });
+      head.hidden = !hasVisibleRow;
+    });
+  };
+
+  searchInput?.addEventListener('input', applyMatrixFilters);
+  stateInputs.forEach((input) => input.addEventListener('change', applyMatrixFilters));
+  applyMatrixFilters();
+
   loadLiveDump()
     .then((dump) => {
       const counts = { verified: 0, lapsed: 0, na: 0 };
@@ -625,13 +811,19 @@ with RootstockCalculator(
         });
         const dim = states.every((s) => s === 'na');
         tr.classList.toggle('am-row--dim', dim);
-        tdCells.forEach((td, i) => { td.innerHTML = cellSvg(states[i], dim); });
+        tdCells.forEach((td, i) => {
+          const state = states[i];
+          if (!state) return;
+          td.dataset.rsState = state;
+          td.innerHTML = cellSvg(state, dim);
+        });
       });
       document.querySelectorAll<HTMLElement>('[data-rs-count]').forEach((el) => {
         const k = el.dataset.rsCount as keyof typeof counts | 'total';
         if (k === 'total') return;
         el.textContent = String(counts[k]);
       });
+      applyMatrixFilters();
     })
     .catch((err) => console.warn('Rootstock live refresh failed', err));
 </script>
