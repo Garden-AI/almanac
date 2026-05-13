@@ -57,15 +57,47 @@ const rows = clusters.map((c) => {
     </thead>
     <tbody>
       {rows.map((r) => (
-        <tr>
+        <tr data-rs-cluster-row={r.id}>
           <td><a class="ink-link it" href={url(`/cluster/${r.id}`)}>{r.name}</a></td>
           <td>{r.inst}</td>
           <td class="mono" style="font-size: 11.5px; color: var(--ink-2);">{r.gpu}</td>
-          <td style="text-align: right; font-variant-numeric: tabular-nums;">{r.counts.verified}</td>
-          <td style="text-align: right; font-variant-numeric: tabular-nums; color: var(--ink-2);">{r.counts.lapsed}</td>
-          <td style="text-align: right; font-variant-numeric: tabular-nums; color: var(--ink-3);">{r.counts.na}</td>
+          <td style="text-align: right; font-variant-numeric: tabular-nums;" data-rs-count={`${r.id}:verified`}>{r.counts.verified}</td>
+          <td style="text-align: right; font-variant-numeric: tabular-nums; color: var(--ink-2);" data-rs-count={`${r.id}:lapsed`}>{r.counts.lapsed}</td>
+          <td style="text-align: right; font-variant-numeric: tabular-nums; color: var(--ink-3);" data-rs-count={`${r.id}:na`}>{r.counts.na}</td>
         </tr>
       ))}
     </tbody>
   </table>
+
+  <script type="application/json" data-rs-clusters-meta set:html={JSON.stringify({
+    clusterIds: clusters.map((c) => c.id),
+    checkpointIds: models.flatMap((m) => m.data.checkpoints.map((cp) => cp.id)),
+  })} />
 </Page>
+
+<script>
+  import { loadLiveDump } from '../lib/rootstock-client';
+  import { findVerification, cellStateFor, type CellState } from '../lib/rootstock';
+
+  const meta = document.querySelector('[data-rs-clusters-meta]');
+  if (meta?.textContent) {
+    const { clusterIds, checkpointIds } = JSON.parse(meta.textContent) as {
+      clusterIds: string[];
+      checkpointIds: string[];
+    };
+    loadLiveDump()
+      .then((dump) => {
+        for (const cid of clusterIds) {
+          const c: Record<CellState, number> = { verified: 0, lapsed: 0, na: 0 };
+          for (const cpId of checkpointIds) {
+            c[cellStateFor(findVerification(dump, cid, cpId))]++;
+          }
+          (['verified', 'lapsed', 'na'] as const).forEach((k) => {
+            const el = document.querySelector(`[data-rs-count="${cid}:${k}"]`);
+            if (el) el.textContent = String(c[k]);
+          });
+        }
+      })
+      .catch((err) => console.warn('Rootstock live refresh failed', err));
+  }
+</script>

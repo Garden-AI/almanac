@@ -7,8 +7,6 @@ import { getRootstockDump, findVerification, cellStateFor, type CellState } from
 import { url } from '../../lib/url';
 import { formatBytes, formatMonthYear, yearOf } from '../../lib/format';
 
-const CLUSTER_COL_CAP = 4;
-
 export async function getStaticPaths() {
   const models = await getCollection('models');
   return models.map((m) => ({ params: { slug: m.id }, props: { model: m } }));
@@ -54,18 +52,12 @@ const allClusters = (await getCollection('clusters')).sort((a, b) => {
 
 const dump = await getRootstockDump();
 
-// Cluster columns: include only clusters where the model has presence
-// (any checkpoint id appears in any env on that cluster's manifest).
-// Cap at CLUSTER_COL_CAP; the full grid lives on the landing page.
-const presentClusters = allClusters
-  .filter((c) =>
-    model.data.checkpoints.some((cp) => findVerification(dump, c.id, cp.id) !== null),
-  )
-  .slice(0, CLUSTER_COL_CAP);
-
+// Render a column for *every* cluster. Columns where the current dump shows
+// no presence get an `am-hidden` class server-side; the live-refresh script
+// re-derives that per column, so a stale build can't strand a real cluster.
 const matrix = model.data.checkpoints.map((cp) => ({
   checkpoint: cp,
-  cells: presentClusters.map((c) => {
+  cells: allClusters.map((c) => {
     const v = findVerification(dump, c.id, cp.id);
     return {
       cluster: c,
@@ -75,6 +67,14 @@ const matrix = model.data.checkpoints.map((cp) => ({
     };
   }),
 }));
+
+const clusterHasPresence: Record<string, boolean> = {};
+for (const c of allClusters) {
+  clusterHasPresence[c.id] = model.data.checkpoints.some(
+    (cp) => findVerification(dump, c.id, cp.id) !== null,
+  );
+}
+const anyPresence = Object.values(clusterHasPresence).some(Boolean);
 
 const glyphHtml = (state: CellState): string => {
   if (state === 'verified') {
@@ -230,8 +230,12 @@ const showMap = orderedLayouts.length > 0 && defaultLayoutId !== null;
             <th>Checkpoint</th>
             <th style="width: 80px; text-align: right;">Params</th>
             <th style="width: 80px; text-align: right;">Size</th>
-            {presentClusters.map((c) => (
-              <th style="width: 84px; text-align: center;">
+            {allClusters.map((c) => (
+              <th
+                class:list={["am-mx-col", !clusterHasPresence[c.id] && "am-hidden"]}
+                data-rs-col={c.id}
+                style="width: 84px; text-align: center;"
+              >
                 <a class="ink-link" href={url(`/cluster/${c.id}`)} style="border-bottom-color: transparent;">
                   {c.data.name}
                 </a>
@@ -251,7 +255,9 @@ const showMap = orderedLayouts.length > 0 && defaultLayoutId !== null;
               </td>
               {cells.map((cell) => (
                 <td
+                  class:list={["am-mx-col", !clusterHasPresence[cell.cluster.id] && "am-hidden"]}
                   style="text-align: center;"
+                  data-rs-col={cell.cluster.id}
                   data-rs-cell={`${cell.cluster.id}:${checkpoint.id}`}
                   set:html={glyphHtml(cell.state)}
                 />
@@ -262,18 +268,18 @@ const showMap = orderedLayouts.length > 0 && defaultLayoutId !== null;
       </table>
     </div>
 
-    {presentClusters.length > 0 && (
-      <div class="matrix-legend">
-        <span><span class="status-verified">●</span> <span class="it">verified, last 7 days</span></span>
-        <span><span class="status-stale">○</span> <span class="it">installed, not recently verified</span></span>
-        <span><span class="status-na">—</span> <span class="it">not installed</span></span>
-      </div>
-    )}
-    {presentClusters.length === 0 && (
-      <p class="it" style="font-size: 12px; color: var(--ink-2); margin-top: 8px;">
-        No cluster has installed any checkpoint of this model yet.
-      </p>
-    )}
+    <div class:list={["matrix-legend", !anyPresence && "am-hidden"]} data-rs-legend>
+      <span><span class="status-verified">●</span> <span class="it">verified, last 7 days</span></span>
+      <span><span class="status-stale">○</span> <span class="it">installed, not recently verified</span></span>
+      <span><span class="status-na">—</span> <span class="it">not installed</span></span>
+    </div>
+    <p
+      class:list={["it", anyPresence && "am-hidden"]}
+      data-rs-empty
+      style="font-size: 12px; color: var(--ink-2); margin-top: 8px;"
+    >
+      No cluster has installed any checkpoint of this model yet.
+    </p>
   </section>
 
   <hr class="hairline" style="margin: 18px 0 10px;" />
@@ -432,6 +438,10 @@ const showMap = orderedLayouts.length > 0 && defaultLayoutId !== null;
     flex-wrap: wrap;
   }
 
+  /* Server-render + live-refresh both toggle this class to drop cluster
+     columns / status messages that don't apply per current Rootstock data. */
+  .am-hidden { display: none; }
+
   .model-body {
     display: grid;
     grid-template-columns: 1fr 240px;
@@ -542,10 +552,25 @@ const showMap = orderedLayouts.length > 0 && defaultLayoutId !== null;
 
   loadLiveDump()
     .then((dump) => {
+      const clusterHasPresence: Record<string, boolean> = {};
       document.querySelectorAll<HTMLElement>('[data-rs-cell]').forEach((td) => {
         const [cluster, checkpoint] = td.dataset.rsCell!.split(':');
         const state = cellStateFor(findVerification(dump, cluster, checkpoint));
         td.innerHTML = glyphHtml(state);
+        if (state !== 'na') clusterHasPresence[cluster] = true;
+      });
+      // Toggle column visibility based on live presence (re-derived per page
+      // load so a stale build doesn't drop a cluster that's since come up).
+      document.querySelectorAll<HTMLElement>('[data-rs-col]').forEach((el) => {
+        const cluster = el.dataset.rsCol!;
+        el.classList.toggle('am-hidden', !clusterHasPresence[cluster]);
+      });
+      const anyPresence = Object.values(clusterHasPresence).some(Boolean);
+      document.querySelectorAll<HTMLElement>('[data-rs-legend]').forEach((el) => {
+        el.classList.toggle('am-hidden', !anyPresence);
+      });
+      document.querySelectorAll<HTMLElement>('[data-rs-empty]').forEach((el) => {
+        el.classList.toggle('am-hidden', anyPresence);
       });
     })
     .catch((err) => console.warn('Rootstock live refresh failed', err));

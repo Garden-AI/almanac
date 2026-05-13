@@ -99,9 +99,13 @@ type PerCluster = { verified: number; lapsed: number; na: number };
 const perCluster: Record<string, PerCluster> = {};
 for (const c of clusters) perCluster[c.id] = { verified: 0, lapsed: 0, na: 0 };
 
+// Every checkpoint gets a row in the DOM regardless of build-time support.
+// `hidden` is the build-time guess at "no cluster supports this"; the live
+// refresh re-derives it from current Rootstock state. This way the visible
+// table is always a function of *live* data, not whatever was true at build.
 const families: FamilyGroup[] = models
   .map((m): FamilyGroup => {
-    const allRows: FamilyRow[] = m.data.checkpoints.map((cp) => {
+    const rows: FamilyRow[] = m.data.checkpoints.map((cp) => {
       const cells = clusters.map((c) => {
         const state: CellState = cellStateFor(findVerification(dump, c.id, cp.id));
         return { cluster: c, state };
@@ -113,17 +117,14 @@ const families: FamilyGroup[] = models
         dim: cells.every((x) => x.state === 'na'),
       };
     });
-    // Hide checkpoints with no cluster support on the landing table — they
-    // still live on the model detail page. Family meta and totals reflect
-    // only what's shown.
-    const rows = allRows.filter((r) => !r.dim);
-    for (const r of rows) {
+    const supported = rows.filter((r) => !r.dim);
+    for (const r of supported) {
       for (const { cluster, state } of r.cells) {
         counts[state]++;
         perCluster[cluster.id][state]++;
       }
     }
-    const sizes = rows
+    const sizes = supported
       .map((r) => r.params)
       .filter((s): s is string => !!s);
     let range: string | null = null;
@@ -140,12 +141,11 @@ const families: FamilyGroup[] = models
       name: m.data.name,
       href: url(`/model/${m.id}`),
       arch: archName(m.data.families[0]?.id ?? ''),
-      count: rows.length,
+      count: supported.length,
       range,
       rows,
     };
   })
-  .filter((f) => f.rows.length > 0)
   .sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()));
 
 const totalCheckpoints = families.reduce((acc, f) => acc + f.count, 0);
@@ -203,9 +203,9 @@ with RootstockCalculator(
           <dd>{c.gpus}</dd>
         </dl>
         <div class="cc-status">
-          <span><span style="color: var(--oxblood);">●</span> {c.counts.verified} verified</span>
-          <span style="color: var(--ink-2);">○ {c.counts.lapsed} lapsed</span>
-          <span class="it">// {c.counts.na} not applicable</span>
+          <span><span style="color: var(--oxblood);">●</span> <span data-rs-cluster-count={`${c.id}:verified`}>{c.counts.verified}</span> verified</span>
+          <span style="color: var(--ink-2);">○ <span data-rs-cluster-count={`${c.id}:lapsed`}>{c.counts.lapsed}</span> lapsed</span>
+          <span class="it">// <span data-rs-cluster-count={`${c.id}:na`}>{c.counts.na}</span> not applicable</span>
         </div>
       </a>
     ))}
@@ -241,7 +241,7 @@ with RootstockCalculator(
       <tbody>
         {families.map((fam) => (
           <>
-            <tr class="am-fhead" data-rs-family={fam.modelId}>
+            <tr class:list={["am-fhead", fam.count === 0 && "am-hidden"]} data-rs-family={fam.modelId}>
               <td colspan={colSpan}>
                 <div class="am-fhead-inner">
                   <a class="am-fhead-name" href={fam.href}>
@@ -249,7 +249,10 @@ with RootstockCalculator(
                     <span class="am-fhead-arrow" aria-hidden="true">→</span>
                   </a>
                   <span class="am-fhead-meta">
-                    <span>{fam.count} checkpoint{fam.count === 1 ? '' : 's'}</span>
+                    <span>
+                      <span data-rs-family-count={fam.modelId}>{fam.count}</span>
+                      {' '}checkpoint<span data-rs-family-plural={fam.modelId}>{fam.count === 1 ? '' : 's'}</span>
+                    </span>
                     {fam.range ? (<><span class="am-dot">·</span><span class="mono">{fam.range}</span></>) : null}
                     {fam.arch ? (<><span class="am-dot">·</span><span class="it">{fam.arch}</span></>) : null}
                   </span>
@@ -257,7 +260,7 @@ with RootstockCalculator(
               </td>
             </tr>
             {fam.rows.map((r) => (
-              <tr class:list={["am-row", r.dim && "am-row--dim"]} data-rs-row={r.checkpointId} data-rs-family-id={fam.modelId}>
+              <tr class:list={["am-row", r.dim && "am-hidden"]} data-rs-row={r.checkpointId} data-rs-family-id={fam.modelId}>
                 <td class="am-slug">
                   <a class="am-slug-link" href={`${fam.href}#${r.checkpointId}`}>{r.checkpointId}</a>
                 </td>
@@ -412,20 +415,11 @@ with RootstockCalculator(
     position: relative;
   }
 
-  /* Fully-unsupported rows still list but recede so the eye lands on what's deployed. */
-  .am-row--dim .am-slug,
-  .am-row--dim .am-size {
-    color: var(--ink-3);
-    font-size: 10.5px;
-  }
-  .am-row--dim td {
-    padding-top: 2px;
-    padding-bottom: 2px;
-  }
-  .am-row--dim:hover .am-slug-link {
-    color: var(--oxblood);
-    border-bottom-color: var(--oxblood);
-  }
+  /* Rows/family-headers hidden because no cluster currently supports them.
+     Build-time render applies this from the fixture/live data; the runtime
+     refresh re-applies it from current Rootstock state — so the matrix
+     reflects live truth even when the build is stale. */
+  .am-hidden { display: none; }
 
   /* Family section header — one TD spanning all columns, hairline above and below.
      `tbody tr.am-fhead td` beats the `tbody td` body-row padding rule above. */
@@ -604,48 +598,59 @@ with RootstockCalculator(
   import { loadLiveDump } from '../lib/rootstock-client';
   import { findVerification, cellStateFor, type CellState } from '../lib/rootstock';
 
-  const cellSvg = (state: CellState, dim: boolean): string => {
-    const stroke = dim ? '#a67878' : 'var(--oxblood)';
+  const cellSvg = (state: CellState): string => {
     if (state === 'verified') {
-      return `<svg width="14" height="14" viewBox="0 0 14 14" aria-label="verified"><circle cx="7" cy="7" r="3.6" fill="${stroke}" /></svg>`;
+      return `<svg width="14" height="14" viewBox="0 0 14 14" aria-label="verified"><circle cx="7" cy="7" r="3.6" fill="var(--oxblood)" /></svg>`;
     }
     if (state === 'lapsed') {
-      return `<svg width="14" height="14" viewBox="0 0 14 14" aria-label="lapsed"><circle cx="7" cy="7" r="3.4" fill="none" stroke="${stroke}" stroke-width="1" /></svg>`;
+      return `<svg width="14" height="14" viewBox="0 0 14 14" aria-label="lapsed"><circle cx="7" cy="7" r="3.4" fill="none" stroke="var(--oxblood)" stroke-width="1" /></svg>`;
     }
-    const id = dim ? 'am-hatch-d' : 'am-hatch-n';
-    const op = dim ? 0.18 : 0.35;
-    return `<svg width="100%" height="14" viewBox="0 0 40 14" preserveAspectRatio="none" aria-label="not applicable" style="display: block;"><defs><pattern id="${id}" patternUnits="userSpaceOnUse" width="5" height="5" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="5" stroke="var(--ink)" stroke-width="0.5" opacity="${op}" /></pattern></defs><rect x="0" y="3" width="40" height="8" fill="url(#${id})" /></svg>`;
+    return `<svg width="100%" height="14" viewBox="0 0 40 14" preserveAspectRatio="none" aria-label="not applicable" style="display: block;"><defs><pattern id="am-hatch-n" patternUnits="userSpaceOnUse" width="5" height="5" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="5" stroke="var(--ink)" stroke-width="0.5" opacity="0.35" /></pattern></defs><rect x="0" y="3" width="40" height="8" fill="url(#am-hatch-n)" /></svg>`;
   };
 
+  // Re-derive visibility purely from live data. Whatever the build baked in
+  // gets overwritten — that's the point. A stale build can't strand rows.
   loadLiveDump()
     .then((dump) => {
       const counts = { verified: 0, lapsed: 0, na: 0 };
-      // Track which families still have at least one supported row after live
-      // refresh, so we can hide the family header when none remain.
-      const familyHasRows: Record<string, boolean> = {};
+      const familySupportedCount: Record<string, number> = {};
+      const perCluster: Record<string, { verified: number; lapsed: number; na: number }> = {};
       const rows = document.querySelectorAll<HTMLElement>('[data-rs-row]');
       rows.forEach((tr) => {
         const tdCells = tr.querySelectorAll<HTMLElement>('[data-rs-cell]');
-        const states: CellState[] = [];
+        const cellInfo: Array<{ cluster: string; state: CellState }> = [];
         tdCells.forEach((td) => {
           const [cluster, checkpoint] = td.dataset.rsCell!.split(':');
-          const s = cellStateFor(findVerification(dump, cluster, checkpoint));
-          states.push(s);
+          cellInfo.push({ cluster, state: cellStateFor(findVerification(dump, cluster, checkpoint)) });
         });
+        const states = cellInfo.map((x) => x.state);
         const allNa = states.every((s) => s === 'na');
         const famId = tr.dataset.rsFamilyId ?? '';
-        if (allNa) {
-          tr.style.display = 'none';
-        } else {
-          tr.style.display = '';
-          familyHasRows[famId] = true;
-          states.forEach((s) => { counts[s]++; });
-          tdCells.forEach((td, i) => { td.innerHTML = cellSvg(states[i], false); });
+        familySupportedCount[famId] = (familySupportedCount[famId] ?? 0) + (allNa ? 0 : 1);
+        tr.classList.toggle('am-hidden', allNa);
+        if (!allNa) {
+          for (const { cluster, state } of cellInfo) {
+            counts[state]++;
+            (perCluster[cluster] ??= { verified: 0, lapsed: 0, na: 0 })[state]++;
+          }
+          tdCells.forEach((td, i) => { td.innerHTML = cellSvg(states[i]); });
         }
+      });
+      document.querySelectorAll<HTMLElement>('[data-rs-cluster-count]').forEach((el) => {
+        const [cluster, metric] = el.dataset.rsClusterCount!.split(':') as [string, 'verified' | 'lapsed' | 'na'];
+        el.textContent = String(perCluster[cluster]?.[metric] ?? 0);
       });
       document.querySelectorAll<HTMLElement>('[data-rs-family]').forEach((tr) => {
         const famId = tr.dataset.rsFamily ?? '';
-        (tr as HTMLElement).style.display = familyHasRows[famId] ? '' : 'none';
+        tr.classList.toggle('am-hidden', (familySupportedCount[famId] ?? 0) === 0);
+      });
+      document.querySelectorAll<HTMLElement>('[data-rs-family-count]').forEach((el) => {
+        const famId = el.dataset.rsFamilyCount ?? '';
+        el.textContent = String(familySupportedCount[famId] ?? 0);
+      });
+      document.querySelectorAll<HTMLElement>('[data-rs-family-plural]').forEach((el) => {
+        const famId = el.dataset.rsFamilyPlural ?? '';
+        el.textContent = (familySupportedCount[famId] ?? 0) === 1 ? '' : 's';
       });
       document.querySelectorAll<HTMLElement>('[data-rs-count]').forEach((el) => {
         const k = el.dataset.rsCount as keyof typeof counts | 'total';
