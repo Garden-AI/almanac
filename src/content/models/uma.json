@@ -5,6 +5,7 @@
   "codeUrl": "https://github.com/facebookresearch/fairchem",
   "paperRefs": ["uma"],
   "checkpoints": [
+    { "id": "uma-s-1", "params": "150M" },
     { "id": "uma-s-1p1", "params": "150M" },
     { "id": "uma-m-1p1", "params": "1.4B" }
   ],

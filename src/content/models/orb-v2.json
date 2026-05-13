@@ -4,7 +4,9 @@
   "codeUrl": "https://github.com/orbital-materials/orb-models",
   "paperRefs": ["orb-v2"],
   "checkpoints": [
-    { "id": "orb-v2", "params": "25M" }
+    { "id": "orb-v2", "params": "25M" },
+    { "id": "orb-d3-v2", "params": "25M" },
+    { "id": "orb-mptraj-only-v2", "params": "25M" }
   ],
   "trainingData": ["mptrj"]
 }
