@@ -78,7 +78,7 @@ const anyPresence = Object.values(clusterHasPresence).some(Boolean);
 
 const glyphHtml = (state: CellState): string => {
   if (state === 'verified') {
-    return '<span class="status-verified" title="Verified within the last 7 days" aria-label="verified">●</span>';
+    return '<span class="status-verified" title="Verified within the last 30 days" aria-label="verified">●</span>';
   }
   if (state === 'lapsed') {
     return '<span class="status-stale" title="Installed but not recently verified" aria-label="installed, not recently verified">○</span>';
@@ -269,7 +269,7 @@ const showMap = orderedLayouts.length > 0 && defaultLayoutId !== null;
     </div>
 
     <div class:list={["matrix-legend", !anyPresence && "am-hidden"]} data-rs-legend>
-      <span><span class="status-verified">●</span> <span class="it">verified, last 7 days</span></span>
+      <span><span class="status-verified">●</span> <span class="it">verified, last 30 days</span></span>
       <span><span class="status-stale">○</span> <span class="it">installed, not recently verified</span></span>
       <span><span class="status-na">—</span> <span class="it">not installed</span></span>
     </div>
@@ -542,7 +542,7 @@ const showMap = orderedLayouts.length > 0 && defaultLayoutId !== null;
 
   const glyphHtml = (state: CellState): string => {
     if (state === 'verified') {
-      return '<span class="status-verified" title="Verified within the last 7 days" aria-label="verified">●</span>';
+      return '<span class="status-verified" title="Verified within the last 30 days" aria-label="verified">●</span>';
     }
     if (state === 'lapsed') {
       return '<span class="status-stale" title="Installed but not recently verified" aria-label="installed, not recently verified">○</span>';

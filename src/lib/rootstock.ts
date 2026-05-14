@@ -97,7 +97,7 @@ export function findVerification(
 
 export type CellState = 'verified' | 'lapsed' | 'na';
 
-const STALE_AFTER_MS = 7 * 24 * 60 * 60 * 1000;
+const STALE_AFTER_MS = 30 * 24 * 60 * 60 * 1000;
 
 export function cellStateFor(
   v: CheckpointVerification | null,

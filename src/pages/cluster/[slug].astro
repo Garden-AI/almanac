@@ -4,7 +4,7 @@ import Page from '../../layouts/Page.astro';
 import { getRootstockDump, findManifest, envGroupsForCluster, cellStateFor } from '../../lib/rootstock';
 import { url } from '../../lib/url';
 
-// New status convention: ● verified within 7 days, ○ installed but not
+// New status convention: ● verified within 30 days, ○ installed but not
 // recently verified (stale or errored), — not installed (won't appear in
 // per-cluster listings since we only enumerate installed checkpoints).
 const rowStatusHtml = (cp: { verifiedAt: string | null; lastError: string | null }): string => {
