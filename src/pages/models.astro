@@ -50,7 +50,7 @@ const tabs = layouts.map((l, i) => ({
   isFirst: i === 0,
 }));
 ---
-<Page title="Models — Garden's Almanac">
+<Page title="Models — Garden's Almanac" wide>
   <header class="models-head">
     <h1 class="models-h1">Models</h1>
     <p class="it models-subtitle">
@@ -136,6 +136,7 @@ const tabs = layouts.map((l, i) => ({
     color: var(--ink-2);
     font-size: 14px;
     margin: 6px 0 0;
+    max-width: 60ch;
   }
 
   .models-map { margin-top: 36px; }

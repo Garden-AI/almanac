@@ -321,7 +321,7 @@ with RootstockCalculator(
     <div class="am-caption">
       <span class="it">
         <span data-rs-count="total">{totalCheckpoints}</span> checkpoints · {clusters.length} clusters ·
-        {' '}<span data-rs-count="verified">{counts.verified}</span> verified,
+        {' '}<span data-rs-count="verified">{counts.verified}</span> verified installations,
         {' '}<span data-rs-count="lapsed">{counts.lapsed}</span> lapsed,
         {' '}<span data-rs-count="na">{counts.na}</span> not applicable
       </span>
@@ -757,10 +757,11 @@ with RootstockCalculator(
         const famId = el.dataset.rsFamilyPlural ?? '';
         el.textContent = (familySupportedCount[famId] ?? 0) === 1 ? '' : 's';
       });
+      const totalCheckpoints = Object.values(familySupportedCount).reduce((a, b) => a + b, 0);
       document.querySelectorAll<HTMLElement>('[data-rs-count]').forEach((el) => {
         const k = el.dataset.rsCount as keyof typeof counts | 'total';
         if (k === 'total') {
-          el.textContent = String(counts.verified + counts.lapsed + counts.na);
+          el.textContent = String(totalCheckpoints);
           return;
         }
         el.textContent = String(counts[k]);

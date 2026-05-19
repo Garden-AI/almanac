@@ -45,7 +45,7 @@ html, body {
 /* Landscape variant for the Compatibility Matrix and other reference pages
    that need a wider canvas. */
 .page--wide {
-  max-width: 1320px;
+  max-width: 1200px;
   padding-left: 36px;
   padding-right: 36px;
   min-height: 100vh;
