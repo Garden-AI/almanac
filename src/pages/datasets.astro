@@ -6,9 +6,9 @@ import { url } from '../lib/url';
 
 const datasets = (await getCollection('datasets')).sort((a, b) => a.data.year - b.data.year);
 ---
-<Page title="Datasets — Garden's Almanac">
+<Page title="Datasets — Garden's Almanac" wide>
   <h1 style="margin-top: 3px;">Datasets</h1>
-  <p class="it" style="margin-top: 4px; font-size: 14px; color: var(--ink-2);">
+  <p class="it" style="margin-top: 4px; font-size: 14px; color: var(--ink-2); max-width: 60ch;">
     The structure libraries from which these models descend.
   </p>
   <div style="margin-top: 8px;"><OrnamentRule width={220} /></div>
