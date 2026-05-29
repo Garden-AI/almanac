@@ -1,0 +1,14 @@
+{
+  "doi": "10.48550/arXiv.2603.06567",
+  "source": "fetched",
+  "title": "A recipe for scalable attention-based MLIPs: unlocking long-range accuracy with all-to-all node attention",
+  "authors": [
+    "Qu, Eric",
+    "Wood, Brandon M.",
+    "Krishnapriyan, Aditi S.",
+    "Ulissi, Zachary W."
+  ],
+  "published": "2026-03-01",
+  "venue": "arXiv",
+  "url": "https://arxiv.org/abs/2603.06567"
+}

@@ -1,0 +1,13 @@
+{
+  "name": "MACE-POLAR-1",
+  "families": ["ace"],
+  "codeUrl": "https://github.com/ACEsuit/mace-foundations",
+  "weightsUrl": "https://github.com/ACEsuit/mace-foundations/releases",
+  "paperRefs": ["mace-polar-1"],
+  "checkpoints": [
+    { "id": "mace-polar-1-s" },
+    { "id": "mace-polar-1-m" },
+    { "id": "mace-polar-1-l" }
+  ],
+  "trainingData": ["omol25"]
+}
