@@ -1,0 +1,16 @@
+{
+  "name": "Delta",
+  "institution": "National Center for Supercomputing Applications",
+  "institutionShort": "NCSA",
+  "gpu": "NVIDIA A100 / A40",
+  "order": 4,
+  "subtitle": "NCSA's NSF-funded GPU supercomputer and an ACCESS resource, combining NVIDIA A100 and A40 GPU partitions.",
+  "specs": {
+    "Architecture": "x86_64",
+    "GPU types": "NVIDIA A100 40GB and A40 48GB (4 per node)",
+    "Scheduler": "Slurm",
+    "Operating institution": "University of Illinois Urbana-Champaign",
+    "Allocation model": "NSF ACCESS allocations",
+    "Documentation": "https://docs.ncsa.illinois.edu/systems/delta/"
+  }
+}
