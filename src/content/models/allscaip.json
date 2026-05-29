@@ -1,0 +1,12 @@
+{
+  "name": "AllScAIP",
+  "families": ["attention"],
+  "huggingFaceId": "facebook/OMol25",
+  "codeUrl": "https://github.com/facebookresearch/fairchem",
+  "paperRefs": ["allscaip"],
+  "checkpoints": [
+    { "id": "allscaip-md-conserving-all-omol" },
+    { "id": "allscaip-md-direct-all-omol" }
+  ],
+  "trainingData": ["omol25"]
+}
