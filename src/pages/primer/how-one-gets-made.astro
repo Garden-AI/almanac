@@ -1,0 +1,298 @@
+---
+import Primer from '../../layouts/Primer.astro';
+import { url } from '../../lib/url';
+---
+<Primer
+  title="How One Gets Made"
+  eyebrow="A Primer on Matter Models · Chapter Four"
+  deck="A trained potential is a curve fit to a few thousand DFT readings. Where the readings come from, and how the curve is fit to them, is the whole of this chapter."
+  running="Ch. 4 — How One Gets Made"
+  prev={{ href: url('/primer/inside-the-network'), label: 'Inside the Network' }}
+  next={{ href: url('/primer/what-mlips-keep'), label: 'What an MLIP Keeps — and Can\'t' }}
+>
+  <p class="lead">
+    By now the machine has a shape. It eats a local neighborhood and returns that atom's energy; the
+    pieces add to a total; differentiate the total and the forces fall out. But a shape is not a
+    model. The network is full of dials — thousands or millions of numbers, the weights — and until
+    those dials are set the machine returns nonsense. Setting them is what "training" means, and it
+    needs two things this chapter is about: a pile of correct answers to fit to, and a procedure for
+    fitting.
+  </p>
+
+  <h2><span class="num">§ 1</span>The data: a set of correct answers</h2>
+
+  <p>
+    The correct answers come from DFT — the slow, expensive method of Chapter 1 that solves for the
+    electrons and reads off one energy. Each answer is a snapshot: a particular arrangement of atoms,
+    frozen in place, labelled with the energy DFT computes for it and with the <strong>force</strong>
+    on every atom — the slope of the energy along each direction, which DFT can also report. For a
+    crystal, where the atoms sit in a repeating box, the snapshot carries one thing more: the
+    <strong>stress</strong> — the way the energy changes when the repeating box is squeezed or
+    stretched. Energy, forces, stress — that is one labelled example.
+  </p>
+
+  <p>
+    Gather a few thousand such snapshots and you have a training set. The network is then tuned until
+    its own outputs match these labels: feed it an arrangement it has seen, and it should return very
+    nearly the energy and forces DFT gave for it.
+  </p>
+
+  <p>
+    Which snapshots, though? This is the question that decides whether the model is any good. The
+    obvious snapshots are the comfortable ones — atoms at rest, every bond at its settled length,
+    every structure relaxed to a valley floor of the energy landscape from Chapter 1. They are easy
+    to generate and easy for DFT to converge on. A training set made only of them looks tidy.
+  </p>
+
+  <p>
+    A model fit to that set fails the moment a simulation does anything interesting. Run a real
+    simulation and the atoms do not sit on the valley floor; they are kicked by heat, shoved through
+    the middle of a reaction, driven up the steep walls of the landscape toward the passes that
+    separate one valley from the next. The model has never seen those walls. It was fit to gentle
+    ground, so it draws gentle ground everywhere — it under-predicts how steeply the energy rises as
+    atoms are pushed together, and a slope that should climb sharply comes out lazy. The force that
+    should shove two atoms apart is too weak. Atoms that ought to be repelled drift closer than any
+    real material would allow. This failure mode has a name: the model has gone <strong>soft</strong>,
+    and the softening is systematic — always in the direction of too-weak resistance, because the
+    fit was anchored only where resistance was low.
+  </p>
+
+  <p>
+    So the rule for the data is one word: <strong>representative</strong>. The set must cover the
+    arrangements the model will actually meet at run time, and that means the uncomfortable ones —
+    compressed bonds, broken bonds, half-formed bonds, atoms at the top of a pass — must be in the
+    training set too, not just the valley floors. You teach the walls by visiting the walls.
+  </p>
+
+  <figure class="fig">
+    <div class="fig-frame">
+      <svg viewBox="0 0 720 250" role="img" aria-label="A one-dimensional energy landscape with two valleys. On the left, training points cover the valley floors and the slopes and passes. On the right, training points sit only at the valley floors, and the fitted curve sags away from the true walls.">
+        <text x="185" y="30" text-anchor="middle" class="svg-label">representative</text>
+        <text x="535" y="30" text-anchor="middle" class="svg-label">valley floors only</text>
+
+        <!-- left: good coverage -->
+        <line x1="40" y1="200" x2="330" y2="200" stroke="var(--ink)" stroke-width="0.75" />
+        <path d="M 50 70 C 110 70, 120 175, 185 175 C 250 175, 260 60, 320 60" fill="none" stroke="var(--ink)" stroke-width="1.5" />
+        <g fill="var(--oxblood)">
+          <circle cx="64" cy="88" r="3.4" />
+          <circle cx="92" cy="148" r="3.4" />
+          <circle cx="120" cy="173" r="3.4" />
+          <circle cx="150" cy="176" r="3.4" />
+          <circle cx="185" cy="175" r="3.4" />
+          <circle cx="222" cy="166" r="3.4" />
+          <circle cx="252" cy="128" r="3.4" />
+          <circle cx="285" cy="86" r="3.4" />
+          <circle cx="312" cy="64" r="3.4" />
+        </g>
+        <text x="185" y="226" text-anchor="middle" class="svg-small">dots on floors AND slopes</text>
+
+        <!-- right: floors only -->
+        <line x1="390" y1="200" x2="680" y2="200" stroke="var(--ink)" stroke-width="0.75" />
+        <path d="M 400 70 C 460 70, 470 175, 535 175 C 600 175, 610 60, 670 60" fill="none" stroke="var(--ink)" stroke-width="1.5" stroke-dasharray="3 3" />
+        <path d="M 400 116 C 460 120, 470 172, 535 173 C 600 172, 610 120, 670 116" fill="none" stroke="var(--oxblood)" stroke-width="1.8" />
+        <g fill="var(--ink)">
+          <circle cx="505" cy="172" r="3.4" />
+          <circle cx="535" cy="174" r="3.4" />
+          <circle cx="565" cy="172" r="3.4" />
+        </g>
+        <text x="535" y="226" text-anchor="middle" class="svg-small">fit sags off the true walls</text>
+      </svg>
+    </div>
+    <figcaption><span class="fig-num">Fig. 1</span>The same energy landscape, fit two ways. Left: training points (oxblood) cover the valley floors, the slopes, and the passes, so the fit tracks the true energy everywhere. Right: points sit only on the floors; with nothing to pin the walls, the fitted curve (oxblood) sags below the true landscape (dashed) — the systematic softening.</figcaption>
+  </figure>
+
+  <h2><span class="num">§ 2</span>The loss: what "match" measures</h2>
+
+  <p>
+    "Tune the dials until the outputs match the labels" needs a precise meaning of <em>match</em>. The
+    procedure needs a single number it can drive toward zero — a score for how wrong the model
+    currently is, summed over every snapshot in the training set. That number is the
+    <strong>loss</strong>. Training is the act of nudging the weights, over and over, in whatever
+    direction lowers the loss, until it stops dropping.
+  </p>
+
+  <p>
+    The obvious loss compares only energies: for each snapshot, take the gap between the model's
+    energy and DFT's energy, and add up those gaps across the set. But energies alone are a trap, and
+    Chapter 1 already gave us the picture to see why. A model that nails every energy but draws the
+    slopes wrong is a map with the right elevation marked at every town and the gradients between
+    towns drawn backwards. Every height is correct; the map still tells you water flows uphill. It is
+    useless for predicting which way anything rolls — and rolling is the entire point. A simulation
+    moves atoms by following forces, step after step. Get the forces wrong and the simulation walks
+    the wrong way from the very first step, no matter how right the energies were.
+  </p>
+
+  <p>
+    So the loss compares forces too, term by term: for each atom in each snapshot, the gap between the
+    model's force arrow and DFT's. And it compares stress, where the snapshot carries one. The three
+    pieces are added with weights that say how much each matters:
+  </p>
+
+  <div class="aside"><span class="aside-label">The loss, in words</span>
+    loss = (energy error) + <em>w</em><sub>F</sub> · (force error) + <em>w</em><sub>S</sub> · (stress
+    error). Each error is a typical-sized gap between model and DFT — usually a root-mean-square, the
+    everyday "average gap" — and the weights <em>w</em><sub>F</sub> and <em>w</em><sub>S</sub> set how
+    loudly forces and stress count against energies. Because getting the slopes right is what keeps a
+    simulation honest, the force weight is set high; forces are not an afterthought to the energy fit,
+    they are most of it.
+  </div>
+
+  <h2><span class="num">§ 3</span>Active learning: choosing the snapshots</h2>
+
+  <p>
+    You do not know in advance which arrangements the model will meet. The atoms a simulation wanders
+    into depend on the model that is driving the simulation — which does not exist yet. You need the model to find out which data you
+    need, and you need the data to build the model. Each waits on the other.
+  </p>
+
+  <p>
+    The way out is to bootstrap, in a loop. Start with a rough model trained on whatever data you have
+    — a small, easy set, valley floors and a little more. It is not good, but it runs. Set it running
+    a simulation and watch where it goes. The instant it wanders into territory unlike anything it was
+    trained on, it is <strong>extrapolating</strong> — guessing past the edge of what it knows — and,
+    as Chapter 1 warned, an MLIP far from its training data can be confidently wrong with no built-in
+    way to tell you so. The trick is to make it tell you anyway.
+  </p>
+
+  <p>
+    One common trick — not the only one, but the clearest to explain — is a <strong>committee</strong>.
+    Train not one rough model but several, each on the same data but started from different random
+    dials, so they end up slightly different. Where
+    the data is dense, all of them learned the same answer and they agree. Where the data is thin —
+    exactly the arrangements you are missing — they have nothing to pin them down, so they drift apart
+    and start to disagree. Their disagreement is a usable signal: it flags, atom by atom and step by
+    step, precisely where the model is guessing.
+  </p>
+
+  <p>
+    Now the loop closes. Wherever the committee disagrees, stop and call DFT — the slow, correct
+    method — on that exact arrangement, and only there. Add the new labelled snapshots to the
+    training set. Retrain. The committee now agrees in the place it used to disagree, runs further
+    before it next gets lost, and flags the next gap. Repeat until it stops getting lost.
+  </p>
+
+  <p>
+    The committee was the workhorse for potentials built one system at a time. Foundation models,
+    trained on millions of arrangements at once, lean on related but different uncertainty signals;
+    the loop is the same, only the way the model raises its hand changes.
+  </p>
+
+  <figure class="fig">
+    <div class="fig-frame">
+      <svg viewBox="0 0 720 260" role="img" aria-label="The active-learning loop drawn as a cycle of four boxes: train a model, run a simulation, flag where it is uncertain, compute DFT there and add the result, then back to train.">
+        <rect x="270" y="20" width="180" height="44" fill="none" stroke="var(--ink)" stroke-width="1" />
+        <text x="360" y="40" text-anchor="middle" class="svg-serif" style="font-size:14px;">train a rough model</text>
+        <text x="360" y="56" text-anchor="middle" class="svg-small">on the data so far</text>
+
+        <rect x="520" y="108" width="180" height="44" fill="none" stroke="var(--ink)" stroke-width="1" />
+        <text x="610" y="128" text-anchor="middle" class="svg-serif" style="font-size:14px;">run a simulation</text>
+        <text x="610" y="144" text-anchor="middle" class="svg-small">let the atoms wander</text>
+
+        <rect x="270" y="196" width="180" height="44" fill="none" stroke="var(--oxblood)" stroke-width="1.2" />
+        <text x="360" y="216" text-anchor="middle" class="svg-serif" style="font-size:14px;">flag uncertainty</text>
+        <text x="360" y="232" text-anchor="middle" class="svg-small">committee disagrees</text>
+
+        <rect x="20" y="108" width="180" height="44" fill="none" stroke="var(--ink)" stroke-width="1" />
+        <text x="110" y="128" text-anchor="middle" class="svg-serif" style="font-size:14px;">DFT there, add it</text>
+        <text x="110" y="144" text-anchor="middle" class="svg-small">only where flagged</text>
+
+        <g stroke="var(--ink)" stroke-width="1.2" fill="none">
+          <path d="M 450 48 C 510 56, 520 88, 560 104" marker-end="url(#ch4loop)" />
+          <path d="M 560 156 C 520 184, 470 192, 452 206" marker-end="url(#ch4loop)" />
+          <path d="M 270 222 C 200 214, 170 184, 158 156" marker-end="url(#ch4loop)" />
+          <path d="M 158 104 C 170 76, 210 56, 268 46" marker-end="url(#ch4loop)" />
+        </g>
+
+        <defs>
+          <marker id="ch4loop" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 z" fill="var(--ink)" /></marker>
+        </defs>
+      </svg>
+    </div>
+    <figcaption><span class="fig-num">Fig. 2</span>The active-learning loop. Starting from any initial data set, the model runs a simulation, flags where its committee disagrees, calls DFT exactly there, adds the result, and retrains. DFT is spent only where it changes the model most — this is how Chapter 1's "few thousand well-chosen arrangements" get chosen.</figcaption>
+  </figure>
+
+  <h2><span class="num">§ 4</span>Foundation models: one fit for much of chemistry</h2>
+
+  <p>
+    Everything so far describes building one potential for one system — a particular alloy, a
+    particular molecule. Run the loop, get a model that knows that system, and stop. The newer
+    approach, the one this Almanac catalogs and the reason the 2024–2026 stretch is worth a 2026
+    edition, drops the "one system" part. Train one large model on an enormous, deliberately diverse
+    pile of data — millions of arrangements spanning much of the periodic table — and you get a
+    <strong>foundation model</strong> (also called a universal potential): a single fit you can pull
+    off the shelf and apply to a system it was never specifically built for. For many uses it is good
+    enough straight away. Where you need more accuracy on one system, you
+    <strong>fine-tune</strong> — take the big pre-trained model and nudge its dials with a small
+    helping of system-specific data, far less than training from scratch would take.
+  </p>
+
+  <p>
+    The diversity has to come from somewhere, and it comes from a handful of large public datasets,
+    each computed at its own level of DFT theory:
+  </p>
+
+  <figure class="fig">
+    <table class="almanac">
+      <thead>
+        <tr><th>Dataset</th><th>Domain</th><th>DFT level</th><th>Rough size</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>OMat24</td><td>Inorganic crystals</td><td>PBE+U (VASP)</td><td>~100M+ structures</td></tr>
+        <tr><td>MPtrj</td><td>Materials Project relaxations</td><td>PBE / PBE+U</td><td>~1.58M structures</td></tr>
+        <tr><td>Alexandria</td><td>Inorganic crystals</td><td>PBE / PBEsol</td><td>millions</td></tr>
+        <tr><td>OMol25</td><td>Molecules</td><td>ωB97M-V hybrid (ORCA)</td><td>millions</td></tr>
+        <tr><td>OC20</td><td>Catalysis, adsorbates on surfaces</td><td>RPBE</td><td>~1.2M relaxations</td></tr>
+      </tbody>
+    </table>
+    <figcaption><span class="fig-num">Fig. 3</span>A sample of the large public training sets behind today's foundation models. The "DFT level" column names the <em>functional</em> — the specific approximation DFT uses — that each set was computed with. PBE, PBE+U, RPBE, and the hybrid used for OMol25 are different approximations to the same quantum-mechanical problem, and they do not agree on energies. The +U suffix adds a correction for transition-metal <em>d</em> electrons; VASP and ORCA name the programs that ran the calculations, not functionals. OMat24 dwarfs the rest: it alone holds more structures than all the others combined.</figcaption>
+  </figure>
+
+  <p>
+    Some models go further and train across several of these at once. UMA — Universal Models for
+    Atoms — is fit jointly over about five such datasets, on the order of half a billion arrangements
+    in total, using an architecture that lets different parts of the network specialize — catalysis
+    in one region, bulk crystals in another — without one domain drowning out the others.
+  </p>
+
+  <p>
+    There is a seam under the word "universal," and it is the DFT level. A foundation model stitches
+    together datasets computed with different, inconsistent recipes — PBE here, RPBE there, a hybrid
+    functional somewhere else. These do not agree with each other; the same arrangement carries a
+    slightly different "correct" energy depending on which recipe labelled it. Train one model to
+    reproduce all of them and it is being asked to fit answers that quietly contradict. The model
+    inherits not one DFT's mistakes, as Chapter 1 put it, but a blend of several DFTs' mistakes, and
+    the join between them is real even when it is small.
+  </p>
+
+  <h2><span class="num">§ 5</span>Validation: does it run, not just fit?</h2>
+
+  <p>
+    A trained model reports a clean number for how well it fits: the typical gap between its energies
+    and forces and the DFT it was tested against, the same root-mean-square error the loss was built
+    from, now measured on held-out snapshots the model never trained on. A small error here is
+    necessary. It is not sufficient.
+  </p>
+
+  <p>
+    The reason is that the error is measured on frozen snapshots — single, static arrangements scored
+    one at a time. A real simulation is not static. It takes thousands or millions of tiny steps, and
+    at each step the model's small error feeds into where the atoms go next, which sets the next
+    arrangement the model must score, which it scores with another small error. The errors compound.
+    A model with an enviable static error can still, run forward in time, drift into arrangements its
+    fit handles badly, feed itself worse and worse inputs, and blow up — atoms flying apart, or a
+    crystal that should sit solid quietly melting on screen.
+  </p>
+
+  <p>
+    So the real test is dynamic. Run the model forward for a long simulation and ask whether it stays
+    <strong>stable</strong> — no explosions, no spurious melting — and whether it reproduces physical
+    properties already known from experiment or from full DFT: the right melting point, the right
+    stiffness, the right spacing between atoms in the crystal. A model that runs stable and matches
+    those properties is trustworthy in a way a static error number cannot confirm.
+  </p>
+
+  <p>
+    A model that runs stable and lands the right melting point has earned its place. What that place
+    cannot include — what no model built this way can ever know — is the next chapter.
+  </p>
+</Primer>

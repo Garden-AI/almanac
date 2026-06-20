@@ -1,0 +1,330 @@
+---
+import Primer from '../../layouts/Primer.astro';
+import { url } from '../../lib/url';
+---
+<Primer
+  title="What an MLIP Keeps — and Can't"
+  eyebrow="A Primer on Matter Models · Chapter Five"
+  deck="A DFT calculation knows a whole electronic world. The potential carries forward one slice of it. This chapter traces the edge of that slice."
+  running="Ch. 5 — What an MLIP Keeps"
+  prev={{ href: url('/primer/how-one-gets-made'), label: 'How One Gets Made' }}
+  next={{ href: url('/primer/at-inference-time'), label: 'At Inference Time' }}
+>
+  <p class="lead">
+    A DFT calculation does not merely emit an energy. To get the energy it has to solve for the
+    electrons, and in solving for them it computes an entire electronic structure: where the charge
+    sits, what energies the electrons are allowed to have, how the whole system would respond to a
+    push or a field. The training set saw all of that. The potential was shown only a sliver. The
+    question for this chapter is which parts of the electronic world survive the trip into a fitted
+    function. The axis of the split is simple: is the property an energy, or a derivative of one? If
+    yes, a potential can reach it. If no, it cannot — and the reason why not will take some unpacking.
+  </p>
+
+  <p>
+    One converged DFT run at a fixed geometry hands you all three at once:
+  </p>
+
+  <figure class="fig fig--ledger">
+    <div class="ledger">
+      <div class="ledger-head">The output of one DFT calculation</div>
+
+      <div class="tier t1">
+        <div class="tier-tag">Tier 1 — kept by every potential</div>
+        <p class="tier-items">total energy · forces on each atom · stress on the cell</p>
+        <p class="tier-note">…and everything that is a <em>derivative</em> of these: phonons, elastic constants, thermal expansion, free energies.</p>
+      </div>
+
+      <div class="tier t2">
+        <div class="tier-tag">Tier 2 — reachable if you ask for it in the data</div>
+        <p class="tier-items">electron affinity · ionisation potential · redox potential · the fundamental gap</p>
+        <p class="tier-note">These are <em>energy differences between charge or spin states</em> — energies again, of different states of the same nuclei.</p>
+      </div>
+
+      <div class="tier t3">
+        <div class="tier-tag">Tier 3 — out of reach for an energy model</div>
+        <p class="tier-items">k-resolved band dispersion · optical absorption &amp; excitons · the dielectric function · magnetic response · conductivity</p>
+        <p class="tier-note">These are <em>spectral</em> facts about the electrons at fixed nuclei, not scalars over nuclear positions.</p>
+      </div>
+    </div>
+    <figcaption><span class="fig-num">Fig. 1</span>One calculation feeds all three tiers. A standard potential trains on the top band only. The lower two are the subject of the rest of this chapter.</figcaption>
+  </figure>
+
+  <h2><span class="num">§ 1</span>Tier 1 — the energy and its shadow</h2>
+
+  <p>
+    A conventional potential is trained to reproduce three numbers: the energy, the forces, and
+    usually the stress. That is the whole target. Yet it can report far more than three numbers,
+    because most of what you might want from a material is a <em>derivative</em> of the energy with
+    respect to where the atoms are or how the box is shaped.
+  </p>
+
+  <p>
+    Forces are the first derivative with respect to position — Chapter 1 wrote this as
+    <em>F</em> = −∇<em>E</em>, the force is the downhill slope of the energy. The curvature of a
+    valley, the second derivative, gives the <strong>phonons</strong>, the frequencies at which the
+    lattice vibrates; from those follow vibrational entropy and heat capacity.
+    Squeeze the cell and watch the energy push back: that response is the stress, and how the stress
+    grows with the squeeze is the elastic constants. Hold the surface at a temperature and sample it,
+    and the free energy falls out. Every one of these is a slope, or a curvature, or an accumulation
+    over the same scalar function <em>E</em>(<em>R</em>) — the energy <em>E</em> as a function of all
+    the nuclear coordinates <em>R</em>. If a property is some derivative of <em>E</em>(<em>R</em>), an
+    energy model has, in principle, already captured it.
+  </p>
+
+  <p>
+    One asterisk carries over from Chapter 1. The potential is an emulator of its training method,
+    not of nature. Train on a particular DFT functional and you inherit that functional's systematic
+    errors exactly. A potential can be a flawless mimic of a reference that is itself wrong. So
+    "Tier 1" means "as good as the DFT you fed it," and never "as good as the experiment."
+  </p>
+
+  <h2><span class="num">§ 2</span>Tier 2 — electronic properties hiding inside energy differences</h2>
+
+  <p>
+    A natural place to stop would be: electronic properties live in the wavefunction, an energy model
+    has no wavefunction, so electronic properties are off-limits. That line is drawn one tier too
+    high. A whole class of properties that people file under "electronic" are not wavefunction
+    properties at all. They are <strong>differences in total energy between two states of charge or
+    spin</strong> — and total energies are exactly what an energy model traffics in.
+  </p>
+
+  <p>
+    Take the <strong>electron affinity</strong>: the energy released when a neutral molecule grabs
+    one more electron. It is the energy of the neutral molecule minus the energy of the same molecule
+    carrying an extra electron — the anion. The <strong>ionisation potential</strong> is the mirror
+    image: neutral minus cation, the energy to remove an electron. Redox potential and the
+    fundamental gap work the same way, by a <strong>two-calculation subtraction</strong> — run the
+    calculation twice, once per charge state, and subtract (the method goes by the name ΔSCF). Each is arithmetic on the total energies of differently-charged
+    or differently-spin-polarised versions of the <em>same nuclei</em>. None of them asks you to look
+    inside a wavefunction.
+  </p>
+
+  <figure class="fig">
+    <div class="fig-frame">
+      <svg viewBox="0 0 720 250" role="img" aria-label="Three horizontal energy levels for the same molecule: the cation highest, the neutral in the middle, the anion lowest. The ionisation potential is the gap from neutral up to cation; the electron affinity is the gap from anion up to neutral.">
+        <text x="360" y="30" text-anchor="middle" class="svg-label">same nuclei, three charge states</text>
+
+        <!-- cation (highest energy) -->
+        <line x1="170" y1="70" x2="430" y2="70" stroke="var(--ink)" stroke-width="2" />
+        <text x="150" y="74" text-anchor="end" class="svg-serif-it">cation</text>
+        <text x="440" y="74" class="svg-small">remove an electron</text>
+
+        <!-- neutral (middle) -->
+        <line x1="170" y1="140" x2="430" y2="140" stroke="var(--oxblood)" stroke-width="2.4" />
+        <text x="150" y="144" text-anchor="end" class="svg-serif-it">neutral</text>
+
+        <!-- anion (lowest) -->
+        <line x1="170" y1="200" x2="430" y2="200" stroke="var(--ink)" stroke-width="2" />
+        <text x="150" y="204" text-anchor="end" class="svg-serif-it">anion</text>
+        <text x="440" y="204" class="svg-small">add an electron</text>
+
+        <!-- IP gap: neutral up to cation -->
+        <line x1="300" y1="140" x2="300" y2="70" stroke="var(--ink)" stroke-width="1.1" marker-start="url(#ch5gapA)" marker-end="url(#ch5gapA)" />
+        <text x="312" y="108" class="svg-serif" style="font-size:14px;">IP = E(cation) − E(neutral)</text>
+
+        <!-- EA gap: anion up to neutral -->
+        <line x1="300" y1="200" x2="300" y2="140" stroke="var(--ink)" stroke-width="1.1" marker-start="url(#ch5gapA)" marker-end="url(#ch5gapA)" />
+        <text x="312" y="174" class="svg-serif" style="font-size:14px;">EA = E(neutral) − E(anion)</text>
+
+        <defs>
+          <marker id="ch5gapA" markerWidth="9" markerHeight="9" refX="4.5" refY="4.5" orient="auto">
+            <path d="M0 4.5 L9 0 L9 9 z" fill="var(--ink)" />
+          </marker>
+        </defs>
+      </svg>
+    </div>
+    <figcaption><span class="fig-num">Fig. 2</span>The same molecule at three charge states. The gap upward to the cation is the ionisation potential; the gap downward to the anion is the electron affinity. Both are subtractions of total energies.</figcaption>
+  </figure>
+
+  <p>
+    Two things make this reachable for an energy model. First, the data has to contain those states:
+    the reference set must include the charged and spin-varied versions of each molecule, computed
+    with DFT. Second, the model has to be <em>told</em> which state it is looking at. A dataset like
+    <strong>OMol25</strong> does both. It carries a charge and a spin multiplicity for every
+    structure, it spans many charge and spin states, and those two numbers — total charge and spin
+    multiplicity — are handed to the model as global inputs alongside the geometry. The model is not
+    blind to charge. It knows the molecule in front of it is the anion rather than the neutral,
+    because you said so.
+  </p>
+
+  <div class="aside">
+    <span class="aside-label">What the model still does not have</span>
+    These networks predict energy and forces. They do not contain explicit long-range electrostatics
+    or a charge-equilibration step — there is no machinery inside that solves where charge flows
+    across the molecule. They reach the redox and affinity numbers by having learned the energies of
+    the right states, not by modelling the electrostatic physics that produces them.
+  </div>
+
+  <p>
+    The striking part is that it works at all. Energy-and-force models trained on OMol25 predict
+    redox potentials and electron affinities competitively with low-cost DFT. The result is not
+    uniform, though, and the split is worth naming. On <strong>organometallic systems</strong> — metal
+    centres wrapped in organic ligands, the workhorses of catalysis — the accuracy is strong: UMA's
+    reduction-potential and electron-affinity errors on the OMol25 test set, about 0.26 volts and 0.17
+    electron-volts respectively, are smaller than those from common semiempirical and low-cost DFT
+    methods benchmarked on the same reference. On <strong>main-group species</strong> — ordinary
+    light-element molecules — it is only on par with those cheap methods, and some models do poorly.
+    The comparison is against the ωB97M-V reference (a range-separated hybrid functional, the same one
+    that labelled OMol25); how well that reference itself matches experiment is a separate question.
+  </p>
+
+  <p>
+    The reference level explains part of the unevenness. OMol25 was computed at the
+    ωB97M-V/def2-TZVPD level — a range-separated hybrid functional paired with a basis set that
+    includes <em>diffuse</em> functions, the loosely-bound tails an electron needs when it is barely
+    held by a molecule. Those diffuse tails are exactly what an anion has and a neutral does not, so
+    they matter precisely for electron affinities. The accuracy ceiling of the learned model is
+    whatever that reference can do; you pay for Tier 2 in reference calculations, not in a new kind of
+    network.
+  </p>
+
+  <h2><span class="num">§ 3</span>Tier 3 — where an energy model cannot follow</h2>
+
+  <p>
+    Now the wall. Some properties are not energy differences between states. They are properties of
+    the electronic <em>spectrum</em> at fixed nuclei: the band structure resolved by momentum, the
+    optical absorption with its excitonic peaks, the dielectric function, magnetic response,
+    conductivity. There is a clean architectural reason no energy model reaches these, and it is
+    worth stating once, plainly.
+  </p>
+
+  <p>
+    A potential's entire output is one scalar, <em>E</em>(<em>R</em>) — the energy as a function of
+    where the nuclei sit. Forces, phonons, elastic constants, free energies are all derivatives of
+    that scalar with respect to nuclear position. A spectrum is not. A spectrum is an
+    <strong>eigenvalue property</strong>: the list of energies an electron is allowed to have,
+    obtained by diagonalising the electronic Hamiltonian — the operator that governs the electrons —
+    at a <em>fixed</em> geometry. Differentiating <em>E</em>(<em>R</em>) asks how the ground-state
+    energy changes as you move atoms. The spectrum asks something the ground-state energy never
+    recorded: what the electrons could do without moving an atom at all. No amount of differentiating
+    <em>E</em>(<em>R</em>) produces the spectrum ε(ω), the intensity of response at each frequency ω.
+    The information was never in the object you are differentiating.
+  </p>
+
+  <figure class="fig">
+    <div class="fig-frame">
+      <svg viewBox="0 0 720 286" role="img" aria-label="Two model output spaces side by side. An energy model outputs a scalar E(R), which you differentiate to get forces and phonons. A Hamiltonian model outputs an operator, which you diagonalise to get spectra. A dashed line divides them.">
+        <line x1="360" y1="28" x2="360" y2="262" stroke="var(--rule)" stroke-width="0.75" stroke-dasharray="3 4" />
+
+        <!-- LEFT: energy model -->
+        <text x="180" y="40" text-anchor="middle" class="svg-label">an energy model</text>
+        <rect x="110" y="58" width="140" height="44" fill="none" stroke="var(--oxblood)" stroke-width="1.6" />
+        <text x="180" y="85" text-anchor="middle" class="svg-serif" style="font-size:15px;">E(R) — a scalar</text>
+        <line x1="180" y1="102" x2="180" y2="150" stroke="var(--ink)" stroke-width="1.2" marker-end="url(#ch5fork)" />
+        <text x="190" y="130" class="svg-small">differentiate</text>
+        <text x="180" y="172" text-anchor="middle" class="svg-serif-it">forces · stress</text>
+        <text x="180" y="192" text-anchor="middle" class="svg-serif-it">phonons · elastic constants</text>
+        <text x="180" y="212" text-anchor="middle" class="svg-serif-it">free energies</text>
+        <text x="180" y="246" text-anchor="middle" class="svg-small">(Tiers 1 &amp; 2 live here)</text>
+
+        <!-- RIGHT: hamiltonian model -->
+        <text x="540" y="40" text-anchor="middle" class="svg-label">a Hamiltonian model</text>
+        <rect x="470" y="58" width="140" height="44" fill="none" stroke="var(--ink)" stroke-width="1.6" />
+        <text x="540" y="85" text-anchor="middle" class="svg-serif" style="font-size:15px;">Ĥ(R) — an operator</text>
+        <line x1="540" y1="102" x2="540" y2="150" stroke="var(--ink)" stroke-width="1.2" marker-end="url(#ch5fork)" />
+        <text x="550" y="130" class="svg-small">diagonalise</text>
+        <text x="540" y="172" text-anchor="middle" class="svg-serif-it">band structure · density of states</text>
+        <text x="540" y="192" text-anchor="middle" class="svg-serif-it">optical absorption</text>
+        <text x="540" y="212" text-anchor="middle" class="svg-serif-it">dielectric · magnetic response</text>
+        <text x="540" y="246" text-anchor="middle" class="svg-small">(Tier 3 lives here)</text>
+
+        <defs>
+          <marker id="ch5fork" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+            <path d="M0 0 L9 4.5 L0 9 z" fill="var(--ink)" />
+          </marker>
+        </defs>
+      </svg>
+    </div>
+    <figcaption><span class="fig-num">Fig. 3</span>The fork is in the output. An energy model emits a scalar you differentiate. A Tier-3 model emits an electronic object you diagonalise. These are different machines, not a better-trained and a worse-trained version of one machine.</figcaption>
+  </figure>
+
+  <p>
+    The far side of the fork has names. A <strong>DeepH</strong>-style network predicts the DFT
+    Hamiltonian itself — the operator, not the energy. You take its predicted operator, diagonalise
+    it, and read off the band structure and density of states directly. Further still,
+    neural-network wavefunctions such as <strong>FermiNet</strong> and <strong>PauliNet</strong> learn
+    the many-electron wavefunction directly and variationally. These last two are not trained against
+    DFT labels at all; they are <em>ab initio</em>, optimised against the Schrödinger equation itself.
+    They reach Tier 3 because their output is electronic from the start — they predict the object the
+    spectrum lives in, rather than a scalar the spectrum was never inside.
+  </p>
+
+  <h2><span class="num">§ 4</span>Why the energy side raced ahead</h2>
+
+  <p>
+    If Tier 3 is a matter of predicting a different object, why is nearly every model in this almanac
+    an energy model? The answer is the <strong>labels</strong>, not the architecture.
+  </p>
+
+  <p>
+    Energies and forces are an almost-free by-product of any DFT run. You were going to converge the
+    calculation anyway, and they fall out of it. That made it cheap to assemble datasets of millions
+    of configurations, and energy models feasted on them. Spectral ground truth is the opposite. A
+    faithful band structure wants a GW calculation — a many-body method that corrects the
+    self-interaction errors left in plain DFT, at ten to a hundred times the cost. Optical absorption
+    with excitons wants the Bethe-Salpeter equation (BSE) on top of GW, costlier still, and on solids
+    these are punishing. There is no materials-scale dataset of band structures
+    because no one can afford to compute one. The energy side raced ahead because its ground truth was
+    affordable. The bottleneck for Tier 3 is the reference data, not the model.
+  </p>
+
+  <p>
+    This sorts out one common compression. The large universal model in the FAIR-chem line,
+    <strong>UMA</strong>, is an energy, force, and stress model trained across roughly five datasets
+    spanning materials and molecules. It lives on the Tier-1 and Tier-2 side. It does not cross into
+    spectra. Pushing an energy model onto charge- and spin-difference properties (Tier 2) and building
+    a Hamiltonian predictor (Tier 3) are two separate moves. Stacking more energy data sharpens the
+    first move and never starts the second.
+  </p>
+
+  <p>
+    That settles what a potential represents. The next chapter turns to using it — what happens when
+    you hand a trained model a structure it has never seen and ask it for an answer.
+  </p>
+</Primer>
+
+<style>
+  .fig--ledger .fig-frame { padding: 0; border: 0; }
+  .ledger {
+    border-top: 1.5px solid var(--ink);
+    border-bottom: 1.5px solid var(--ink);
+  }
+  .ledger-head {
+    font-family: var(--smallcaps);
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    color: var(--ink);
+    padding: 10px 16px;
+    border-bottom: 0.5px solid var(--ink);
+    background: rgba(26, 22, 18, 0.025);
+  }
+  .ledger .tier {
+    padding: 13px 16px 14px 20px;
+    border-left: 3px solid var(--oxblood);
+    margin: 0;
+  }
+  .ledger .tier + .tier { border-top: 0.5px solid var(--rule); }
+  .ledger .t2 { border-left-color: rgba(122, 31, 31, 0.5); border-left-style: dashed; }
+  .ledger .t3 { border-left-color: var(--ink-3); border-left-style: dotted; }
+  .ledger .tier-tag {
+    font-family: var(--smallcaps);
+    font-size: 11px;
+    letter-spacing: 0.10em;
+    color: var(--ink);
+    margin-bottom: 5px;
+  }
+  .ledger .t3 .tier-tag { color: var(--ink-2); }
+  .ledger .tier-items {
+    font-size: 16px;
+    line-height: 1.4;
+    color: var(--ink);
+    margin: 0;
+  }
+  .ledger .t3 .tier-items { color: var(--ink-2); }
+  .ledger .tier-note {
+    font-size: 13.5px;
+    line-height: 1.4;
+    color: var(--ink-3);
+    margin: 5px 0 0;
+  }
+</style>
