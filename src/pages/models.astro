@@ -10,23 +10,24 @@ const allModels = await getCollection('models');
 const families = await getCollection('architectures');
 const familyName = (id: string) => families.find((f) => f.id === id)?.data.name ?? id;
 
+const resolveDate = async (m: typeof allModels[number]): Promise<string | null> => {
+  if (m.data.releaseDate) return m.data.releaseDate;
+  for (const ref of m.data.paperRefs) {
+    const p = await getEntry('papers', ref.id);
+    if (p?.data.published) return p.data.published;
+  }
+  return null;
+};
+
 const enriched = await Promise.all(
   allModels.map(async (m) => {
-    let resolvedDate = m.data.releaseDate ?? null;
-    if (!resolvedDate) {
-      for (const ref of m.data.paperRefs) {
-        const p = await getEntry('papers', ref.id);
-        if (p?.data.published) {
-          resolvedDate = p.data.published;
-          break;
-        }
-      }
-    }
+    const resolvedDate = await resolveDate(m);
     return { model: m, resolvedDate, year: yearOf(resolvedDate) };
   }),
 );
 
-const models = enriched.sort((a, b) => {
+// Table: most-recent-first.
+const models = [...enriched].sort((a, b) => {
   if (!a.resolvedDate && !b.resolvedDate) return a.model.data.name.localeCompare(b.model.data.name);
   if (!a.resolvedDate) return 1;
   if (!b.resolvedDate) return -1;
@@ -48,75 +49,207 @@ const tabs = layouts.map((l, i) => ({
   label: l.data.dataset,
   layout: l,
   isFirst: i === 0,
+  n: l.data.n,
 }));
+// The popover's projection line names the active layout's point count; seed it
+// with the first layout and let the client script rewrite it on dataset change.
+const firstLayout = tabs[0].layout;
+const projMethod = firstLayout.data.method.split(/[\s(]/)[0]; // "UMAP (…)" → "UMAP"
+
+// --- Architecture Families (merged in from the deleted /architectures page) ---
+// Order; empty families are dropped (currently `earlier`). If `earlier` is ever
+// repopulated it reappears automatically. Each family links one representative
+// paper, resolved from the papers collection.
+const FAMILY_ORDER = ['equivariant', 'ace', 'mpnn', 'vanilla', 'attention', 'earlier'];
+const FAM_META: Record<string, { brief: string; paperSlug: string; paperLabel: string }> = {
+  equivariant: {
+    brief:
+      'Networks that build 3-D rotational symmetry directly into their layers, so predictions transform correctly under rotation by construction rather than by data augmentation. Accuracy is high; the price is heavier compute and memory than unconstrained models.',
+    paperSlug: 'equiformer-v2',
+    paperLabel: 'Liao et al., EquiformerV2 (2023)',
+  },
+  ace: {
+    brief:
+      "A distinct equivariant lineage that expands each atom's neighborhood into a body-ordered basis, with modern variants layering message passing on top. In practice the basis construction matters as much as the equivariant label, which is why the catalog tracks it separately.",
+    paperSlug: 'mace-mp-0',
+    paperLabel: 'Batatia et al., MACE (2024)',
+  },
+  mpnn: {
+    brief:
+      'Atoms are graph nodes that pass messages to their neighbors over several rounds of aggregation. Cheap and well understood — the workhorse family — with later refinements adding directional and equivariant message channels that lead into the equivariant models.',
+    paperSlug: 'schnet',
+    paperLabel: 'Schütt et al., SchNet (2018)',
+  },
+  vanilla: {
+    brief:
+      "Models that don't enforce equivariance as a hard constraint, trading the guarantee for 2–4× throughput by encouraging rotational consistency during training instead. A good fit for screening-scale workloads, less defensible for long production MD.",
+    paperSlug: 'orb-v2',
+    paperLabel: 'Neumann et al., Orb (2024)',
+  },
+  attention: {
+    brief:
+      'Self-attention transformers adapted to atoms: each atom weighs its neighbors — and, in the all-to-all variants, every other atom in the system — by learned content rather than a fixed aggregation rule. Borrowed from the transformers of language and vision and run on invariant features for throughput, the family trades hard equivariance for scale, with a global attention channel added to recover long-range accuracy.',
+    paperSlug: 'allscaip',
+    paperLabel: 'Qu et al., AllScAIP (2026)',
+  },
+  earlier: {
+    brief:
+      'Small, single-domain potentials from before the current scale era, kept as historical anchors. They remain widely cited baselines that newer papers still benchmark against.',
+    paperSlug: 'dimenet-pp',
+    paperLabel: 'Gasteiger et al., DimeNet++ (2020)',
+  },
+};
+
+const familiesOrdered = [...families].sort(
+  (a, b) => FAMILY_ORDER.indexOf(a.id) - FAMILY_ORDER.indexOf(b.id),
+);
+
+const familyCards = (
+  await Promise.all(
+    familiesOrdered.map(async (f) => {
+      const matching = enriched.filter((e) =>
+        e.model.data.families.some((ref) => ref.id === f.id),
+      );
+      // Models listed oldest-first (matches the design reference).
+      matching.sort((a, b) => {
+        if (!a.resolvedDate && !b.resolvedDate)
+          return a.model.data.name.localeCompare(b.model.data.name);
+        if (!a.resolvedDate) return 1;
+        if (!b.resolvedDate) return -1;
+        return a.resolvedDate.localeCompare(b.resolvedDate);
+      });
+      const meta = FAM_META[f.id];
+      const paper = meta ? await getEntry('papers', meta.paperSlug) : null;
+      return {
+        id: f.id,
+        name: f.data.name,
+        brief: meta?.brief ?? f.data.descriptor,
+        paperLabel: meta?.paperLabel ?? '',
+        paperUrl: paper?.data.url ?? null,
+        models: matching.map((e) => e.model),
+      };
+    }),
+  )
+).filter((f) => f.models.length > 0); // omit empty families (e.g. `earlier`)
 ---
 <Page title="Models — Garden's Almanac" wide>
   <header class="models-head">
     <h1 class="models-h1">Models</h1>
-    <p class="it models-subtitle">
-      All {models.length} catalogued models, most recent first. Click any name for the detail page.
-    </p>
   </header>
 
-  <section class="models-list">
-    <table class="almanac" style="font-size: 13px;">
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Family</th>
-          <th style="text-align: right; width: 90px;">Params</th>
-          <th style="text-align: right; width: 70px;">Year</th>
-          <th style="width: 24px;" aria-hidden="true"></th>
-        </tr>
-      </thead>
-      <tbody>
-        {models.map(({ model: m, year }) => (
+  <section class="mm-split" id="map">
+    <!-- Left: models table, by publication year -->
+    <div class="mm-col">
+      <p class="mm-eyebrow">By publication year</p>
+      <table class="almanac" style="font-size: 13px;">
+        <thead>
           <tr>
-            <td><a class="ink-link it" href={url(`/model/${m.id}`)}>{m.data.name}</a></td>
-            <td class="sc" style="font-size: 11px;">{familyName(m.data.families[0].id)}</td>
-            <td style="text-align: right; font-variant-numeric: tabular-nums;">{displayParams(m.data.checkpoints)}</td>
-            <td style="text-align: right; font-variant-numeric: tabular-nums;">{year ?? '—'}</td>
-            <td style="text-align: right; color: var(--ink-3);" aria-hidden="true">→</td>
+            <th>Name</th>
+            <th>Family</th>
+            <th style="text-align: right; width: 90px;">Params</th>
+            <th style="text-align: right; width: 70px;">Year</th>
           </tr>
+        </thead>
+        <tbody>
+          {models.map(({ model: m, year }) => (
+            <tr>
+              <td><a class="ink-link it" href={url(`/model/${m.id}`)}>{m.data.name}</a></td>
+              <td class="sc" style="font-size: 11px;">{familyName(m.data.families[0].id)}</td>
+              <td style="text-align: right; font-variant-numeric: tabular-nums;">{displayParams(m.data.checkpoints)}</td>
+              <td style="text-align: right; font-variant-numeric: tabular-nums;">{year ?? '—'}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Right: embedding similarity map -->
+    <div class="mm-col">
+      <p class="mm-eyebrow">By embedding similarity</p>
+      <div class="map-stages">
+        {tabs.map((t) => (
+          <MapStage layout={t.layout} active={t.isFirst} />
         ))}
-      </tbody>
-    </table>
+      </div>
+
+      <div class="mm-controls">
+        <div class="mm-info-wrap">
+          <button type="button" class="mm-info-btn" aria-expanded="false" aria-controls="mm-popover">
+            <span aria-hidden="true" class="mm-info-glyph">ⓘ</span>
+            <span>How to read the embedding map</span>
+          </button>
+          <div id="mm-popover" class="mm-popover" hidden>
+            <div class="mm-popover-head">
+              <span class="mm-popover-title">Reading the map</span>
+              <button type="button" class="mm-popover-close" aria-label="Close">×</button>
+            </div>
+            <p class="mm-def">
+              <span class="mm-term">Projection</span>&#8201;—&#8201;<span data-pop-method>{projMethod}</span> of
+              <span data-pop-n>{firstLayout.data.n}</span> foundation models; nearness ≈ representational similarity.
+            </p>
+            <p class="mm-def">
+              <span class="mm-term">Distance</span>&#8201;—&#8201;CKNNA, <span class="mono">k = 25</span>. The axes carry no meaning.
+            </p>
+            <p class="mm-def">
+              <span class="mm-term">Marker size</span>&#8201;—&#8201;scales with parameter count.
+            </p>
+            <p class="mm-def">
+              <span class="mm-term">Hollow marker</span>&#8201;—&#8201;a <em>dens</em>, <em>direct</em>, or <em>invariant</em> variant.
+            </p>
+            <p class="mm-def">
+              <span class="mm-term">Italic label</span>&#8201;—&#8201;a model catalogued in this almanac.
+            </p>
+          </div>
+        </div>
+
+        <fieldset class="map-toggle">
+          <legend class="sc map-toggle-legend">Reference dataset</legend>
+          <div class="map-toggle-tabs">
+            {tabs.map((t) => (
+              <>
+                <input
+                  class="map-toggle-input"
+                  type="radio"
+                  name="ds"
+                  id={t.inputId}
+                  value={t.id}
+                  data-ds={t.label}
+                  data-n={t.n}
+                  checked={t.isFirst}
+                />
+                <label for={t.inputId} class="sc map-toggle-tab">{t.label}</label>
+              </>
+            ))}
+          </div>
+        </fieldset>
+      </div>
+    </div>
   </section>
 
-  <section class="models-map">
-    <hr class="hairline" />
-    <header class="models-map-head">
-      <div>
-        <h2 class="models-map-h2">Embedding similarity map</h2>
-        <p class="it models-map-caption">
-          Proximity encodes representational similarity (CKNNA, <span class="mono">k = 25</span>);
-          the axes themselves carry no independent meaning.
-        </p>
-      </div>
-      <fieldset class="map-toggle">
-        <legend class="sc map-toggle-legend">Reference dataset</legend>
-        <div class="map-toggle-tabs">
-          {tabs.map((t) => (
-            <>
-              <input
-                class="map-toggle-input"
-                type="radio"
-                name="ds"
-                id={t.inputId}
-                value={t.id}
-                data-ds={t.label}
-                checked={t.isFirst}
-              />
-              <label for={t.inputId} class="sc map-toggle-tab">{t.label}</label>
-            </>
-          ))}
-        </div>
-      </fieldset>
-    </header>
-
-    <div class="map-stages">
-      {tabs.map((t) => (
-        <MapStage layout={t.layout} active={t.isFirst} />
+  <section class="fam">
+    <div class="fam-rule" aria-hidden="true"></div>
+    <h2 class="fam-h2">Architecture Families</h2>
+    <div class="fam-grid">
+      {familyCards.map((f) => (
+        <article class="fam-card">
+          <h3 class="fam-name">{f.name}</h3>
+          <p class="fam-brief">{f.brief}</p>
+          <p class="fam-models">
+            <span class="fam-label">Models</span>
+            {f.models.map((m, i) => (
+              <>
+                {i > 0 && <span class="fam-dot" aria-hidden="true">·</span>}
+                <a class="ink-link it" href={url(`/model/${m.id}`)}>{m.data.name}</a>
+              </>
+            ))}
+          </p>
+          {f.paperUrl && (
+            <p class="fam-paper">
+              <span class="fam-label">Example paper:</span>
+              <a class="ink-link it" href={f.paperUrl} target="_blank" rel="noopener">{f.paperLabel}</a>
+            </p>
+          )}
+        </article>
       ))}
     </div>
   </section>
@@ -132,37 +265,108 @@ const tabs = layouts.map((l, i) => ({
     letter-spacing: -0.01em;
     margin: 0;
   }
-  .models-subtitle {
-    color: var(--ink-2);
+
+  /* Table + map, side-by-side; collapses to one column on narrow screens. */
+  .mm-split {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+    gap: 32px;
+    align-items: start;
+    scroll-margin-top: 24px;
+  }
+  .mm-col { min-width: 0; }
+  .mm-eyebrow {
+    font-style: italic;
     font-size: 14px;
-    margin: 6px 0 0;
-    max-width: 60ch;
+    color: var(--ink-2);
+    margin: 0 0 10px;
+    line-height: 1.2;
   }
 
-  .models-map { margin-top: 36px; }
-  .models-map-head {
+  /* MapStage carries its own long figcaption + counts; the popover replaces it
+     on this page, so hide them here without touching the shared component. */
+  .mm-col :global(.map-caption) { display: none; }
+
+  /* Controls row below the map: info button (left), dataset selector (right). */
+  .mm-controls {
     display: flex;
     align-items: flex-end;
     justify-content: space-between;
-    gap: 24px;
-    flex-wrap: wrap;
-    margin: 18px 0 12px;
+    gap: 14px 20px;
+    flex-wrap: nowrap;
+    margin-top: 12px;
   }
-  .models-map-h2 {
-    font-family: var(--serif);
-    font-size: 22px;
-    font-weight: 600;
-    line-height: 1.1;
-    letter-spacing: -0.005em;
-    margin: 0;
-  }
-  .models-map-caption {
-    color: var(--ink-2);
+
+  .mm-info-wrap { position: relative; }
+  .mm-info-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    max-width: 190px;
+    text-align: left;
+    font-family: var(--smallcaps);
+    text-transform: lowercase;
     font-size: 13px;
-    line-height: 1.45;
-    max-width: 52ch;
-    margin: 4px 0 0;
+    letter-spacing: 0.05em;
+    line-height: 1.25;
+    color: var(--ink-2);
+    background: transparent;
+    border: 0.5px solid var(--rule);
+    border-radius: 0;
+    padding: 7px 14px;
+    cursor: pointer;
+    transition: color 0.12s, border-color 0.12s;
   }
+  .mm-info-btn:hover { color: var(--oxblood); border-color: var(--oxblood); }
+  .mm-info-glyph { flex: 0 0 auto; font-style: normal; }
+
+  .mm-popover {
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 0;
+    width: 326px;
+    z-index: 30;
+    background: var(--paper);
+    border: 0.5px solid var(--ink);
+    border-radius: 0;
+    padding: 14px 16px;
+  }
+  .mm-popover[hidden] { display: none; }
+  .mm-popover-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    border-bottom: 0.5px solid var(--rule-soft);
+    padding-bottom: 6px;
+    margin-bottom: 9px;
+  }
+  .mm-popover-title {
+    font-family: var(--smallcaps);
+    text-transform: lowercase;
+    font-size: 11.5px;
+    letter-spacing: 0.10em;
+    color: var(--ink);
+  }
+  .mm-popover-close {
+    border: 0;
+    background: transparent;
+    color: var(--ink-3);
+    font-size: 15px;
+    line-height: 1;
+    padding: 0 2px;
+    cursor: pointer;
+    transition: color 0.12s;
+  }
+  .mm-popover-close:hover { color: var(--oxblood); }
+  .mm-def {
+    font-size: 12px;
+    line-height: 1.5;
+    margin: 0 0 5px;
+    color: var(--ink);
+  }
+  .mm-def:last-child { margin-bottom: 0; }
+  .mm-term { font-style: italic; color: var(--ink-2); }
+  .mm-def em { font-style: italic; }
 
   /* Reference-dataset toggle — same visual as the old /map page. */
   .map-toggle {
@@ -170,14 +374,13 @@ const tabs = layouts.map((l, i) => ({
     margin: 0;
     padding: 0;
     flex: 0 0 auto;
-    margin-left: auto;
   }
   .map-toggle-legend {
     display: block;
     font-size: 10.5px;
     letter-spacing: 0.10em;
     color: var(--ink-2);
-    margin: 0 0 6px;
+    margin: 0 0 5px;
     padding: 0;
     text-align: right;
   }
@@ -187,7 +390,7 @@ const tabs = layouts.map((l, i) => ({
     gap: 0;
     border-top: 0.5px solid var(--ink);
     border-bottom: 0.5px solid var(--ink);
-    padding: 4px 0 3px;
+    padding: 3px 0;
   }
   .map-toggle-input {
     position: absolute;
@@ -198,14 +401,14 @@ const tabs = layouts.map((l, i) => ({
   }
   .map-toggle-tab {
     display: inline-block;
-    font-size: 12px;
-    letter-spacing: 0.14em;
+    font-size: 11px;
+    letter-spacing: 0.10em;
     color: var(--ink-2);
-    padding: 4px 12px 4px;
+    padding: 3px 10px;
     cursor: pointer;
     user-select: none;
     border-left: 0.5px solid var(--ink-2);
-    transition: color 0.12s;
+    transition: color 0.12s, background 0.12s;
   }
   .map-toggle-tab:first-of-type { border-left: none; }
   .map-toggle-tab:hover { color: var(--ink); }
@@ -217,18 +420,93 @@ const tabs = layouts.map((l, i) => ({
     outline: 1px dotted var(--ink);
     outline-offset: 2px;
   }
+
+  /* Architecture Families. */
+  .fam { margin-top: 40px; }
+  .fam-rule {
+    border-top: 1.5px solid var(--ink);
+    border-bottom: 0.5px solid var(--ink);
+    height: 3px;
+  }
+  .fam-h2 {
+    font-family: var(--serif);
+    font-size: 30px;
+    font-weight: 600;
+    line-height: 1.04;
+    letter-spacing: -0.008em;
+    margin: 14px 0 16px;
+  }
+  .fam-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(440px, 1fr));
+    gap: 0 44px;
+  }
+  .fam-card {
+    padding: 16px 0 18px;
+    border-top: 0.5px solid var(--rule);
+  }
+  .fam-name {
+    font-family: var(--serif);
+    font-size: 19px;
+    font-weight: 600;
+    line-height: 1.15;
+    letter-spacing: -0.003em;
+    margin: 0;
+  }
+  .fam-brief {
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--ink);
+    margin: 6px 0 10px;
+  }
+  .fam-models { margin: 0 0 6px; line-height: 1.6; }
+  .fam-paper { margin: 0; }
+  .fam-label {
+    font-family: var(--smallcaps);
+    text-transform: lowercase;
+    font-size: 10.5px;
+    letter-spacing: 0.10em;
+    color: var(--ink-3);
+    margin-right: 8px;
+  }
+  .fam-dot { color: var(--ink-3); margin: 0 6px; }
 </style>
 
 <script>
   const inputs = document.querySelectorAll<HTMLInputElement>('.map-toggle-input');
   const stages = document.querySelectorAll<HTMLElement>('.map-stage');
-  const show = (ds: string | undefined) => {
-    if (!ds) return;
-    stages.forEach((s) => s.classList.toggle('is-active', s.dataset.ds === ds));
+  const popN = document.querySelector<HTMLElement>('[data-pop-n]');
+
+  const show = (input: HTMLInputElement) => {
+    const ds = input.dataset.ds;
+    if (ds) stages.forEach((s) => s.classList.toggle('is-active', s.dataset.ds === ds));
+    if (popN && input.dataset.n) popN.textContent = input.dataset.n;
   };
   inputs.forEach((input) =>
     input.addEventListener('change', () => {
-      if (input.checked) show(input.dataset.ds);
+      if (input.checked) show(input);
     }),
   );
+
+  // "How to read the embedding map" popover.
+  const btn = document.querySelector<HTMLButtonElement>('.mm-info-btn');
+  const pop = document.getElementById('mm-popover');
+  const closeBtn = pop?.querySelector<HTMLButtonElement>('.mm-popover-close');
+  const wrap = btn?.closest('.mm-info-wrap');
+
+  const setOpen = (open: boolean) => {
+    if (!pop || !btn) return;
+    pop.hidden = !open;
+    btn.setAttribute('aria-expanded', String(open));
+  };
+
+  btn?.addEventListener('click', () => setOpen(pop?.hidden ?? false));
+  closeBtn?.addEventListener('click', () => setOpen(false));
+  document.addEventListener('click', (e) => {
+    if (!pop || pop.hidden) return;
+    if (wrap && !wrap.contains(e.target as Node)) setOpen(false);
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') setOpen(false);
+  });
 </script>
