@@ -8,7 +8,6 @@ import { url } from '../../lib/url';
   deck="A trained potential gives you a cheap energy and cheap forces. This chapter spends them."
   running="Ch. 6 — At Inference Time"
   prev={{ href: url('/primer/what-mlips-keep'), label: "What an MLIP Keeps — and Can't" }}
-  next={{ href: url('/primer/what-actually-changes'), label: 'What Actually Changes' }}
 >
   <p class="lead">
     The potential takes an arrangement of atoms and returns one energy and the force on every atom —
@@ -65,16 +64,16 @@ import { url } from '../../lib/url';
     and a relaxation can run for dozens of steps. With a potential each reading is milliseconds, so the
     whole walk finishes in a moment. And once one structure is cheap, a thousand are cheap. You can
     relax thousands of candidate arrangements and keep the ones that settle lowest — the practical
-    engine behind screening new materials, which we return to in the next chapter.
+    engine behind screening new materials.
   </p>
 
-  <div class="aside">
-    <span class="aside-label">One caution</span>
+  <aside class="sidenote">
+    <span class="sn-label">One caution</span>
     Rolling downhill finds <em>a</em> valley, the nearest one, not necessarily the deepest. A landscape
     has many valleys, and relaxation stops at whichever floor your starting guess drains into. Finding
     the lowest valley of all is a separate and harder search; relaxation only takes you to the bottom of
     the basin you started in.
-  </div>
+  </aside>
 
   <h2><span class="num">§ 2</span>Molecular dynamics: step the atoms through time</h2>
 
@@ -274,7 +273,9 @@ run_dynamics(atoms, temperature=300)  # so does this — same slot</div>
   </p>
 
   <p>
-    Fast, as long as you stay where the model has been. The next chapter asks what becomes possible once
-    that is true at scale: what actually changes in the world when an accurate energy is suddenly cheap.
+    Fast, as long as you stay where the model has been. That caveat kept in view, this is what the
+    whole primer was built toward: the energy of a set of atoms — once a slow secret of the electrons —
+    is now cheap enough to run forward across millions of atoms and millions of steps that DFT could
+    never have afforded. That is what a machine-learned potential is for.
   </p>
 </Primer>

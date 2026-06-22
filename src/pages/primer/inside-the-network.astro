@@ -64,7 +64,7 @@ import { url } from '../../lib/url';
 
   <figure class="fig">
     <div class="fig-frame">
-      <svg viewBox="0 0 720 260" role="img" aria-label="An atom's neighborhood turned into a vector of descriptors, fed to a per-element neural network to produce a per-atom energy, with all per-atom energies summed to the total.">
+      <svg viewBox="0 0 720 230" role="img" aria-label="An atom's neighborhood turned into a vector of descriptors, fed to a per-element neural network to produce a per-atom energy, with all per-atom energies summed to the total.">
         <g stroke="var(--rule)" stroke-width="1">
           <line x1="78" y1="120" x2="48" y2="92" />
           <line x1="78" y1="120" x2="110" y2="92" />
@@ -100,14 +100,14 @@ import { url } from '../../lib/url';
         </g>
         <text x="366" y="172" text-anchor="middle" class="svg-small">network for element of i</text>
 
-        <line x1="430" y1="120" x2="476" y2="120" stroke="var(--ink)" stroke-width="1.2" marker-end="url(#ch3aA)" />
+        <line x1="430" y1="120" x2="498" y2="120" stroke="var(--ink)" stroke-width="1.2" marker-end="url(#ch3aA)" />
 
-        <text x="506" y="126" text-anchor="middle" class="svg-serif" style="font-size:17px;">εᵢ</text>
+        <text x="520" y="116" text-anchor="middle" class="svg-serif" style="font-size:17px;">εᵢ</text>
+        <text x="520" y="138" text-anchor="middle" class="svg-small">atom i's energy</text>
 
-        <line x1="40" y1="216" x2="680" y2="216" stroke="var(--rule)" stroke-width="0.5" stroke-dasharray="2 4" />
-        <text x="600" y="126" text-anchor="middle" class="svg-serif" style="font-size:16px;">Σ</text>
-        <text x="652" y="126" text-anchor="middle" class="svg-serif-it">E</text>
-        <text x="360" y="244" text-anchor="middle" class="svg-serif-it">E = ε₁ + ε₂ + ⋯ + εₙ</text>
+        <line x1="40" y1="170" x2="680" y2="170" stroke="var(--rule)" stroke-width="0.5" stroke-dasharray="2 4" />
+        <text x="360" y="198" text-anchor="middle" class="svg-serif-it">E = ε₁ + ε₂ + ε₃ + ⋯ + εₙ</text>
+        <text x="360" y="218" text-anchor="middle" class="svg-small">the total — every atom's piece, summed</text>
 
         <defs>
           <marker id="ch3aA" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 z" fill="var(--ink)" /></marker>
@@ -203,14 +203,14 @@ import { url } from '../../lib/url';
     feel, the model's <strong>receptive field</strong>.
   </p>
 
-  <div class="aside">
-    <span class="aside-label">Two ranges, not one</span>
+  <aside class="sidenote">
+    <span class="sn-label">Two ranges, not one</span>
     The cutoff and the receptive field are different knobs and it is easy to confuse them. The
     <em>cutoff</em> decides who you talk to in a single round — your direct neighbors, a few
     ångströms out. The <em>number of rounds</em> decides how many hops the gossip travels, and so
     how far the influence reaches in total. Three rounds with a five-ångström cutoff lets an atom
     feel structure roughly fifteen ångströms away, without ever drawing an edge that long.
-  </div>
+  </aside>
 
   <figure class="fig">
     <div class="fig-frame">
@@ -308,8 +308,8 @@ import { url } from '../../lib/url';
     <strong>NequIP</strong>, <strong>MACE</strong>, and <strong>Allegro</strong> family work this way.
   </p>
 
-  <div class="aside">
-    <span class="aside-label">A point not to overclaim</span>
+  <aside class="sidenote">
+    <span class="sn-label">A point not to overclaim</span>
     Equivariant hidden features are not required for correct forces. Chapter 2 already showed that an
     invariant energy, differentiated, gives equivariant forces for free — and SchNet and DimeNet,
     whose insides are entirely invariant, get their forces exactly this way. The payoff of carrying
@@ -318,7 +318,7 @@ import { url } from '../../lib/url';
     from far fewer of them. NequIP reported matching the accuracy of earlier invariant models with a
     small fraction of the training data they needed — on some benchmarks a tenth or a hundredth as
     many examples.
-  </div>
+  </aside>
 
   <p>
     Whether the directional features are written in everyday <em>x, y, z</em> components or in the
@@ -350,20 +350,24 @@ import { url } from '../../lib/url';
         <line x1="120" y1="60" x2="120" y2="230" stroke="var(--ink)" stroke-width="0.9" marker-end="url(#ch3map)" />
         <line x1="120" y1="230" x2="640" y2="230" stroke="var(--ink)" stroke-width="0.9" marker-end="url(#ch3map)" />
 
-        <text x="380" y="258" text-anchor="middle" class="svg-label">hidden features: invariant → equivariant</text>
-        <text x="104" y="150" text-anchor="middle" class="svg-label" transform="rotate(-90 104 150)">few rounds, high body order → many rounds</text>
+        <text x="384" y="262" text-anchor="middle" class="svg-label">hidden features: invariant → equivariant</text>
+        <text x="100" y="145" text-anchor="middle" class="svg-label" transform="rotate(-90 100 145)">few rounds → many rounds</text>
 
-        <text x="250" y="100" text-anchor="middle" class="svg-serif-it">SchNet</text>
-        <text x="250" y="124" text-anchor="middle" class="svg-small">distance scalars</text>
-        <text x="250" y="170" text-anchor="middle" class="svg-serif-it">DimeNet / GemNet</text>
-        <text x="250" y="190" text-anchor="middle" class="svg-small">+ angle scalars</text>
+        <line x1="384" y1="66" x2="384" y2="224" stroke="var(--rule)" stroke-width="0.5" stroke-dasharray="2 4" />
+        <line x1="128" y1="145" x2="640" y2="145" stroke="var(--rule)" stroke-width="0.5" stroke-dasharray="2 4" />
 
-        <text x="540" y="100" text-anchor="middle" class="svg-serif-it" style="fill:var(--oxblood);">NequIP / Allegro</text>
-        <text x="540" y="124" text-anchor="middle" class="svg-small">equivariant features</text>
-        <text x="540" y="186" text-anchor="middle" class="svg-serif-it" style="fill:var(--oxblood);">MACE</text>
-        <text x="540" y="206" text-anchor="middle" class="svg-small">equivariant, high body order</text>
+        <text x="252" y="96" text-anchor="middle" class="svg-serif-it">SchNet</text>
+        <text x="252" y="116" text-anchor="middle" class="svg-serif-it">DimeNet · GemNet</text>
+        <text x="252" y="132" text-anchor="middle" class="svg-small">scalar features, many rounds</text>
 
-        <line x1="380" y1="64" x2="380" y2="222" stroke="var(--rule)" stroke-width="0.5" stroke-dasharray="2 4" />
+        <text x="516" y="100" text-anchor="middle" class="svg-serif-it" style="fill:var(--oxblood);">NequIP · Allegro</text>
+        <text x="516" y="120" text-anchor="middle" class="svg-small">equivariant, many rounds</text>
+
+        <text x="252" y="184" text-anchor="middle" class="svg-serif-it">Behler–Parrinello · ACE</text>
+        <text x="252" y="204" text-anchor="middle" class="svg-small">hand-built, one layer</text>
+
+        <text x="516" y="184" text-anchor="middle" class="svg-serif-it" style="fill:var(--oxblood);">MACE</text>
+        <text x="516" y="204" text-anchor="middle" class="svg-small">equivariant, high body order</text>
 
         <defs>
           <marker id="ch3map" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 z" fill="var(--ink)" /></marker>

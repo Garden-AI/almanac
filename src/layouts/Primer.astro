@@ -12,6 +12,7 @@ interface Props {
   running?: string;     // running-head text, right side
   prev?: NavLink;
   next?: NavLink;
+  gutter?: boolean;     // false on the cover: no right margin for sidenotes
 }
 
 const {
@@ -22,6 +23,7 @@ const {
   running = 'A Primer on Matter Models',
   prev,
   next,
+  gutter = true,
 } = Astro.props;
 
 const homeHref = url('/');
@@ -62,7 +64,7 @@ const contentsHref = url('/primer/');
       </div>
       <hr class="title-rule" />
 
-      <div class="primer-body">
+      <div class:list={['primer-body', { 'primer-body--nogutter': !gutter }]}>
         <slot />
       </div>
 

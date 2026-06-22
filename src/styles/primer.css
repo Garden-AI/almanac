@@ -85,7 +85,9 @@
 .primer hr.title-rule { margin: 22px 0 30px; }
 
 /* ── Reading column ───────────────────────────────────────────── */
-.primer-body { }
+/* A right gutter holds the margin sidenotes; prose stays in the column. */
+.primer-body { padding-right: 244px; }
+.primer-body--nogutter { padding-right: 0; }
 .primer-body > * { max-width: 660px; margin-left: auto; margin-right: auto; }
 .primer-body p {
   font-size: 18px;
@@ -184,10 +186,91 @@
   margin-right: 8px;
 }
 
+/* ── Margin sidenotes (Claude Design) ───────────────────────────── */
+.primer-body .sidenote {
+  float: right;
+  clear: right;
+  width: 212px;
+  max-width: 212px;
+  margin: 6px -244px 18px 0;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--ink-2);
+  border-top: 0.5px solid var(--rule);
+  padding-top: 8px;
+}
+.primer-body .sidenote .sn-label {
+  font-family: var(--smallcaps);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  color: var(--oxblood);
+  display: block;
+  margin-bottom: 4px;
+}
+.primer-body .sidenote p { margin: 0 0 0.55em; font-size: 13.5px; line-height: 1.5; }
+.primer-body .sidenote p:last-child { margin-bottom: 0; }
+.primer-body .sidenote .cmd { font-size: 10.5px; }
+
+/* ── Inline hover-glossary (Claude Design) ──────────────────────── */
+.term { border-bottom: 1px dotted var(--oxblood); cursor: help; position: relative; }
+.term > .gloss {
+  position: absolute;
+  left: 50%;
+  bottom: 150%;
+  width: 248px;
+  transform: translateX(-50%) translateY(4px);
+  background: var(--ink);
+  color: var(--paper);
+  font-family: var(--serif);
+  font-style: normal;
+  font-weight: 400;
+  font-size: 13px;
+  line-height: 1.46;
+  letter-spacing: 0;
+  text-align: left;
+  padding: 9px 12px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.13s, transform 0.13s;
+  z-index: 20;
+  box-shadow: 0 2px 12px rgba(31, 28, 24, 0.22);
+}
+.term:hover > .gloss,
+.term:focus-within > .gloss { opacity: 1; transform: translateX(-50%) translateY(0); }
+.term > .gloss::after {
+  content: "";
+  position: absolute;
+  left: calc(50% - 5px);
+  top: 100%;
+  border: 5px solid transparent;
+  border-top-color: var(--ink);
+}
+.term > .gloss b { color: #e8b3b3; font-weight: 600; }
+
+/* ── Marginalia + glossary collapse on narrow screens ───────────── */
+@media (max-width: 860px) {
+  .primer-body { padding-right: 0; }
+  .primer-body figure.fig { margin-left: auto; margin-right: auto; clear: none; }
+  .primer-body .sidenote {
+    float: none;
+    clear: none;
+    width: auto;
+    max-width: 660px;
+    margin: 1.4em auto;
+    border-top: 0;
+    border-left: 2px solid rgba(122, 31, 31, 0.4);
+    padding: 8px 0 8px 14px;
+    background: rgba(122, 31, 31, 0.03);
+  }
+  .term > .gloss { width: 200px; }
+}
+
 /* ── Figures ──────────────────────────────────────────────────── */
 .primer-body figure.fig {
   max-width: 820px;
   margin: 2.1em auto;
+  margin-right: -244px;   /* reclaim the right gutter so figures run wide */
+  clear: right;           /* never overlap a floated sidenote */
 }
 figure.fig .fig-frame {
   border-top: 1.5px solid var(--ink);

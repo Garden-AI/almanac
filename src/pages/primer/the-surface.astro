@@ -1,5 +1,6 @@
 ---
 import Primer from '../../layouts/Primer.astro';
+import Term from '../../components/Term.astro';
 import { url } from '../../lib/url';
 ---
 <Primer
@@ -30,7 +31,7 @@ import { url } from '../../lib/url';
       <svg viewBox="0 0 720 300" role="img" aria-label="Energy of two atoms versus the distance between them: a steep wall when too close, a valley at the settled separation, a plateau when far apart.">
         <line x1="70" y1="28" x2="70" y2="252" stroke="var(--ink)" stroke-width="1" />
         <line x1="70" y1="252" x2="694" y2="252" stroke="var(--ink)" stroke-width="1" />
-        <text x="64" y="40" text-anchor="end" class="svg-label">energy of the pair</text>
+        <text transform="rotate(-90 22 140)" x="22" y="140" text-anchor="middle" class="svg-label">energy of the pair</text>
         <text x="690" y="274" text-anchor="end" class="svg-serif-it">distance between the two atoms →</text>
 
         <path d="M 104 44 C 144 180, 214 214, 252 214 C 330 214, 384 172, 462 160 C 542 151, 620 150, 688 150"
@@ -41,8 +42,8 @@ import { url } from '../../lib/url';
         <text x="120" y="62" class="svg-small">too close to bear</text>
         <text x="688" y="142" text-anchor="end" class="svg-serif-it">far enough to ignore each other</text>
 
-        <line x1="372" y1="176" x2="320" y2="200" stroke="var(--ink)" stroke-width="1.4" marker-end="url(#f1)" />
-        <text x="380" y="172" class="svg-small">force = the steepness here (which way is downhill)</text>
+        <text x="312" y="98" class="svg-serif-it">the slope here is the force</text>
+        <line x1="398" y1="110" x2="380" y2="176" stroke="var(--ink)" stroke-width="1.4" marker-end="url(#f1)" />
 
         <defs>
           <marker id="f1" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8 z" fill="var(--ink)" /></marker>
@@ -82,7 +83,7 @@ import { url } from '../../lib/url';
   </p>
 
   <p>
-    That landscape is the <strong>potential energy surface</strong>. Almost everything atomistic
+    That landscape is the <strong><Term gloss="<b>Potential energy surface (PES).</b> The energy of a set of atoms as a function of where every atom sits — one number per arrangement. The landscape this whole primer is about.">potential energy surface</Term></strong>. Almost everything atomistic
     simulation does is move on it. Roll downhill until the slope vanishes and you have relaxed a
     structure — found a valley floor. Let the atoms wander with momentum and temperature and you are
     running molecular dynamics. Measure the curve of a valley floor and you have the vibrations.
@@ -148,7 +149,7 @@ import { url } from '../../lib/url';
     the energy of electrons living in the field of these fixed nuclei. Add the one piece it leaves
     out, the nuclei's own repulsion, and you have the total: the height of the surface at this one
     geometry, and only there. Freezing the nuclei to make the electron question well-posed is the
-    <strong>Born–Oppenheimer approximation</strong>. (It can fail where two electron arrangements
+    <strong><Term gloss="<b>Born–Oppenheimer approximation.</b> Because nuclei are thousands of times heavier than electrons, freeze the nuclei in place, let the electrons settle to their lowest-energy arrangement, and read that off as the energy of the geometry.">Born–Oppenheimer approximation</Term></strong>. (It can fail where two electron arrangements
     tie — a conical intersection — but across most of chemistry one surface holds, and it is the
     surface a model learns.)
   </p>
@@ -183,33 +184,35 @@ import { url } from '../../lib/url';
   <p>
     Finding that lowest electron energy is the expensive step. The electrons repel one another and
     tangle together quantum-mechanically; solving for where they settle is a real many-body problem.
-    <strong>Density functional theory</strong> — DFT — is the standard method that makes it doable,
+    <strong><Term gloss="<b>Density functional theory (DFT).</b> The standard, expensive method for the electron problem. It returns one energy (and the forces) for one frozen arrangement, and it supplies almost all of an MLIP's training data.">Density functional theory</Term></strong> — DFT — is the standard method that makes it doable,
     and it produced very nearly all the training data behind the models in this almanac. Doable is
     not cheap. One DFT reading of one arrangement takes minutes to hours, and the cost climbs
     steeply with the number of electrons. Each calculation yields one point on the surface.
   </p>
 
-  <div class="aside">
-    <span class="aside-label">One reading, concretely</span>
-    What does a DFT program take in? Mostly the arrangement itself, plus a few choices. Take the
-    eight-atom cubic cell of silicon:
-    <div class="cmd">in:    8 Si atoms — each an element + (x, y, z) — in a 5.43 Å cube that repeats
-method: PBE functional · plane-wave cutoff 520 eV · 4×4×4 grid of sampling points
-run:    settle the electrons (iterate until self-consistent)
-out:    energy ≈ −43 eV (reference-dependent) · a force on every atom · a stress on the cell</div>
-    That one returns in seconds. The hour-scale jobs are larger — a few hundred atoms, or a more
-    accurate and far costlier functional. The programs that do this are the likes of Quantum ESPRESSO
-    and VASP for solids, ORCA and Psi4 for molecules.
-  </div>
+  <aside class="sidenote">
+    <span class="sn-label">One reading, concretely</span>
+    <p>What a DFT program takes in is mostly the arrangement, plus a few choices — here, the eight-atom cubic cell of silicon:</p>
+    <div class="cmd">in   8 Si atoms,
+     5.43 Å cube,
+     repeating
+how  PBE, 520 eV
+     cutoff, 4×4×4 grid
+run  settle electrons
+     (self-consistent)
+out  energy ≈ −43 eV,
+     forces, cell stress</div>
+    <p>Back in seconds; hour-scale jobs are bigger cells or costlier functionals. Such programs: Quantum ESPRESSO, VASP, ORCA, Psi4.</p>
+  </aside>
 
-  <div class="aside">
-    <span class="aside-label">Forces come almost free</span>
+  <aside class="sidenote">
+    <span class="sn-label">Forces come almost free</span>
     You might think the force costs even more than the energy — that to get the slope you must track
     how the whole electron cloud shifts as a nucleus moves. You don't. Because the electrons have
     already settled to their lowest energy, that shifting term cancels, and the force on a nucleus is
     just the plain electrostatic pull of the settled electron cloud and the other nuclei. The slope
-    comes nearly free with the height. This is the <em>Hellmann–Feynman theorem</em>.
-  </div>
+    comes nearly free with the height. This is the <Term gloss="<b>Hellmann–Feynman theorem.</b> The force on a nucleus is just the ordinary electrostatic pull of the settled electron cloud and the other nuclei — so forces fall out almost for free once you have the energy."><em>Hellmann–Feynman theorem</em></Term>.
+  </aside>
 
   <h2><span class="num">§ 3</span>Two problems</h2>
 
