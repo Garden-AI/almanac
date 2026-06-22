@@ -1,0 +1,341 @@
+---
+import Primer from '../../layouts/Primer.astro';
+import { url } from '../../lib/url';
+---
+<Primer
+  title="Atoms as a Graph"
+  eyebrow="A Primer on Matter Models · Chapter Two"
+  deck="How do you hand a pile of atoms to a function at all? Two ideas — locality and symmetry — turn the question into something a machine can learn."
+  running="Ch. 2 — Atoms as a Graph"
+  prev={{ href: url('/primer/the-surface'), label: 'The Surface Beneath Everything' }}
+  next={{ href: url('/primer/inside-the-network'), label: 'Inside the Network' }}
+>
+  <p class="lead">
+    You have a function to build. It eats an arrangement of atoms and returns one energy. The
+    obvious way to hand it the atoms is to give it their coordinates — a long list of (x, y, z)
+    triples, one per atom — and train a network to turn that list into the energy.
+  </p>
+
+  <p>
+    It fails at once. Pick the whole molecule up and set it down a step to the left. Every coordinate
+    in the list changes; the energy does not. Turn the molecule forty degrees. Every coordinate
+    changes; the energy does not. Swap the labels on two identical atoms — what was atom 5 is now
+    atom 12 — and once more every number moves while the energy sits still. A network fed raw
+    coordinates would have to learn by brute force that all these different-looking lists mean one
+    energy. It is like grading an essay from the pixel positions of the ink: nudge the page and the
+    meaning you learned is gone.
+  </p>
+
+  <p>
+    Three changes, then, must leave the energy untouched: sliding the whole system (a
+    <strong>translation</strong>), turning it (a <strong>rotation</strong>), and relabeling identical
+    atoms (a <strong>permutation</strong>). A description that already obeys all three is worth far
+    more than one the network must learn to ignore. The rest of this chapter builds that description
+    out of two ideas: <strong>locality</strong> and <strong>symmetry</strong>.
+  </p>
+
+  <h2><span class="num">§ 1</span>Locality: chop the energy into pieces</h2>
+
+  <p>
+    Start with locality, the idea Chapter 1 promised and then set aside. An atom's share of the
+    energy depends almost entirely on what sits near it. The atoms across the room barely register.
+  </p>
+
+  <p>
+    So chop the energy into per-atom pieces. Write the total as a sum,
+    <em>E</em> = Σ<sub>i</sub> ε<sub>i</sub>: the energy <em>E</em> is the sum, over every atom
+    <em>i</em>, of a per-atom energy ε<sub>i</sub>. And let each ε<sub>i</sub> depend only on the
+    atoms within a fixed cutoff distance of atom <em>i</em>. Every atom looks around its own
+    neighborhood, contributes its piece, and the pieces add up.
+  </p>
+
+  <p>
+    Picture a stadium crowd whose total noise you want to measure. You do not need a microphone that
+    hears the whole stadium. Give each person a small meter that picks up only their nearest
+    neighbors, read all the meters, and add them. The same per-person rule works whether the crowd
+    is ten people or ten thousand.
+  </p>
+
+  <figure class="fig">
+    <div class="fig-frame">
+      <svg viewBox="0 0 720 290" role="img" aria-label="The total energy written as a sum of per-atom energies, each computed from one atom's local neighborhood.">
+        <g stroke="var(--rule)" stroke-width="1">
+          <line x1="120" y1="80" x2="170" y2="70" />
+          <line x1="120" y1="80" x2="150" y2="130" />
+          <line x1="170" y1="70" x2="200" y2="135" />
+          <line x1="150" y1="130" x2="200" y2="135" />
+          <line x1="150" y1="130" x2="105" y2="150" />
+          <line x1="150" y1="130" x2="165" y2="185" />
+          <line x1="200" y1="135" x2="225" y2="185" />
+        </g>
+        <circle cx="150" cy="130" r="68" fill="none" stroke="var(--oxblood)" stroke-width="1" stroke-dasharray="3 3" />
+        <g fill="var(--ink)">
+          <circle cx="120" cy="80" r="6.5" />
+          <circle cx="170" cy="70" r="6.5" />
+          <circle cx="200" cy="135" r="6.5" />
+          <circle cx="105" cy="150" r="6.5" />
+          <circle cx="165" cy="185" r="6.5" />
+          <circle cx="225" cy="185" r="6.5" />
+        </g>
+        <circle cx="150" cy="130" r="7.5" fill="var(--oxblood)" />
+        <text x="150" y="214" text-anchor="middle" class="svg-small">atom i and the neighbors inside its cutoff</text>
+
+        <line x1="252" y1="120" x2="332" y2="120" stroke="var(--ink)" stroke-width="1.2" marker-end="url(#g1arr)" />
+        <text x="292" y="110" text-anchor="middle" class="svg-small">look around</text>
+
+        <rect x="346" y="98" width="116" height="46" fill="none" stroke="var(--ink)" stroke-width="1" />
+        <text x="404" y="120" text-anchor="middle" class="svg-serif" style="font-size:17px;">εᵢ</text>
+        <text x="404" y="137" text-anchor="middle" class="svg-small">atom i's piece</text>
+
+        <line x1="40" y1="238" x2="680" y2="238" stroke="var(--rule)" stroke-width="0.5" stroke-dasharray="2 4" />
+        <text x="360" y="266" text-anchor="middle" class="svg-serif" style="font-size:18px;">E = ε₁ + ε₂ + ε₃ + ⋯ + εₙ</text>
+
+        <defs>
+          <marker id="g1arr" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 z" fill="var(--ink)" /></marker>
+        </defs>
+      </svg>
+    </div>
+    <figcaption><span class="fig-num">Fig. 1</span>Each atom looks only at the neighbors inside its cutoff and contributes one number, ε<sub>i</sub>; the total energy is those numbers added up.</figcaption>
+  </figure>
+
+  <p>
+    The payoff is <strong>reach</strong>. Because the rule for ε<sub>i</sub> is the same for every
+    atom of a given element and looks only at a local patch — the atoms inside its cutoff — you can
+    learn it on small arrangements and apply it to enormous ones: train on a hundred atoms, run on a
+    million, no retraining. It also settles the puzzle Chapter 1 left open — how a few thousand
+    sampled arrangements could ever cover a space of thousands of dimensions. They do not have to.
+    The model never learns whole arrangements; it learns local patches, and a few thousand small
+    structures hold the same handful of patches over and over.
+  </p>
+
+  <p>
+    Locality is an approximation. Cutting an atom's world off at a radius is, in principle, a drastic
+    one that simply happens to work well: the energy left out beyond a few ångströms (Å) — about an
+    atom's width — is, in well-behaved systems, often only a few thousandths of an electron-volt (eV)
+    per atom, negligible against the eV-scale energies that make and break bonds. Where it does not
+    work — pull an electron off one end of a long molecule and the energy shifts at the far end,
+    beyond any cutoff — the local picture goes blind. That failure, and the machinery built to repair
+    it, is a thread we pick up later.
+  </p>
+
+  <h2><span class="num">§ 2</span>The cutoff, made smooth</h2>
+
+  <p>
+    The cutoff needs one piece of care. If a neighborhood simply stopped at a hard edge — inside
+    counts, outside does not — then an atom drifting across that edge would pop in and out of the
+    sum, and the energy would jump. Forces are slopes of the energy; a jump in the energy is an
+    infinite force. That would wreck any simulation in a single step.
+  </p>
+
+  <p>
+    So the boundary is a dimmer, not a switch. Each neighbor's contribution is multiplied by a
+    <strong>cutoff function</strong> that fades to zero as the neighbor reaches the cutoff radius
+    <em>r</em><sub>c</sub> — full weight up close, then easing off so gently that it arrives at zero
+    with zero slope, no kink. An atom drifting across the boundary weighs nothing there and crosses
+    smoothly, so neither the energy nor the force — itself a slope — ever jumps. The cutoffs are
+    small: five or six ångströms, far enough to take in an atom's nearest neighbors and the ring or
+    two beyond.
+  </p>
+
+  <figure class="fig">
+    <div class="fig-frame">
+      <svg viewBox="0 0 720 280" role="img" aria-label="A central atom with a cutoff sphere: neighbors inside are connected to it, neighbors outside are not, and a cutoff function fades smoothly to zero slope at the radius.">
+        <circle cx="200" cy="150" r="120" fill="none" stroke="var(--oxblood)" stroke-width="1" />
+        <text x="200" y="24" text-anchor="middle" class="svg-small">cutoff radius rᶜ ≈ 5 Å</text>
+
+        <g stroke="var(--rule)" stroke-width="1">
+          <line x1="200" y1="150" x2="140" y2="110" />
+          <line x1="200" y1="150" x2="250" y2="110" />
+          <line x1="200" y1="150" x2="160" y2="205" />
+          <line x1="200" y1="150" x2="270" y2="180" />
+          <line x1="200" y1="150" x2="130" y2="180" />
+        </g>
+        <g fill="var(--ink)">
+          <circle cx="140" cy="110" r="6" />
+          <circle cx="250" cy="110" r="6" />
+          <circle cx="160" cy="205" r="6" />
+          <circle cx="270" cy="180" r="6" />
+          <circle cx="130" cy="180" r="6" />
+        </g>
+        <circle cx="200" cy="150" r="8" fill="var(--oxblood)" />
+
+        <circle cx="316" cy="150" r="6" fill="var(--ink)" opacity="0.4" />
+        <text x="322" y="170" class="svg-small" opacity="0.7">at the edge: weight ≈ 0</text>
+
+        <g fill="none" stroke="var(--ink-3)" stroke-width="1.2">
+          <circle cx="360" cy="84" r="6" />
+          <circle cx="372" cy="214" r="6" />
+          <circle cx="318" cy="250" r="6" />
+        </g>
+        <text x="372" y="234" class="svg-small">outside: ignored</text>
+
+        <!-- inset: cutoff function, flat at both ends -->
+        <line x1="478" y1="64" x2="478" y2="214" stroke="var(--ink)" stroke-width="0.75" />
+        <line x1="478" y1="214" x2="694" y2="214" stroke="var(--ink)" stroke-width="0.75" />
+        <text x="472" y="74" text-anchor="end" class="svg-small">weight</text>
+        <text x="472" y="86" text-anchor="end" class="svg-small">1</text>
+        <text x="694" y="232" text-anchor="end" class="svg-serif-it">distance →</text>
+        <path d="M 482 82 C 560 82, 600 212, 656 212 L 690 212" fill="none" stroke="var(--oxblood)" stroke-width="2" />
+        <line x1="656" y1="210" x2="656" y2="218" stroke="var(--ink)" stroke-width="0.75" />
+        <text x="656" y="230" text-anchor="middle" class="svg-small">rᶜ</text>
+      </svg>
+    </div>
+    <figcaption><span class="fig-num">Fig. 2</span>An atom's cutoff. Neighbors inside the radius count toward its energy; atoms outside are ignored. The weight does not drop off a cliff at <em>r</em><sub>c</sub> — it eases to zero with zero slope (inset), so an atom crossing the boundary never makes the energy or the force jump.</figcaption>
+  </figure>
+
+  <h2><span class="num">§ 3</span>Atoms as a graph</h2>
+
+  <p>
+    Locality has a natural shape, and it gives the chapter its name. Draw every atom as a node. Draw
+    an edge between two atoms whenever they fall within the cutoff of each other. What you get is a
+    <strong>graph</strong> — and it is exactly the data structure the machinery of the next chapter
+    runs on. The same neighborhood can be drawn as the ball-and-stick picture a chemist sketches, or
+    as this graph of nodes and edges, or as a plain table of the distances between every pair. They
+    carry the same information; the graph is the form the model works in.
+  </p>
+
+  <figure class="fig">
+    <div class="fig-frame">
+      <svg viewBox="0 0 720 230" role="img" aria-label="The same four-atom group drawn two ways: as a ball-and-stick molecule, and as an abstract graph of nodes and edges.">
+        <text x="160" y="40" text-anchor="middle" class="svg-label">ball-and-stick</text>
+        <g stroke="var(--ink)" stroke-width="2">
+          <line x1="110" y1="140" x2="170" y2="100" />
+          <line x1="110" y1="140" x2="170" y2="180" />
+          <line x1="170" y1="100" x2="220" y2="140" />
+          <line x1="170" y1="180" x2="220" y2="140" />
+        </g>
+        <g fill="var(--ink)">
+          <circle cx="110" cy="140" r="9" />
+          <circle cx="170" cy="100" r="9" />
+          <circle cx="170" cy="180" r="9" />
+          <circle cx="220" cy="140" r="9" />
+        </g>
+
+        <text x="360" y="120" text-anchor="middle" class="svg-serif" style="font-size:20px;">→</text>
+
+        <text x="555" y="40" text-anchor="middle" class="svg-label">graph</text>
+        <g stroke="var(--rule)" stroke-width="1.2">
+          <line x1="505" y1="140" x2="565" y2="100" />
+          <line x1="505" y1="140" x2="565" y2="180" />
+          <line x1="565" y1="100" x2="615" y2="140" />
+          <line x1="565" y1="180" x2="615" y2="140" />
+          <line x1="565" y1="100" x2="565" y2="180" />
+        </g>
+        <g fill="var(--paper)" stroke="var(--ink)" stroke-width="1.5">
+          <circle cx="505" cy="140" r="8" />
+          <circle cx="565" cy="100" r="8" />
+          <circle cx="565" cy="180" r="8" />
+          <circle cx="615" cy="140" r="8" />
+        </g>
+        <line x1="556" y1="108" x2="574" y2="172" stroke="var(--oxblood)" stroke-width="1.2" />
+        <text x="640" y="140" class="svg-small">edge within</text>
+        <text x="640" y="152" class="svg-small">cutoff, not a bond</text>
+      </svg>
+    </div>
+    <figcaption><span class="fig-num">Fig. 3</span>The same group of atoms as a molecule and as a graph (and, just as well, as a table of pairwise distances). One caution: an edge means "within the cutoff," not "chemically bonded." The cutoff runs several bond lengths, so an atom is joined to many neighbors it shares no bond with — the oxblood edge here is one of them.</figcaption>
+  </figure>
+
+  <p>
+    So the graph is a map of who-is-near-whom, not who-is-bonded-to-whom.
+  </p>
+
+  <h2><span class="num">§ 4</span>Describing a patch without coordinates</h2>
+
+  <p>
+    We have each atom's neighborhood; how do we hand it to the function without the raw coordinates
+    that doomed the naive attempt? Describe each neighbor by three things that survive all three
+    symmetries: its <strong>distance</strong> from the central atom, the <strong>angles</strong> it
+    makes with the other neighbors, and its <strong>element</strong>. Distances and angles do not
+    change when the molecule is slid or turned; an element stays itself however the molecule is
+    placed or labeled. And because each neighbor's term carries its element, adding the neighbors up
+    in any order leaves the patch unchanged — there is the permutation symmetry. (A change that
+    leaves the energy untouched is a symmetry of it; we have found three.)
+  </p>
+
+  <p>
+    Distances, angles, and species still do not pin a neighborhood down completely — that takes a
+    little more, and supplying it is part of the network's job next chapter — but they are the
+    backbone of every description that follows.
+  </p>
+
+  <h2><span class="num">§ 5</span>Invariant energy, equivariant forces</h2>
+
+  <p>
+    The energy is a single number, and turning the molecule does not change it. A quantity that
+    ignores the rotation this way is <strong>invariant</strong>. Think of a bathroom scale: turn the
+    scale on the floor and the weight it reads is the same.
+  </p>
+
+  <p>
+    The force is not a number but an arrow — a direction and a strength on each atom. Turn the
+    molecule and every force arrow turns rigidly with it, keeping its grip on each atom. A quantity
+    that turns along with the system is <strong>equivariant</strong>. In symbols, rotate the whole
+    system by a rotation <em>R</em> and the energy <em>E</em> is unchanged, while each force
+    <em>f</em> becomes <em>R f</em> — turned by the same <em>R</em>.
+  </p>
+
+  <figure class="fig">
+    <div class="fig-frame">
+      <svg viewBox="0 0 720 280" role="img" aria-label="A molecule with force arrows on its atoms, and the same molecule rotated: the force arrows rotate with it while the energy reading is unchanged.">
+        <g stroke="var(--ink)" stroke-width="2">
+          <line x1="130" y1="170" x2="210" y2="170" />
+          <line x1="130" y1="170" x2="170" y2="100" />
+          <line x1="210" y1="170" x2="170" y2="100" />
+        </g>
+        <g fill="var(--ink)">
+          <circle cx="130" cy="170" r="8" />
+          <circle cx="210" cy="170" r="8" />
+          <circle cx="170" cy="100" r="8" />
+        </g>
+        <g stroke="var(--oxblood)" stroke-width="1.6">
+          <line x1="130" y1="170" x2="113" y2="190" marker-end="url(#frc)" />
+          <line x1="210" y1="170" x2="227" y2="190" marker-end="url(#frc)" />
+          <line x1="170" y1="100" x2="170" y2="76" marker-end="url(#frc)" />
+        </g>
+        <text x="170" y="238" text-anchor="middle" class="svg-serif-it">E = −4.21 eV</text>
+
+        <line x1="300" y1="150" x2="396" y2="150" stroke="var(--ink)" stroke-width="1.2" marker-end="url(#rot)" />
+        <text x="348" y="140" text-anchor="middle" class="svg-small">rotate</text>
+
+        <g stroke="var(--ink)" stroke-width="2">
+          <line x1="497" y1="140" x2="558" y2="191" />
+          <line x1="497" y1="140" x2="572" y2="112" />
+          <line x1="558" y1="191" x2="572" y2="112" />
+        </g>
+        <g fill="var(--ink)">
+          <circle cx="497" cy="140" r="8" />
+          <circle cx="558" cy="191" r="8" />
+          <circle cx="572" cy="112" r="8" />
+        </g>
+        <g stroke="var(--oxblood)" stroke-width="1.6">
+          <line x1="497" y1="140" x2="474" y2="144" marker-end="url(#frc)" />
+          <line x1="558" y1="191" x2="558" y2="214" marker-end="url(#frc)" />
+          <line x1="572" y1="112" x2="586" y2="95" marker-end="url(#frc)" />
+        </g>
+        <text x="535" y="245" text-anchor="middle" class="svg-serif-it">E = −4.21 eV</text>
+
+        <defs>
+          <marker id="frc" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8 z" fill="var(--oxblood)" /></marker>
+          <marker id="rot" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 z" fill="var(--ink)" /></marker>
+        </defs>
+      </svg>
+    </div>
+    <figcaption><span class="fig-num">Fig. 4</span>Same molecule, rotated. The energy reading is identical — invariant — while every force arrow has turned with the molecule — equivariant.</figcaption>
+  </figure>
+
+  <p>
+    Because the force is the slope of the energy — <em>F</em> = −∇<em>E</em> — a properly invariant
+    energy yields properly equivariant forces the instant you differentiate it. Get the energy's
+    symmetry right and the forces' comes free. Whether to let rotation live <em>inside</em> the
+    network's hidden workings, not only at its input and output, is the heart of the next chapter.
+  </p>
+
+  <p>
+    The shape of the machine is now visible. Cut the energy into local per-atom pieces, which makes
+    the atoms a graph. Describe each atom's patch by distances, angles, and species, which slide,
+    turn, and relabel without changing. Add the pieces for an invariant energy; differentiate for
+    equivariant forces. One box is still shut: the per-atom function ε<sub>i</sub> itself — how a
+    neighborhood becomes a number. Opening that box is the next chapter, and it is where the learning
+    actually happens.
+  </p>
+</Primer>

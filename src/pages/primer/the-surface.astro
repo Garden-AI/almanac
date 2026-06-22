@@ -1,0 +1,344 @@
+---
+import Primer from '../../layouts/Primer.astro';
+import { url } from '../../lib/url';
+---
+<Primer
+  title="The Surface Beneath Everything"
+  eyebrow="A Primer on Matter Models · Chapter One"
+  deck="Before there is a model, there is a landscape. Two atoms and a dial reveal its shape. Mapping it is another matter."
+  running="Ch. 1 — The Surface Beneath Everything"
+  next={{ href: url('/primer/atoms-as-a-graph'), label: 'Atoms as a Graph' }}
+>
+  <p class="lead">
+    Set one argon atom on a table and roll a second one toward it. Far apart, the two ignore each
+    other. Bring them closer and they begin to pull together — gently, then harder. Closer still
+    and the pull turns into a shove, because two atoms cannot share the same space. Somewhere
+    between those extremes is a separation the pair settles into, the way a marble settles into a
+    bowl.
+  </p>
+
+  <p>
+    Give yourself two instruments. A <strong>dial</strong> that sets the distance between the atoms.
+    A <strong>gauge</strong> that reads the energy of the pair at whatever distance you dial in.
+    Turn the dial through every distance and write down the energy at each one. Plot it, and a curve
+    appears: high on the left, where the atoms are crammed together; down into a valley at the
+    settled separation; up to a plateau on the right, where the two stop noticing each other.
+  </p>
+
+  <figure class="fig">
+    <div class="fig-frame">
+      <svg viewBox="0 0 720 300" role="img" aria-label="Energy of two atoms versus the distance between them: a steep wall when too close, a valley at the settled separation, a plateau when far apart.">
+        <line x1="70" y1="28" x2="70" y2="252" stroke="var(--ink)" stroke-width="1" />
+        <line x1="70" y1="252" x2="694" y2="252" stroke="var(--ink)" stroke-width="1" />
+        <text x="64" y="40" text-anchor="end" class="svg-label">energy of the pair</text>
+        <text x="690" y="274" text-anchor="end" class="svg-serif-it">distance between the two atoms →</text>
+
+        <path d="M 104 44 C 144 180, 214 214, 252 214 C 330 214, 384 172, 462 160 C 542 151, 620 150, 688 150"
+              fill="none" stroke="var(--oxblood)" stroke-width="2" />
+
+        <circle cx="252" cy="214" r="3.4" fill="var(--ink)" />
+        <text x="252" y="236" text-anchor="middle" class="svg-serif-it">the separation they settle into</text>
+        <text x="120" y="62" class="svg-small">too close to bear</text>
+        <text x="688" y="142" text-anchor="end" class="svg-serif-it">far enough to ignore each other</text>
+
+        <line x1="372" y1="176" x2="320" y2="200" stroke="var(--ink)" stroke-width="1.4" marker-end="url(#f1)" />
+        <text x="380" y="172" class="svg-small">force = the steepness here (which way is downhill)</text>
+
+        <defs>
+          <marker id="f1" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8 z" fill="var(--ink)" /></marker>
+        </defs>
+      </svg>
+    </div>
+    <figcaption><span class="fig-num">Fig. 1</span>Two atoms, one dial. Turn the dial to set their separation; read the gauge to get the energy of the pair. The valley is where the pair wants to be. The slope anywhere is how hard the atoms are pushed toward that valley — and the slope is the force.</figcaption>
+  </figure>
+
+  <p>
+    Two things in that curve carry the whole primer. The valley is where the pair wants to be; a
+    deeper valley is a more stable arrangement. The slope is the force — steeper slope, harder push
+    toward the valley. The force is nothing but the slope of the energy: which way is downhill, and
+    how steep. In symbols, <em>F</em> = −d<em>E</em>/d<em>x</em>: the force <em>F</em> is minus the
+    slope of the energy <em>E</em> as you move a position <em>x</em>. The minus sign is the whole
+    point — the force pushes the way the energy falls. With many atoms free to move in every
+    direction, that one slope becomes a slope in all directions at once, written −∇<em>E</em>, but it
+    means the same thing: downhill, and how steep.
+  </p>
+
+  <h2><span class="num">§ 1</span>A landscape you cannot picture</h2>
+
+  <p>
+    We turned one dial. A real material has thousands of atoms, each free to move three ways, so it
+    has thousands of dials. The energy is no longer a curve but a surface standing over a space of
+    thousands of dimensions — a landscape no one can picture.
+  </p>
+
+  <p>
+    Add all the dials you like; the gauge still reads <strong>one number</strong>, a single energy
+    for the whole arrangement. The dials are the input — one axis per coordinate of every atom. The
+    energy is the output — one scalar. The landscape is that one number plotted over the space of
+    all dial settings, the way a map plots a single altitude over a field. Our field has thousands
+    of axes instead of two. Many numbers in, one number out — which is all the notation
+    <em>E</em>(<em>R</em>) means: the energy <em>E</em> as a function of <em>R</em>, the whole list of
+    every atom's coordinates. Hand it <em>R</em>, and it returns a single number.
+  </p>
+
+  <p>
+    That landscape is the <strong>potential energy surface</strong>. Almost everything atomistic
+    simulation does is move on it. Roll downhill until the slope vanishes and you have relaxed a
+    structure — found a valley floor. Let the atoms wander with momentum and temperature and you are
+    running molecular dynamics. Measure the curve of a valley floor and you have the vibrations.
+    Find the lowest pass between two valleys and you have a chemical reaction, with its height
+    setting the rate. Each needs only what the two-atom bowl gave us: the energy at a point, and the
+    slope there.
+  </p>
+
+  <figure class="fig">
+    <div class="fig-frame">
+      <svg viewBox="0 0 720 290" role="img" aria-label="A potential energy landscape with two valleys separated by a pass, a ball resting in one valley, and a dashed path over the pass to the other.">
+        <line x1="66" y1="26" x2="66" y2="246" stroke="var(--ink)" stroke-width="1" />
+        <line x1="66" y1="246" x2="694" y2="246" stroke="var(--ink)" stroke-width="1" />
+        <text x="60" y="38" text-anchor="end" class="svg-label">energy</text>
+        <text x="690" y="268" text-anchor="end" class="svg-serif-it">the space of all arrangements (thousands of dials)</text>
+
+        <path d="M 74 70 C 130 150, 168 188, 214 188 C 268 188, 318 96, 360 90 C 404 96, 470 206, 520 210 C 584 214, 654 120, 690 96"
+              fill="none" stroke="var(--oxblood)" stroke-width="2" />
+
+        <circle cx="214" cy="188" r="3" fill="var(--ink)" />
+        <circle cx="520" cy="210" r="3" fill="var(--ink)" />
+        <circle cx="360" cy="90" r="3" fill="var(--ink)" />
+        <text x="214" y="208" text-anchor="middle" class="svg-serif">a stable structure</text>
+        <text x="520" y="230" text-anchor="middle" class="svg-serif">a more stable structure</text>
+        <text x="360" y="78" text-anchor="middle" class="svg-serif-it">a pass — a reaction</text>
+
+        <circle cx="236" cy="178" r="6" fill="var(--paper)" stroke="var(--ink)" stroke-width="1.4" />
+        <path d="M 244 176 C 300 150, 330 104, 360 98 C 392 104, 446 196, 500 206"
+              fill="none" stroke="var(--ink)" stroke-width="1" stroke-dasharray="3 4" />
+      </svg>
+    </div>
+    <figcaption><span class="fig-num">Fig. 2</span>The same bowl, in thousands of dimensions. We can draw only one winding path through it — the page holds two dimensions, not thousands — but every feature is real. Each valley is a stable arrangement; the lowest pass between two valleys is a reaction; the slope everywhere is the force.</figcaption>
+  </figure>
+
+  <h2><span class="num">§ 2</span>What the gauge measures</h2>
+
+  <p>
+    The gauge reads an energy — the total energy of this one fixed arrangement of atoms. The
+    question worth asking is what sets that number: why one arrangement comes out low and another
+    high.
+  </p>
+
+  <p>
+    An atom is a nucleus — a small, heavy, positive core — surrounded by electrons. So the energy
+    splits in two: <em>E</em> = <em>E</em><sub>nuclei</sub> + <em>E</em><sub>electrons</sub>. The
+    first term is the nuclei pushing each other apart — they are all positive, and like charges
+    repel — and it is plain electrostatics, a number you could work out by hand from where the nuclei
+    sit. The second term, the electrons, is the hard part, and the interesting one. They are the
+    glue — shared between nuclei, they hold the arrangement together — and where they go decides
+    almost everything about the energy.
+  </p>
+
+  <p>
+    Electrons are not pinned in place. Given where the nuclei are, they spread into whatever
+    arrangement is lowest in energy, and because they are light — a proton outweighs one about 1836
+    to one — they fall into it almost the instant the nuclei move. So we can hold the nuclei still
+    and ask a question with a single answer: with these nuclei frozen here, what is the lowest
+    energy the electrons can reach?
+  </p>
+
+  <p>
+    That lowest electron energy already counts the pull between the electrons and the nuclei — it is
+    the energy of electrons living in the field of these fixed nuclei. Add the one piece it leaves
+    out, the nuclei's own repulsion, and you have the total: the height of the surface at this one
+    geometry, and only there. Freezing the nuclei to make the electron question well-posed is the
+    <strong>Born–Oppenheimer approximation</strong>. (It can fail where two electron arrangements
+    tie — a conical intersection — but across most of chemistry one surface holds, and it is the
+    surface a model learns.)
+  </p>
+
+  <figure class="fig">
+    <div class="fig-frame">
+      <svg viewBox="0 0 720 240" role="img" aria-label="Heavy slow nuclei surrounded by a fast electron cloud; freezing the nuclei lets the electrons settle, and the settled energy is read off.">
+        <defs>
+          <pattern id="cloud3" patternUnits="userSpaceOnUse" width="6" height="6" patternTransform="rotate(45)">
+            <line x1="0" y1="0" x2="0" y2="6" stroke="var(--ink-3)" stroke-width="0.5" opacity="0.5" />
+          </pattern>
+          <marker id="a3b" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 z" fill="var(--ink)" /></marker>
+        </defs>
+
+        <text x="230" y="34" text-anchor="middle" class="svg-serif-it">electrons: light and fast — they settle almost instantly</text>
+        <ellipse cx="230" cy="118" rx="150" ry="72" fill="url(#cloud3)" stroke="var(--rule)" stroke-width="0.75" />
+        <circle cx="180" cy="118" r="10" fill="var(--oxblood)" />
+        <circle cx="280" cy="118" r="10" fill="var(--oxblood)" />
+        <text x="230" y="208" text-anchor="middle" class="svg-small">nuclei: heavy and slow (a proton outweighs an electron ≈ 1836 : 1) — treat as frozen</text>
+
+        <line x1="392" y1="118" x2="486" y2="118" stroke="var(--ink)" stroke-width="1.2" marker-end="url(#a3b)" />
+        <text x="439" y="108" text-anchor="middle" class="svg-small">read</text>
+
+        <rect x="498" y="90" width="196" height="56" fill="none" stroke="var(--ink)" stroke-width="1" />
+        <text x="596" y="114" text-anchor="middle" class="svg-label">one energy</text>
+        <text x="596" y="134" text-anchor="middle" class="svg-serif-it">the height at this geometry</text>
+      </svg>
+    </div>
+    <figcaption><span class="fig-num">Fig. 3</span>What the gauge measures. The nuclei are thousands of times heavier than the electrons, so we hold them still, let the electrons fall to their lowest-energy arrangement, and read the result. That reading — plus the bare nuclei's repulsion — is the height of the surface at this one geometry.</figcaption>
+  </figure>
+
+  <p>
+    Finding that lowest electron energy is the expensive step. The electrons repel one another and
+    tangle together quantum-mechanically; solving for where they settle is a real many-body problem.
+    <strong>Density functional theory</strong> — DFT — is the standard method that makes it doable,
+    and it produced very nearly all the training data behind the models in this almanac. Doable is
+    not cheap. One DFT reading of one arrangement takes minutes to hours, and the cost climbs
+    steeply with the number of electrons. Each calculation yields one point on the surface.
+  </p>
+
+  <div class="aside">
+    <span class="aside-label">One reading, concretely</span>
+    What does a DFT program take in? Mostly the arrangement itself, plus a few choices. Take the
+    eight-atom cubic cell of silicon:
+    <div class="cmd">in:    8 Si atoms — each an element + (x, y, z) — in a 5.43 Å cube that repeats
+method: PBE functional · plane-wave cutoff 520 eV · 4×4×4 grid of sampling points
+run:    settle the electrons (iterate until self-consistent)
+out:    energy ≈ −43 eV (reference-dependent) · a force on every atom · a stress on the cell</div>
+    That one returns in seconds. The hour-scale jobs are larger — a few hundred atoms, or a more
+    accurate and far costlier functional. The programs that do this are the likes of Quantum ESPRESSO
+    and VASP for solids, ORCA and Psi4 for molecules.
+  </div>
+
+  <div class="aside">
+    <span class="aside-label">Forces come almost free</span>
+    You might think the force costs even more than the energy — that to get the slope you must track
+    how the whole electron cloud shifts as a nucleus moves. You don't. Because the electrons have
+    already settled to their lowest energy, that shifting term cancels, and the force on a nucleus is
+    just the plain electrostatic pull of the settled electron cloud and the other nuclei. The slope
+    comes nearly free with the height. This is the <em>Hellmann–Feynman theorem</em>.
+  </div>
+
+  <h2><span class="num">§ 3</span>Two problems</h2>
+
+  <p>
+    Two problems now stand between this surface and any use of it.
+  </p>
+
+  <p>
+    <strong>Each reading is slow.</strong> Minutes to hours, for one arrangement of atoms.
+  </p>
+
+  <p>
+    <strong>There are far too many readings to take.</strong> You might hope to read the gauge once
+    at every arrangement and store the answers in a table. So count the arrangements. Ten atoms in
+    three dimensions is thirty dials; allow each dial only ten coarse settings and the table needs
+    10<sup>30</sup> entries — more than the atoms in your body. Ten atoms is nothing; real
+    simulations want thousands. The table could never be built, by anyone, on any machine.
+  </p>
+
+  <p>
+    The two compound. To watch a crack spread through a solid, a film grow on a battery electrode, or
+    a catalyst cycle through reaction after reaction, you step the atoms forward in tiny time-steps
+    and read the gauge at every step — millions of slow readings, across thousands or millions of
+    atoms. You will never get there one DFT calculation at a time.
+  </p>
+
+  <h2><span class="num">§ 4</span>The escape</h2>
+
+  <p>
+    The escape is already in your calculator. Press the sine button and sin 31° appears at once. The
+    calculator did not look it up in a stored table — there are infinitely many angles — and it did
+    not recompute sine from its definition the slow way. It evaluated a short formula that someone
+    long ago fit to the true sine curve, a handful of numbers that reproduce it to more decimal
+    places than you will ever need. The expensive work happened once, when the formula was built;
+    every press since has been cheap.
+  </p>
+
+  <p>
+    A machine-learned interatomic potential plays the same trick on the potential energy surface,
+    with DFT in the role of the slow honest computation. Pay for DFT readings at a few thousand
+    well-chosen arrangements — slow, but a few thousand, not 10<sup>30</sup>. Fit a flexible function
+    through them. From then on, asking that function for an energy takes milliseconds, not hours. That
+    function is the MLIP.
+  </p>
+
+  <p>
+    Both problems give way. Evaluating the fit anywhere is cheap, so <em>each reading is slow</em> no
+    longer bites. And the fit was built from only a few thousand sampled arrangements, so we never
+    had to face <em>too many readings to take</em> — we sampled a handful and let the function cover
+    the rest.
+  </p>
+
+  <p>
+    Cover the rest — in thirty thousand dimensions, from a few thousand points? It should be
+    hopeless, and would be, but for one more fact about the surface: it is built from local pieces.
+    An atom's energy depends almost entirely on its near neighbors, not on atoms an ocean away. So
+    the model never learns a whole arrangement at once. It learns the few local patterns an atom can
+    sit in, and a few thousand small arrangements hold those patterns many times over. The same rule
+    then sums over a million atoms it has never seen. How it does that is the work of a later
+    chapter.
+  </p>
+
+  <figure class="fig">
+    <div class="fig-frame">
+      <svg viewBox="0 0 720 280" role="img" aria-label="One slow DFT calculation yields a single point; many such points are then fitted by a smooth fast curve, the machine-learned potential.">
+        <text x="120" y="32" text-anchor="middle" class="svg-label">one DFT reading</text>
+        <circle cx="120" cy="92" r="22" fill="none" stroke="var(--ink)" stroke-width="1.2" />
+        <line x1="120" y1="92" x2="120" y2="76" stroke="var(--ink)" stroke-width="1.2" />
+        <line x1="120" y1="92" x2="133" y2="99" stroke="var(--ink)" stroke-width="1.2" />
+        <text x="120" y="132" text-anchor="middle" class="svg-small">minutes–hours</text>
+        <line x1="120" y1="150" x2="120" y2="188" stroke="var(--ink)" stroke-width="1" marker-end="url(#a4b)" />
+        <text x="120" y="212" text-anchor="middle" class="svg-small">one point</text>
+        <circle cx="120" cy="234" r="4.5" fill="var(--ink)" />
+
+        <line x1="210" y1="40" x2="210" y2="252" stroke="var(--rule)" stroke-width="0.75" stroke-dasharray="3 4" />
+
+        <line x1="250" y1="36" x2="250" y2="252" stroke="var(--ink)" stroke-width="1" />
+        <line x1="250" y1="252" x2="700" y2="252" stroke="var(--ink)" stroke-width="1" />
+        <text x="244" y="48" text-anchor="end" class="svg-label">energy</text>
+        <text x="698" y="272" text-anchor="end" class="svg-serif-it">arrangement</text>
+
+        <path d="M 262 78 C 312 150, 350 178, 392 178 C 440 178, 486 104, 528 100 C 574 106, 626 168, 676 96"
+              fill="none" stroke="var(--oxblood)" stroke-width="2" />
+        <circle cx="288" cy="116" r="4" fill="var(--ink)" />
+        <circle cx="360" cy="174" r="4" fill="var(--ink)" />
+        <circle cx="430" cy="150" r="4" fill="var(--ink)" />
+        <circle cx="500" cy="104" r="4" fill="var(--ink)" />
+        <circle cx="560" cy="120" r="4" fill="var(--ink)" />
+        <circle cx="640" cy="132" r="4" fill="var(--ink)" />
+        <text x="470" y="234" text-anchor="middle" class="svg-serif-it">the fitted potential: evaluated anywhere, in milliseconds</text>
+
+        <defs>
+          <marker id="a4b" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 z" fill="var(--ink)" /></marker>
+        </defs>
+      </svg>
+    </div>
+    <figcaption><span class="fig-num">Fig. 4</span>The escape. Each black dot is one arrangement someone paid for in DFT — a slow, trustworthy reading. The oxblood curve is the potential, fit to thread the dots. A few thousand readings; the potential fills in the rest.</figcaption>
+  </figure>
+
+  <p>
+    Two things to carry forward. First, nearly every such model computes its forces as the exact
+    slope of its own energy — the rule <em>F</em> = −∇<em>E</em> applied to the model itself, not a
+    second quantity figured on the side. A model's energies and forces can never contradict each
+    other, which matters the moment you step the atoms forward in time.
+  </p>
+
+  <p>
+    Second, the accuracy — and here the calculator analogy breaks. We know the true sine on its own
+    terms: we can compute it to any precision and check the formula against it at any angle, so its
+    error is bounded everywhere and can always be made smaller. An MLIP has no such anchor. The
+    surface it fits is the very thing too expensive to evaluate, so it cannot be checked everywhere.
+    Near the arrangements it trained on, it is excellent. Far from them — an exotic bond, a pressure
+    no training structure ever saw — it can be wrong, and it will not warn you. There is no precision
+    dial; the remedy is to feed it more DFT where it is weak, and knowing where it is weak is its own
+    hard problem.
+  </p>
+
+  <p>
+    And even at its best, an MLIP cannot beat its teacher. It learned DFT, so it inherits DFT's
+    mistakes: where the reference gets a bond wrong, the model gets it wrong too — confidently, and a
+    million times faster. DFT is not reality, only a good approximation to it; the model is an
+    approximation to that.
+  </p>
+
+  <p>
+    And the electrons? Having done their work in the training data, they never appear in the
+    finished model. Which leaves the word we have leaned on without earning it: <em>fit</em>. We keep
+    saying the model is fit to the surface and built from local pieces — but how does a function take
+    a list of atomic positions and hand back one energy, cheaply, while honoring that locality? That
+    is where we turn next.
+  </p>
+</Primer>

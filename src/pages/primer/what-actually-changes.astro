@@ -1,0 +1,293 @@
+---
+import Primer from '../../layouts/Primer.astro';
+import { url } from '../../lib/url';
+---
+<Primer
+  title="What Actually Changes"
+  eyebrow="A Primer on Matter Models · Chapter Seven"
+  deck="A fast, near-universal potential moves the bottleneck. It does not remove it — and which outcomes were ever gated by the potential is a sharper question than it looks."
+  running="Ch. 7 — What Actually Changes"
+  prev={{ href: url('/primer/at-inference-time'), label: 'At Inference Time' }}
+>
+  <p class="lead">
+    The promise is easy to state. Make the energy of a set of atoms cheap and accurate everywhere,
+    and the world of materials and molecules opens. The trouble is in the quiet word
+    <em>everywhere</em>, and in a hidden assumption underneath the whole sentence: that the energy
+    surface was the thing standing in the way of the outcome you cared about.
+  </p>
+
+  <p>
+    For most headline outcomes it was not. A drug, a battery, a catalyst, a better alloy — each is
+    the end of a long pipeline, and the energy evaluation is one station on it. Make that station
+    free and the pipeline does not finish; the queue simply backs up at the next station. So the
+    useful question is not "what does a universal potential unlock," but the narrower and more
+    honest one: which outcomes were actually gated by the potential energy surface, and which only
+    look like they were.
+  </p>
+
+  <h2><span class="num">§ 1</span>The bottleneck moves; it does not vanish</h2>
+
+  <p>
+    Picture the path from an idea to a thing that works as a line of stations. First, decide what to
+    even make — pick a composition, a structure, a molecule. Then simulate it: relax it, check that
+    it holds together, predict how it behaves. Then synthesize it in a lab. Then measure the real
+    article and find out whether the simulation told the truth. The potential lives entirely in the
+    second station.
+  </p>
+
+  <p>
+    A fast, accurate potential shrinks that second station, sometimes by orders of magnitude — a
+    relaxation that was hours of DFT becomes seconds. But shrinking one station only matters to the
+    whole line if it was the slow one. For most real programs the slow stations are elsewhere:
+    deciding what to make (the <strong>inverse problem</strong> — you can score a candidate far
+    faster than you can think of the right candidate), and making and measuring it (synthesis and
+    experimental validation, which run at the speed of furnaces and instruments, not GPUs). Free
+    energy evaluation relocates the rate limiter to those stations; it does not abolish it.
+  </p>
+
+  <figure class="fig">
+    <div class="fig-frame">
+      <svg viewBox="0 0 720 230" role="img" aria-label="A four-station pipeline from idea to validated result; the forward-simulation station shrinks to a thin sliver while synthesis and experiment remain wide, becoming the rate-limiting stations.">
+        <text x="360" y="34" text-anchor="middle" class="svg-label">where the time goes, after the potential gets cheap</text>
+
+        <!-- idea -->
+        <rect x="40" y="78" width="120" height="64" fill="none" stroke="var(--ink)" stroke-width="1.2" />
+        <text x="100" y="106" text-anchor="middle" class="svg-serif" style="font-size:14px;">choose</text>
+        <text x="100" y="124" text-anchor="middle" class="svg-serif" style="font-size:14px;">what to make</text>
+
+        <!-- forward sim: shrunk -->
+        <rect x="232" y="78" width="40" height="64" fill="none" stroke="var(--oxblood)" stroke-width="1.6" />
+        <text x="252" y="160" text-anchor="middle" class="svg-small">simulate</text>
+        <text x="252" y="172" text-anchor="middle" class="svg-small">(now cheap)</text>
+
+        <!-- synthesis: wide -->
+        <rect x="344" y="78" width="150" height="64" fill="none" stroke="var(--ink)" stroke-width="1.2" />
+        <text x="419" y="114" text-anchor="middle" class="svg-serif" style="font-size:14px;">synthesize</text>
+
+        <!-- experiment: wide -->
+        <rect x="560" y="78" width="120" height="64" fill="none" stroke="var(--ink)" stroke-width="1.2" />
+        <text x="620" y="114" text-anchor="middle" class="svg-serif" style="font-size:14px;">measure</text>
+
+        <g stroke="var(--ink)" stroke-width="1.1">
+          <line x1="160" y1="110" x2="226" y2="110" marker-end="url(#ch7arrA)" />
+          <line x1="272" y1="110" x2="338" y2="110" marker-end="url(#ch7arrA)" />
+          <line x1="494" y1="110" x2="554" y2="110" marker-end="url(#ch7arrA)" />
+        </g>
+
+        <line x1="344" y1="196" x2="680" y2="196" stroke="var(--oxblood)" stroke-width="0.75" />
+        <text x="512" y="214" text-anchor="middle" class="svg-small">the rate limiter now lives here</text>
+
+        <defs>
+          <marker id="ch7arrA" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 z" fill="var(--ink)" /></marker>
+        </defs>
+      </svg>
+    </div>
+    <figcaption><span class="fig-num">Fig. 1</span>The pipeline from idea to validated result. A fast potential collapses the simulate station (oxblood), but the line is only as quick as its slowest station — and after the collapse those are choosing what to make, and making and measuring it.</figcaption>
+  </figure>
+
+  <h2><span class="num">§ 2</span>The carve that cuts the materials world in half</h2>
+
+  <p>
+    There is a second, harder limit, and Chapter 5 already drew it. A forward energy model gives you
+    the geometry of the energy surface and everything that is a derivative of it: stable structures,
+    whether a phase holds together, the kinetics — rates and pathways — of how atoms move and ions migrate, the mechanical
+    response to a load, the thermal behavior. What it does not give you is anything that lives in the
+    electronic spectrum — band gaps, optical absorption, magnetism, superconductivity. Those are
+    Tier 3, and an energy model is permanently silent on them.
+  </p>
+
+  <p>
+    That silence carves the materials world roughly in half, and along an awkward seam. The
+    functional materials people most romanticize are useful for exactly the electronic-structure
+    reasons a potential cannot speak to. A solar cell absorbs light because of its band gap. A
+    transistor switches because of its band structure. An LED emits at a color set by its gap; a
+    magnet, a superconductor — all electronic facts. For these a forward potential can relax the
+    structure and check that it is stable, then it must hand off. It cannot tell you the property you
+    actually wanted.
+  </p>
+
+  <p>
+    Where a fast universal potential comes closest to decisive is the other half — materials whose
+    worth is set by structure, stability, ion transport, mechanics, or heat: structural alloys and
+    refractory ceramics, solid-state electrolytes and battery interfaces, catalysts, thermal-management
+    materials. This is a real and important slice. It is also a slice, and not the one most
+    "AI discovers new materials" press releases are quietly pointing at.
+  </p>
+
+  <figure class="fig">
+    <div class="fig-frame">
+      <svg viewBox="0 0 720 270" role="img" aria-label="A vertical divider splits the materials world into two columns: structure, stability, transport and mechanics where a potential is decisive, versus electronic and spectral properties where it is silent, each with example material classes.">
+        <line x1="360" y1="30" x2="360" y2="252" stroke="var(--rule)" stroke-width="0.75" stroke-dasharray="3 4" />
+
+        <!-- IN -->
+        <text x="180" y="48" text-anchor="middle" class="svg-label">gated by structure · stability</text>
+        <text x="180" y="62" text-anchor="middle" class="svg-label">transport · mechanics · heat</text>
+        <text x="180" y="84" text-anchor="middle" class="svg-small" style="fill:var(--oxblood);">a potential can be decisive</text>
+        <g class="svg-serif-it" style="font-size:14px;" fill="var(--ink)">
+          <text x="180" y="118" text-anchor="middle">structural alloys</text>
+          <text x="180" y="142" text-anchor="middle">refractory ceramics</text>
+          <text x="180" y="166" text-anchor="middle">solid-state electrolytes</text>
+          <text x="180" y="190" text-anchor="middle">battery interfaces</text>
+          <text x="180" y="214" text-anchor="middle">catalysts</text>
+          <text x="180" y="238" text-anchor="middle">thermal-management materials</text>
+        </g>
+
+        <!-- OUT -->
+        <text x="540" y="48" text-anchor="middle" class="svg-label">gated by the electronic</text>
+        <text x="540" y="62" text-anchor="middle" class="svg-label">spectrum (Tier 3)</text>
+        <text x="540" y="84" text-anchor="middle" class="svg-small">a potential is silent</text>
+        <g class="svg-serif-it" style="font-size:14px;" fill="var(--ink-2)">
+          <text x="540" y="118" text-anchor="middle">photovoltaics</text>
+          <text x="540" y="142" text-anchor="middle">semiconductors</text>
+          <text x="540" y="166" text-anchor="middle">LEDs &amp; emitters</text>
+          <text x="540" y="190" text-anchor="middle">magnets</text>
+          <text x="540" y="214" text-anchor="middle">superconductors</text>
+        </g>
+      </svg>
+    </div>
+    <figcaption><span class="fig-num">Fig. 2</span>Two columns of material classes divided by a dashed rule. Left: properties accessible as derivatives of the energy surface — structure, stability, transport, mechanics. Right: properties set by the electronic spectrum, beyond what a forward energy model computes.</figcaption>
+  </figure>
+
+  <h2><span class="num">§ 3</span>The strongest cases</h2>
+
+  <p>
+    The first is any problem genuinely gated by the cost of mapping a large energy landscape, and the
+    cleanest example is <strong>heterogeneous catalysis</strong> — a reaction sped along by a solid
+    surface. To find a good catalyst you must know how strongly a molecule sticks to a surface (its
+    adsorption energy) and how high the barrier is for the reaction step, and you must know these
+    across a combinatorial grid: every composition, crossed with every crystal facet, crossed with
+    every adsorbate and intermediate. That grid is enormous, each cell of it is an energy-surface
+    question, and DFT is too slow to fill it. These are exactly the quantities a fast potential is
+    fit to supply, and it is why the Open Catalyst effort exists. Whether that is sufficient to
+    screen a good catalyst depends on the system — selectivity involves competing pathways that are
+    harder to rank — but for the screening step it is the right tool, and the motivation, at least,
+    points at real stakes: cheaper catalysts for green hydrogen, ammonia synthesis, carbon-dioxide
+    reduction, fuel cells.
+  </p>
+
+  <p>
+    The second is subtler: the potential as a
+    scientific <strong>instrument</strong>. A million atoms, simulated for a microsecond, at near
+    quantum accuracy, lets you watch processes that were invisible from both sides at once — too fast
+    and too small for experiment to catch, too expensive for honest DFT to reach. A crystal nucleus
+    forming out of a melt. The protective film growing on a battery electrode in its first cycles.
+    Dislocations gliding and a crack running through a metal under load. A phase transforming;
+    water meeting a solid surface; matter squeezed to the pressures inside a planet. The payoff here
+    is not a product but understanding — mechanism you could not see before.
+  </p>
+
+  <div class="aside">
+    <span class="aside-label">On instruments</span>
+    A better telescope did not, on the day it was built, discover a planet. It made a class of
+    observations possible, and the discoveries followed over years as people looked. The
+    quantum-accurate, million-atom simulation is that kind of instrument: its value is the
+    observations it newly permits, not a single result you can name in advance.
+  </div>
+
+  <h2><span class="num">§ 4</span>The weakest case</h2>
+
+  <p>
+    The case that gets oversold is drug discovery, and it is worth saying why plainly. A potential
+    can improve the energetics that feed a binding-affinity calculation — how tightly a candidate
+    molecule grips its protein target, the relative energies of a molecule's shapes (its conformers)
+    and its protonation states (whether the molecule has picked up or lost a hydrogen ion in
+    solution). These are accuracy upgrades to free-energy methods, and they are welcome.
+  </p>
+
+  <p>
+    But the difficulty in protein–ligand binding is not the accuracy of a single energy. It is
+    sampling — a flexible molecule and a flexible protein each writhe through an astronomical number
+    of shapes, and the answer is an average over all of them — and it is sheer system scale. A more
+    accurate energy at one geometry does little for a problem whose hardness is in counting the
+    geometries. The recent leap in predicting protein structure came from a different lineage
+    entirely, one that learned from a database of known structures rather than from the physics of
+    the energy surface. And the things that actually sink drug programs — choosing the right target
+    in the first place, whether the body absorbs and tolerates the compound, failure in the
+    clinic — do not touch atoms at all. The contribution here is incremental, not transformative.
+  </p>
+
+  <h2><span class="num">§ 5</span>The deepest objections</h2>
+
+  <p>
+    Two objections cut to the bone, and an honest accounting has to sit with them.
+  </p>
+
+  <p>
+    The first is about where a model can be trusted. Discovery means going where the data is not —
+    that is what makes it discovery. But a potential is most accurate exactly where you least need
+    it: near known, mostly-stable chemistry, densely covered by its training set. It is least
+    reliable in the exotic, far-from-equilibrium, transition-state regions where genuine novelty
+    lives — and there even the uncertainty flag of Chapter 6 is little help, being itself
+    extrapolated, and so least trustworthy exactly where you most need it. The honest engineering
+    reply is <strong>dynamic</strong> fine-tuning — the fine-tuning of Chapter 4, done on the fly:
+    when you stray off the map, generate fresh DFT reference points for the new region and patch the
+    model as you go. It works. But notice what it costs: if you must compute new reference data for
+    each new system, the DFT expense you were trying to escape walks quietly back in.
+  </p>
+
+  <p>
+    The second is about the ceiling, and it never moves. The word <strong>universal</strong> is
+    carrying enormous weight in these promises, and a potential's accuracy is still bounded by its
+    reference method. A perfect emulator of DFT inherits DFT's errors exactly. For strongly
+    correlated systems — materials where the electrons interact so tightly that the standard DFT
+    approximation breaks down, as in many transition-metal oxides — for the weak dispersion forces
+    that hold soft matter together, for reaction barriers, for anything excited out of its ground
+    state, DFT itself is often not good enough — so
+    a flawless DFT emulator is, in those very places, not good enough either. And even a perfect,
+    instant forward model answers only "how good is this candidate," never "what should I make."
+    Generative models that propose candidates help with that inverse problem, but they propose
+    novel structures — out of distribution by construction — and then trustworthiness on the
+    unfamiliar is the whole game over again.
+  </p>
+
+  <h2><span class="num">§ 6</span>The honest answer</h2>
+
+  <p>
+    So here is the accounting, with no thumb on the scale. The forward-simulation and triage stage
+    gets cheap and quantum-accurate; that much is real and already arriving. The rate limiter moves
+    downstream, to closing the loop with synthesis and experiment. The largest single multiplier is
+    therefore not a better potential sitting in isolation — it is a fast potential
+    <strong>coupled tightly to an autonomous experiment</strong>, a lab that proposes, simulates,
+    makes, measures, and feeds the result back without waiting on a human at each step. Computation
+    triages; the robot lab adjudicates; the disagreements become tomorrow's training data.
+  </p>
+
+  <figure class="fig">
+    <div class="fig-frame">
+      <svg viewBox="0 0 720 240" role="img" aria-label="A closed loop: a fast potential proposes and screens candidates, an autonomous lab synthesizes and measures the best, and the measured results return as new training data, tightening the potential.">
+        <text x="360" y="34" text-anchor="middle" class="svg-label">the loop that compounds</text>
+
+        <rect x="246" y="56" width="228" height="48" fill="none" stroke="var(--oxblood)" stroke-width="1.6" />
+        <text x="360" y="80" text-anchor="middle" class="svg-serif" style="font-size:14px;">fast potential</text>
+        <text x="360" y="96" text-anchor="middle" class="svg-small">propose &amp; screen candidates</text>
+
+        <rect x="246" y="158" width="228" height="48" fill="none" stroke="var(--ink)" stroke-width="1.2" />
+        <text x="360" y="182" text-anchor="middle" class="svg-serif" style="font-size:14px;">autonomous lab</text>
+        <text x="360" y="198" text-anchor="middle" class="svg-small">synthesize &amp; measure</text>
+
+        <!-- down: best candidates -->
+        <path d="M 474 104 C 560 116, 560 146, 474 158" fill="none" stroke="var(--ink)" stroke-width="1.1" marker-end="url(#ch7arrB)" />
+        <text x="600" y="135" text-anchor="middle" class="svg-small">best</text>
+        <text x="600" y="148" text-anchor="middle" class="svg-small">candidates</text>
+
+        <!-- up: measured data -->
+        <path d="M 246 158 C 160 146, 160 116, 246 104" fill="none" stroke="var(--oxblood)" stroke-width="1.1" marker-end="url(#ch7arrC)" />
+        <text x="118" y="135" text-anchor="middle" class="svg-small">measured</text>
+        <text x="118" y="148" text-anchor="middle" class="svg-small">results → data</text>
+
+        <defs>
+          <marker id="ch7arrB" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 z" fill="var(--ink)" /></marker>
+          <marker id="ch7arrC" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 z" fill="var(--oxblood)" /></marker>
+        </defs>
+      </svg>
+    </div>
+    <figcaption><span class="fig-num">Fig. 3</span>The coupling that compounds. The potential screens cheaply; the autonomous lab makes and measures the survivors; the measurements return as training data, so the next pass through the loop screens better. The potential is one part of an engine, not the engine.</figcaption>
+  </figure>
+
+  <p>
+    The compounding impact, then, is less "we found material X" and more a change in standing:
+    computational triage crosses a threshold of trustworthiness where an experimentalist treats its
+    ranking as a real prior, worth pointing a furnace at, rather than a suggestion to be ignored. It
+    is the claim that holds up.
+  </p>
+</Primer>

@@ -1,0 +1,280 @@
+---
+import Primer from '../../layouts/Primer.astro';
+import { url } from '../../lib/url';
+---
+<Primer
+  title="At Inference Time"
+  eyebrow="A Primer on Matter Models · Chapter Six"
+  deck="A trained potential gives you a cheap energy and cheap forces. This chapter spends them."
+  running="Ch. 6 — At Inference Time"
+  prev={{ href: url('/primer/what-mlips-keep'), label: "What an MLIP Keeps — and Can't" }}
+  next={{ href: url('/primer/what-actually-changes'), label: 'What Actually Changes' }}
+>
+  <p class="lead">
+    The potential takes an arrangement of atoms and returns one energy and the force on every atom —
+    the same two quantities a DFT calculation hands back, but in milliseconds instead of hours. That
+    speed is the whole point, and it changes what you can do with the energy landscape from Chapter 1.
+  </p>
+
+  <h2><span class="num">§ 1</span>Relaxation: roll downhill until the forces vanish</h2>
+
+  <p>
+    Start with the simplest thing you can ask. You have a guessed arrangement of atoms — a candidate
+    crystal, a molecule sketched by hand, a defect dropped into a lattice — and you want the stable
+    version of it: the arrangement nature would actually settle into. On the landscape, "stable" means
+    a valley floor. Nudge any atom and the energy goes up; that is what makes it a resting place.
+  </p>
+
+  <p>
+    A valley floor is exactly where the slope is zero, so the force on every atom is zero. That gives
+    you a procedure. Read the forces at your guessed arrangement. They point downhill, toward lower
+    energy. Take a small step in that direction. Read the forces again at the new arrangement; step
+    again. Each step lowers the energy, the forces shrink, and you coast to a stop at the bottom of the
+    valley. This downhill walk is called <strong>relaxation</strong>, or geometry optimization, and the
+    arrangement it lands on is the relaxed structure.
+  </p>
+
+  <figure class="fig">
+    <div class="fig-frame">
+      <svg viewBox="0 0 720 250" role="img" aria-label="A ball on the energy landscape rolling down a slope into a valley floor, with force arrows that shrink to nothing at the bottom.">
+        <path d="M 60 70 C 200 40, 260 210, 380 210 C 500 210, 560 90, 660 110" fill="none" stroke="var(--ink)" stroke-width="1.5" />
+        <text x="60" y="58" class="svg-small">energy</text>
+
+        <circle cx="118" cy="78" r="9" fill="none" stroke="var(--ink-3)" stroke-width="1.4" />
+        <line x1="118" y1="92" x2="150" y2="120" stroke="var(--oxblood)" stroke-width="1.6" marker-end="url(#ch6arrA)" />
+
+        <circle cx="250" cy="150" r="9" fill="none" stroke="var(--ink-3)" stroke-width="1.4" />
+        <line x1="258" y1="162" x2="290" y2="186" stroke="var(--oxblood)" stroke-width="1.6" marker-end="url(#ch6arrA)" />
+
+        <circle cx="335" cy="201" r="9" fill="none" stroke="var(--ink-3)" stroke-width="1.4" />
+        <line x1="346" y1="206" x2="366" y2="209" stroke="var(--oxblood)" stroke-width="1.4" marker-end="url(#ch6arrA)" />
+
+        <circle cx="382" cy="201" r="10" fill="var(--oxblood)" />
+        <text x="382" y="234" text-anchor="middle" class="svg-small">forces ≈ 0 : the valley floor</text>
+
+        <defs>
+          <marker id="ch6arrA" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 z" fill="var(--oxblood)"/></marker>
+        </defs>
+      </svg>
+    </div>
+    <figcaption><span class="fig-num">Fig. 1</span>Relaxation. From a guessed arrangement, step in the direction the forces point — downhill — until the forces shrink to nothing at a valley floor. That floor is the stable structure.</figcaption>
+  </figure>
+
+  <p>
+    With DFT this was painful: every step needs a fresh energy and forces, every reading takes hours,
+    and a relaxation can run for dozens of steps. With a potential each reading is milliseconds, so the
+    whole walk finishes in a moment. And once one structure is cheap, a thousand are cheap. You can
+    relax thousands of candidate arrangements and keep the ones that settle lowest — the practical
+    engine behind screening new materials, which we return to in the next chapter.
+  </p>
+
+  <div class="aside">
+    <span class="aside-label">One caution</span>
+    Rolling downhill finds <em>a</em> valley, the nearest one, not necessarily the deepest. A landscape
+    has many valleys, and relaxation stops at whichever floor your starting guess drains into. Finding
+    the lowest valley of all is a separate and harder search; relaxation only takes you to the bottom of
+    the basin you started in.
+  </div>
+
+  <h2><span class="num">§ 2</span>Molecular dynamics: step the atoms through time</h2>
+
+  <p>
+    Relaxation finds where atoms come to rest. But atoms at any real temperature do not rest — they
+    move, jostle, and trade energy. To watch that, you let them move under their own forces, one tiny
+    instant at a time.
+  </p>
+
+  <p>
+    The loop is short. Take the current positions and read the force on every atom. A force is a push,
+    and a push makes a mass accelerate — heavier atoms respond less, lighter ones more. So the forces
+    tell you how every atom's velocity changes over a very short slice of time — a femtosecond, a
+    millionth of a billionth of a second — call it one <strong>time-step</strong>;
+    the velocities tell you how the positions change over that same slice. Apply both and you have a new
+    arrangement, a sliver of time later. Read the forces there and repeat. Step and repeat, step and
+    repeat — this is <strong>molecular dynamics</strong>, and the arrangement traced out step by step is
+    a <strong>trajectory</strong>.
+  </p>
+
+  <figure class="fig">
+    <div class="fig-frame">
+      <svg viewBox="0 0 720 250" role="img" aria-label="A four-stage cycle: positions feed into the model, the model returns forces, forces update velocities and positions, and the loop repeats.">
+        <rect x="280" y="20" width="160" height="40" fill="none" stroke="var(--ink)" stroke-width="1.2" />
+        <text x="360" y="44" text-anchor="middle" class="svg-serif" style="font-size:14px;">positions</text>
+
+        <rect x="500" y="100" width="170" height="46" fill="none" stroke="var(--oxblood)" stroke-width="1.6" />
+        <text x="585" y="120" text-anchor="middle" class="svg-serif" style="font-size:14px;">the potential</text>
+        <text x="585" y="137" text-anchor="middle" class="svg-small">→ forces</text>
+
+        <rect x="280" y="186" width="160" height="44" fill="none" stroke="var(--ink)" stroke-width="1.2" />
+        <text x="360" y="206" text-anchor="middle" class="svg-serif" style="font-size:14px;">update velocities</text>
+        <text x="360" y="222" text-anchor="middle" class="svg-serif" style="font-size:14px;">&amp; positions</text>
+
+        <rect x="50" y="100" width="170" height="46" fill="none" stroke="var(--ink)" stroke-width="1.2" />
+        <text x="135" y="128" text-anchor="middle" class="svg-small">one time-step later</text>
+
+        <line x1="440" y1="46" x2="512" y2="100" stroke="var(--ink)" stroke-width="1.2" marker-end="url(#ch6arrB)" />
+        <line x1="560" y1="146" x2="442" y2="196" stroke="var(--ink)" stroke-width="1.2" marker-end="url(#ch6arrB)" />
+        <line x1="280" y1="208" x2="150" y2="146" stroke="var(--ink)" stroke-width="1.2" marker-end="url(#ch6arrB)" />
+        <line x1="150" y1="100" x2="280" y2="46" stroke="var(--ink)" stroke-width="1.2" marker-end="url(#ch6arrB)" />
+
+        <text x="360" y="128" text-anchor="middle" class="svg-serif-it" style="font-size:13px;">milliseconds per step,</text>
+        <text x="360" y="146" text-anchor="middle" class="svg-serif-it" style="font-size:13px;">millions of steps</text>
+
+        <defs>
+          <marker id="ch6arrB" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 z" fill="var(--ink)"/></marker>
+        </defs>
+      </svg>
+    </div>
+    <figcaption><span class="fig-num">Fig. 2</span>The molecular-dynamics loop: from positions, the potential returns forces; the forces update the velocities and positions; one time-step later the loop runs again.</figcaption>
+  </figure>
+
+  <p>
+    This is the cheap mirror of the slow loop Chapter 1 described. There, each step asked DFT for the
+    energy and forces, so a trajectory of any length was hopeless — millions of femtosecond steps are
+    needed to see anything happen. Replace the DFT reading with a potential reading and the cost per
+    step collapses. Now those millions of steps are routine: where DFT dynamics reaches tens of
+    picoseconds on tens of atoms, a potential runs nanoseconds on millions. The impossible regime from
+    Chapter 1 becomes an afternoon.
+  </p>
+
+  <p>
+    One piece is missing. Left alone, the loop holds total energy nearly constant — what it cannot do is
+    fix the temperature. To run at, say, room
+    temperature, you attach a <strong>thermostat</strong>: a small adjustment, applied each step, that
+    gently nudges the atoms' speeds up or down to hold the average kinetic energy at the value
+    corresponding to the target temperature. Set the thermostat to 300 kelvin and the simulation runs as
+    if the sample sat in a 300-kelvin room.
+  </p>
+
+  <p>
+    With that, you can watch processes, not just resting structures. Heat a crystal past its melting
+    point and see the lattice give way to a liquid. Track a single atom wandering through a solid over
+    time — <strong>diffusion</strong>. Pull on a slab until a <strong>crack</strong> starts — a line of
+    broken bonds — and watch that line advance one bond at a time as the front reaches each atom. Press
+    two materials together and watch the interface between them settle.
+  </p>
+
+  <h2><span class="num">§ 3</span>Derived quantities: reading more off the surface</h2>
+
+  <p>
+    Chapter 5 named these as derivatives of the energy; here is how you read them off the landscape
+    cheaply. Sit at a valley floor and ask how steeply the walls rise. That curvature — how fast the
+    force grows as you push an atom off the bottom — sets how the atoms vibrate, the phonons, and from
+    the vibrations follow heat capacity and — for sufficiently anharmonic materials — thermal
+    expansion. Squeeze the whole box a little and watch the energy climb: how stiffly it resists gives
+    the elastic constants, the material's springiness. These are just the landscape's local shape,
+    sampled with cheap evaluations instead of expensive ones.
+  </p>
+
+  <p>
+    Two ask a little more. A chemical reaction is a trip from one valley to another over the ridge
+    between them; the height of the lowest pass through that ridge is the <strong>reaction barrier</strong>,
+    which sets how fast the reaction goes. Finding the lowest pass is its own small search, called the
+    <strong>nudged elastic band</strong>: lay a chain of intermediate arrangements from one valley to
+    the other, pull each arrangement downhill while an artificial spring between neighbors — a bookkeeping
+    force, not a real one — keeps the chain from collapsing to one end, and the settled chain traces the
+    lowest path over the ridge. Finally, a <strong>free energy</strong> — the quantity that determines
+    which phase or arrangement is thermodynamically stable at a given temperature — is not read at one
+    point but averaged over a stretch of dynamics at that temperature. All four lean on the same cheap
+    evaluation; that is what makes them practical.
+  </p>
+
+  <h2><span class="num">§ 4</span>Serving it: the drop-in calculator</h2>
+
+  <p>
+    Mature simulation tools already know how to relax a structure, run dynamics, compute phonons — the
+    whole catalogue above. What they do not contain is the
+    physics. They expect to be handed something that, given the current positions, returns the energy and
+    the forces. They call that something a <strong>calculator</strong>, and they ask it the same question
+    every step.
+  </p>
+
+  <p>
+    That slot is exactly the shape of an MLIP. A potential is a function from positions to energy and
+    forces; a calculator is an object that returns energy and forces from positions. Wrap the model so it
+    answers to the calculator's two questions and it plugs straight into the simulation tool — for
+    instance, the widely used Atomic Simulation Environment, or <strong>ASE</strong>. Your relaxation and
+    dynamics code never learns which model is behind the slot, so you can swap one potential for another
+    without touching the surrounding code.
+  </p>
+
+  <div class="cmd">atoms = read("candidate.cif")        # the arrangement
+atoms.calc = MyMLIP(checkpoint="...")  # drop the model into the slot
+
+relax(atoms)                          # tool calls the model each step
+run_dynamics(atoms, temperature=300)  # so does this — same slot</div>
+
+  <p>
+    Installing a potential on a cluster — the right
+    Python environment, the matching dependencies, the weights — is fiddly, and doing it once per model
+    per machine is the kind of friction that keeps people from trying a second model.
+    <strong>Rootstock</strong>, the backend behind these pages, pre-installs many potentials on shared HPC
+    clusters and serves each through exactly this drop-in calculator interface. You pick a checkpoint, point
+    your simulation at it, and the model runs on the cluster behind the same slot your code already speaks
+    to.
+  </p>
+
+  <figure class="fig">
+    <div class="fig-frame">
+      <svg viewBox="0 0 720 230" role="img" aria-label="Three boxes left to right: the user's simulation code, a standard calculator interface, and the model running on a cluster, with positions flowing right and energy and forces flowing back left.">
+        <rect x="40" y="80" width="160" height="64" fill="none" stroke="var(--ink)" stroke-width="1.2" />
+        <text x="120" y="108" text-anchor="middle" class="svg-serif" style="font-size:14px;">your simulation</text>
+        <text x="120" y="126" text-anchor="middle" class="svg-small">relax · dynamics · phonons</text>
+
+        <rect x="280" y="80" width="160" height="64" fill="none" stroke="var(--ink)" stroke-width="1.2" />
+        <text x="360" y="104" text-anchor="middle" class="svg-serif" style="font-size:14px;">calculator</text>
+        <text x="360" y="120" text-anchor="middle" class="svg-small">the standard slot</text>
+        <text x="360" y="134" text-anchor="middle" class="svg-small">(e.g. ASE)</text>
+
+        <rect x="520" y="80" width="160" height="64" fill="none" stroke="var(--oxblood)" stroke-width="1.6" />
+        <text x="600" y="104" text-anchor="middle" class="svg-serif" style="font-size:14px;">the model</text>
+        <text x="600" y="120" text-anchor="middle" class="svg-small">on a cluster</text>
+        <text x="600" y="134" text-anchor="middle" class="svg-small">(Rootstock)</text>
+
+        <line x1="200" y1="100" x2="278" y2="100" stroke="var(--ink)" stroke-width="1.2" marker-end="url(#ch6arrC)" />
+        <line x1="440" y1="100" x2="518" y2="100" stroke="var(--ink)" stroke-width="1.2" marker-end="url(#ch6arrC)" />
+        <text x="360" y="60" text-anchor="middle" class="svg-small">positions →</text>
+
+        <line x1="518" y1="126" x2="442" y2="126" stroke="var(--ink-3)" stroke-width="1.1" marker-end="url(#ch6arrD)" />
+        <line x1="278" y1="126" x2="202" y2="126" stroke="var(--ink-3)" stroke-width="1.1" marker-end="url(#ch6arrD)" />
+        <text x="360" y="188" text-anchor="middle" class="svg-small">← energy &amp; forces</text>
+
+        <defs>
+          <marker id="ch6arrC" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 z" fill="var(--ink)"/></marker>
+          <marker id="ch6arrD" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 z" fill="var(--ink-3)"/></marker>
+        </defs>
+      </svg>
+    </div>
+    <figcaption><span class="fig-num">Fig. 3</span>The serving pattern. Your simulation code asks the standard calculator slot for energy and forces; the slot is filled by a model running on a cluster.</figcaption>
+  </figure>
+
+  <h2><span class="num">§ 5</span>Where it goes wrong at run time</h2>
+
+  <p>
+    The failure that matters here is not the one you would expect. A potential that is a little off on a
+    single static structure is rarely the problem. The problem is the trajectory.
+  </p>
+
+  <p>
+    Run the dynamics loop long enough and the atoms wander. Sooner or later they may reach an arrangement
+    unlike anything in the training set — a bond squeezed shorter than any the model was shown, a strange
+    transient cluster. There, the model is extrapolating, and Chapter 1's warning comes due: far from its
+    training data a potential can be confidently wrong, with no dial that tells you so. A small wrong force
+    nudges the atoms somewhere stranger still, which yields a stranger force, and the trajectory can drift
+    off course or "blow up" — atoms flying apart, energies running to nonsense — over a long run that looked
+    fine for its first million steps. A model can pass every static test and still fail this way, because
+    static tests never visit the arrangements a long trajectory eventually finds.
+  </p>
+
+  <p>
+    Two habits guard against it. Keep the simulation in-distribution — run it on the kinds of systems the
+    model was trained for, and be wary when it strays. And where a model offers an <strong>uncertainty
+    estimate</strong> — a flag it raises when an arrangement looks unfamiliar — watch that flag and stop, or
+    fetch real DFT for the strange region, before the drift compounds.
+  </p>
+
+  <p>
+    Fast, as long as you stay where the model has been. The next chapter asks what becomes possible once
+    that is true at scale: what actually changes in the world when an accurate energy is suddenly cheap.
+  </p>
+</Primer>

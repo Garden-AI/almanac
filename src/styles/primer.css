@@ -1,0 +1,303 @@
+/* Garden's Almanac — Primer wing.
+   A walled-off, long-form explainer section. Reuses the almanac.css design
+   tokens (paper/ink/oxblood, the three font families) but lays out for
+   reading: a single warm column with room for figures to breathe.
+   Illustrated-Transformer energy, almanac materials. */
+
+.primer {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--serif);
+  max-width: 940px;
+  margin: 0 auto;
+  padding: 44px 56px 80px;
+  box-sizing: border-box;
+  position: relative;
+  min-height: 100vh;
+}
+
+/* ── Running head ─────────────────────────────────────────────── */
+.primer-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px 24px;
+  flex-wrap: wrap;
+  border-bottom: 0.5px solid var(--rule);
+  padding-bottom: 10px;
+  margin-bottom: 34px;
+}
+.primer-head a { color: var(--ink); text-decoration: none; }
+.primer-head .home-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  font-family: var(--smallcaps);
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  transition: color 0.15s;
+}
+.primer-head .home-link:hover { color: var(--oxblood); }
+.primer-head .home-link svg { color: var(--ink-2); }
+.primer-head .home-link:hover svg { color: var(--oxblood); }
+.primer-head .running {
+  font-family: var(--smallcaps);
+  font-size: 11.5px;
+  letter-spacing: 0.14em;
+  color: var(--ink-3);
+  margin-left: auto;
+}
+
+/* ── Title block ──────────────────────────────────────────────── */
+.primer-title { max-width: 720px; margin-bottom: 18px; }
+.primer-eyebrow {
+  font-family: var(--smallcaps);
+  font-size: 13px;
+  letter-spacing: 0.18em;
+  color: var(--oxblood);
+  margin: 0 0 10px;
+}
+.primer-title h1 {
+  font-family: var(--serif);
+  font-size: 44px;
+  line-height: 1.04;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  margin: 0;
+  text-wrap: balance;
+}
+.primer-deck {
+  font-size: 19px;
+  line-height: 1.45;
+  color: var(--ink-2);
+  margin: 16px 0 0;
+  max-width: 640px;
+  font-style: italic;
+}
+.primer-byline {
+  font-family: var(--smallcaps);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  color: var(--ink-3);
+  margin-top: 14px;
+}
+
+.primer hr.title-rule { margin: 22px 0 30px; }
+
+/* ── Reading column ───────────────────────────────────────────── */
+.primer-body { }
+.primer-body > * { max-width: 660px; margin-left: auto; margin-right: auto; }
+.primer-body p {
+  font-size: 18px;
+  line-height: 1.62;
+  margin: 0 0 1.05em;
+  color: var(--ink);
+}
+.primer-body p.lead {
+  font-size: 21px;
+  line-height: 1.5;
+}
+.primer-body p.lead::first-letter {
+  font-family: var(--serif);
+  font-weight: 700;
+  float: left;
+  font-size: 3.1em;
+  line-height: 0.82;
+  padding: 6px 10px 0 0;
+  color: var(--oxblood);
+}
+.primer-body h2 {
+  font-family: var(--serif);
+  font-size: 27px;
+  line-height: 1.15;
+  font-weight: 600;
+  letter-spacing: -0.004em;
+  margin: 1.9em auto 0.05em;
+}
+.primer-body h2 .num {
+  font-family: var(--smallcaps);
+  font-size: 0.5em;
+  letter-spacing: 0.12em;
+  color: var(--oxblood);
+  display: block;
+  margin-bottom: 4px;
+}
+.primer-body h3 {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 1.6em auto 0.2em;
+}
+.primer-body strong { font-weight: 600; }
+.primer-body em { font-family: var(--serif-italic); }
+.primer-body a.ink-link { font-size: inherit; }
+.primer-body code, .primer-body .mono {
+  font-family: var(--mono);
+  font-size: 0.84em;
+  background: rgba(26, 22, 18, 0.045);
+  padding: 0.5px 4px;
+}
+.primer-body ul, .primer-body ol {
+  font-size: 18px;
+  line-height: 1.55;
+  padding-left: 1.3em;
+  margin: 0 auto 1.05em;
+}
+.primer-body li { margin-bottom: 0.4em; }
+.primer-body li::marker { color: var(--ink-3); }
+
+/* Pull-quote / the-precise-answer callout. */
+.primer-body .answer {
+  max-width: 660px;
+  border-left: 2px solid var(--oxblood);
+  background: rgba(122, 31, 31, 0.035);
+  padding: 14px 20px;
+  margin: 1.6em auto;
+  font-size: 18px;
+  line-height: 1.55;
+}
+.primer-body .answer .answer-label {
+  font-family: var(--smallcaps);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  color: var(--oxblood);
+  display: block;
+  margin-bottom: 6px;
+}
+.primer-body .answer p:last-child { margin-bottom: 0; }
+
+/* Margin-style aside — a softer note, hairline boxed. */
+.primer-body .aside {
+  max-width: 660px;
+  border-top: 0.5px solid var(--rule);
+  border-bottom: 0.5px solid var(--rule);
+  padding: 12px 0;
+  margin: 1.6em auto;
+  font-size: 15.5px;
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+.primer-body .aside .aside-label {
+  font-family: var(--smallcaps);
+  font-size: 10.5px;
+  letter-spacing: 0.12em;
+  color: var(--ink);
+  margin-right: 8px;
+}
+
+/* ── Figures ──────────────────────────────────────────────────── */
+.primer-body figure.fig {
+  max-width: 820px;
+  margin: 2.1em auto;
+}
+figure.fig .fig-frame {
+  border-top: 1.5px solid var(--ink);
+  border-bottom: 0.5px solid var(--ink);
+  padding: 22px 16px 18px;
+}
+figure.fig svg { display: block; width: 100%; height: auto; }
+figure.fig figcaption {
+  font-size: 13.5px;
+  line-height: 1.45;
+  color: var(--ink-2);
+  margin-top: 10px;
+  text-align: center;
+}
+figure.fig figcaption .fig-num {
+  font-family: var(--smallcaps);
+  font-size: 10.5px;
+  letter-spacing: 0.12em;
+  color: var(--oxblood);
+  margin-right: 7px;
+}
+
+/* SVG figure text helpers (used inline). */
+.svg-label { font-family: var(--smallcaps); font-size: 11px; letter-spacing: 0.08em; fill: var(--ink); }
+.svg-small { font-family: var(--mono); font-size: 9.5px; fill: var(--ink-2); }
+.svg-serif { font-family: var(--serif); font-size: 12px; fill: var(--ink); }
+.svg-serif-it { font-family: var(--serif); font-style: italic; font-size: 12px; fill: var(--ink-2); }
+
+/* ── Chapter foot nav ─────────────────────────────────────────── */
+.primer-nav {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  border-top: 0.5px solid var(--rule);
+  margin-top: 56px;
+  padding-top: 18px;
+  font-family: var(--smallcaps);
+  font-size: 12.5px;
+  letter-spacing: 0.06em;
+}
+.primer-nav a { color: var(--ink); text-decoration: none; max-width: 46%; }
+.primer-nav a:hover { color: var(--oxblood); }
+.primer-nav .dir {
+  display: block;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  color: var(--ink-3);
+  margin-bottom: 3px;
+}
+.primer-nav .next { text-align: right; margin-left: auto; }
+
+/* ── Contents page ────────────────────────────────────────────── */
+.toc { max-width: 720px; margin: 0 auto; }
+.toc-item {
+  display: block;
+  text-decoration: none;
+  color: var(--ink);
+  border-top: 0.5px solid var(--rule);
+  padding: 16px 2px;
+  position: relative;
+}
+.toc-item:first-child { border-top: 1.5px solid var(--ink); }
+.toc-item:last-child { border-bottom: 1.5px solid var(--ink); }
+.toc-item .toc-num {
+  font-family: var(--smallcaps);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  color: var(--oxblood);
+}
+.toc-item .toc-title {
+  font-family: var(--serif);
+  font-size: 23px;
+  font-weight: 600;
+  line-height: 1.12;
+  margin: 3px 0 0;
+  letter-spacing: -0.004em;
+}
+.toc-item .toc-blurb {
+  font-size: 15px;
+  line-height: 1.45;
+  color: var(--ink-2);
+  margin: 6px 0 0;
+  max-width: 560px;
+}
+.toc-item .toc-arrow {
+  position: absolute; right: 4px; top: 18px;
+  color: var(--oxblood); font-family: var(--serif); font-size: 18px;
+  opacity: 0; transition: opacity 0.15s;
+}
+.toc-item:hover .toc-title { color: var(--oxblood); }
+.toc-item:hover .toc-arrow { opacity: 1; }
+.toc-item.pending { opacity: 0.55; }
+.toc-item.pending .toc-arrow { display: none; }
+.toc-item .toc-soon {
+  font-family: var(--smallcaps);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  color: var(--ink-3);
+  border: 0.5px solid var(--rule);
+  padding: 1px 6px;
+  margin-left: 8px;
+}
+
+@media (max-width: 720px) {
+  .primer { padding: 28px 20px 56px; }
+  .primer-title h1 { font-size: 32px; }
+  .primer-deck { font-size: 16px; }
+  .primer-body p { font-size: 16.5px; }
+  .primer-body p.lead { font-size: 18px; }
+  .primer-body h2 { font-size: 23px; }
+  .primer-body ul, .primer-body ol { font-size: 16.5px; }
+  figure.fig .fig-frame { padding: 14px 8px 12px; }
+}

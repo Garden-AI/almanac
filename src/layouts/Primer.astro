@@ -1,0 +1,81 @@
+---
+import '../styles/almanac.css';
+import '../styles/primer.css';
+import { url } from '../lib/url';
+
+interface NavLink { href: string; label: string; }
+interface Props {
+  title: string;
+  eyebrow?: string;     // e.g. "Primer · Chapter One"
+  deck?: string;        // standfirst / subtitle
+  byline?: string;
+  running?: string;     // running-head text, right side
+  prev?: NavLink;
+  next?: NavLink;
+}
+
+const {
+  title,
+  eyebrow = 'A Primer on Matter Models',
+  deck,
+  byline = "Garden's Almanac · 2026 Edition · Working draft",
+  running = 'A Primer on Matter Models',
+  prev,
+  next,
+} = Astro.props;
+
+const homeHref = url('/');
+const contentsHref = url('/primer/');
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>{title} — A Primer on Matter Models</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;0,8..60,700;1,8..60,400;1,8..60,500&family=IM+Fell+English+SC&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <article class="primer">
+      <header class="primer-head">
+        <a class="home-link" href={contentsHref}>
+          <svg width="13" height="13" viewBox="0 0 16 16" aria-hidden="true">
+            <path d="M2 7.5L8 2.5l6 5V13.5a.5.5 0 0 1-.5.5H10v-4H6v4H2.5a.5.5 0 0 1-.5-.5V7.5z"
+              fill="none" stroke="currentColor" stroke-width="1.1" stroke-linejoin="round" />
+          </svg>
+          <span>Contents</span>
+        </a>
+        <span class="running">{running}</span>
+      </header>
+
+      <div class="primer-title">
+        {eyebrow && <p class="primer-eyebrow">{eyebrow}</p>}
+        <h1>{title}</h1>
+        {deck && <p class="primer-deck">{deck}</p>}
+        {byline && <p class="primer-byline">{byline}</p>}
+      </div>
+      <hr class="title-rule" />
+
+      <div class="primer-body">
+        <slot />
+      </div>
+
+      {(prev || next) && (
+        <nav class="primer-nav" aria-label="Chapter navigation">
+          {prev ? (
+            <a class="prev" href={prev.href}><span class="dir">← Previous</span>{prev.label}</a>
+          ) : <a class="prev" href={contentsHref}><span class="dir">←</span>Contents</a>}
+          {next ? (
+            <a class="next" href={next.href}><span class="dir">Next →</span>{next.label}</a>
+          ) : <a class="next" href={contentsHref}><span class="dir">→</span>Contents</a>}
+        </nav>
+      )}
+    </article>
+  </body>
+</html>
