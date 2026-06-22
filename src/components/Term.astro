@@ -1,0 +1,8 @@
+---
+// Inline hover-glossary term. Wrap the FIRST in-prose appearance of a piece of
+// jargon; the definition surfaces on hover (and on keyboard focus).
+//   <Term gloss="<b>DFT.</b> The standard method for the electron problem…">density functional theory</Term>
+interface Props { gloss: string; }
+const { gloss } = Astro.props;
+---
+<span class="term" tabindex="0"><slot /><span class="gloss" role="tooltip" set:html={gloss} /></span>
