@@ -27,8 +27,49 @@ const models = enriched.sort((a, b) => {
   return b.resolvedDate.localeCompare(a.resolvedDate);
 });
 
-// Architecture Families — full-width below the split (same data as /architectures).
-const FAMILY_ORDER = ['equivariant', 'ace', 'mpnn', 'vanilla', 'earlier', 'attention'];
+// Architecture Families — full-width below the split (merged in from the deleted
+// /architectures page). Per-family briefs and a representative paper are layered
+// on top of the architectures collection; empty families (e.g. `earlier`) are
+// dropped, and reappear automatically if ever repopulated.
+const FAMILY_ORDER = ['equivariant', 'ace', 'mpnn', 'vanilla', 'attention', 'earlier'];
+const FAM_META: Record<string, { brief: string; paperSlug: string; paperLabel: string }> = {
+  equivariant: {
+    brief:
+      'Networks that build 3-D rotational symmetry directly into their layers, so predictions transform correctly under rotation by construction rather than by data augmentation. Accuracy is high; the price is heavier compute and memory than unconstrained models.',
+    paperSlug: 'equiformer-v2',
+    paperLabel: 'Liao et al., EquiformerV2 (2023)',
+  },
+  ace: {
+    brief:
+      "A distinct equivariant lineage that expands each atom's neighborhood into a body-ordered basis, with modern variants layering message passing on top. In practice the basis construction matters as much as the equivariant label, which is why the catalog tracks it separately.",
+    paperSlug: 'mace-mp-0',
+    paperLabel: 'Batatia et al., MACE (2024)',
+  },
+  mpnn: {
+    brief:
+      'Atoms are graph nodes that pass messages to their neighbors over several rounds of aggregation. Cheap and well understood — the workhorse family — with later refinements adding directional and equivariant message channels that lead into the equivariant models.',
+    paperSlug: 'schnet',
+    paperLabel: 'Schütt et al., SchNet (2018)',
+  },
+  vanilla: {
+    brief:
+      "Models that don't enforce equivariance as a hard constraint, trading the guarantee for 2–4× throughput by encouraging rotational consistency during training instead. A good fit for screening-scale workloads, less defensible for long production MD.",
+    paperSlug: 'orb-v2',
+    paperLabel: 'Neumann et al., Orb (2024)',
+  },
+  attention: {
+    brief:
+      'Self-attention transformers adapted to atoms: each atom weighs its neighbors — and, in the all-to-all variants, every other atom in the system — by learned content rather than a fixed aggregation rule. Borrowed from the transformers of language and vision and run on invariant features for throughput, the family trades hard equivariance for scale, with a global attention channel added to recover long-range accuracy.',
+    paperSlug: 'allscaip',
+    paperLabel: 'Qu et al., AllScAIP (2026)',
+  },
+  earlier: {
+    brief:
+      'Small, single-domain potentials from before the current scale era, kept as historical anchors. They remain widely cited baselines that newer papers still benchmark against.',
+    paperSlug: 'dimenet-pp',
+    paperLabel: 'Gasteiger et al., DimeNet++ (2020)',
+  },
+};
 const families = (await getCollection('architectures')).sort(
   (a, b) => FAMILY_ORDER.indexOf(a.id) - FAMILY_ORDER.indexOf(b.id),
 );
@@ -39,7 +80,21 @@ for (const f of families) {
     .map((m) => ({ id: m.id, name: m.data.name }))
     .sort((a, b) => a.name.localeCompare(b.name));
 }
-const familyCards = families.filter((f) => modelsByFamily[f.id].length > 0);
+const familyCards = await Promise.all(
+  families
+    .filter((f) => modelsByFamily[f.id].length > 0)
+    .map(async (f) => {
+      const meta = FAM_META[f.id];
+      const paper = meta ? await getEntry('papers', meta.paperSlug) : null;
+      return {
+        id: f.id,
+        name: f.data.name,
+        brief: meta?.brief ?? f.data.descriptor,
+        paperLabel: meta?.paperLabel ?? '',
+        paperUrl: paper?.data.url ?? null,
+      };
+    }),
+);
 ---
 
 <Page title="Models — Garden's Almanac" wide>
@@ -101,8 +156,8 @@ const familyCards = families.filter((f) => modelsByFamily[f.id].length > 0);
         <div class="models-families-grid">
           {familyCards.map((f) => (
             <div class="models-family">
-              <h3 class="models-family-h3">{f.data.name}</h3>
-              <p class="models-family-brief">{f.data.descriptor}</p>
+              <h3 class="models-family-h3">{f.name}</h3>
+              <p class="models-family-brief">{f.brief}</p>
               <div class="models-family-models">
                 <span class="sc models-family-k">Models</span>
                 {modelsByFamily[f.id].map((m) => (
@@ -112,6 +167,12 @@ const familyCards = families.filter((f) => modelsByFamily[f.id].length > 0);
                   </>
                 ))}
               </div>
+              {f.paperUrl && (
+                <p class="models-family-paper">
+                  <span class="sc models-family-k">Example paper</span>
+                  <a class="ink-link it" href={f.paperUrl} target="_blank" rel="noopener">{f.paperLabel}</a>
+                </p>
+              )}
             </div>
           ))}
         </div>
@@ -187,6 +248,7 @@ const familyCards = families.filter((f) => modelsByFamily[f.id].length > 0);
   }
   .models-family-brief { font-size: 13px; line-height: 1.5; color: var(--ink); margin: 6px 0 0; }
   .models-family-models { margin-top: 10px; font-size: 12.5px; line-height: 1.7; }
+  .models-family-paper { margin: 6px 0 0; font-size: 12.5px; line-height: 1.6; }
   .models-family-k {
     font-size: 10.5px; letter-spacing: 0.10em; color: var(--ink-3); margin-right: 4px;
   }
