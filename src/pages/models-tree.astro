@@ -1,0 +1,635 @@
+---
+// HIDDEN evaluation page — a representational-similarity tree of interatomic
+// potentials, candidate replacement for the Models page's 2-D UMAP map.
+// Not linked in nav (Page.astro's nav is a fixed list); reach it at /models-tree.
+//
+// Ported from design_handoff_similarity_tree/Models-Similarity-Tree.dc.html with
+// the one substantive fix the handoff calls for: neighbor-joining runs on the real
+// √JSD(CKNNA) distance matrix (src/data/tree-data.json, from export_tree_data.py),
+// not on UMAP 2-D coordinates. Leaf color = real training corpus from metadata.
+import Page from '../layouts/Page.astro';
+import treeData from '../data/tree-data.json';
+---
+
+<Page title="Models — Similarity Tree" wide>
+  <section class="tree-page">
+    <header class="tree-titleblock">
+      <h1 class="tree-h1">Models</h1>
+      <p class="sc tree-subtitle">A similarity tree of interatomic potentials</p>
+    </header>
+
+    <section class="tree-standfirst">
+      <p class="tree-standfirst-lede">
+        <b>Each dot is a model.</b> They were all shown the same structures, and the
+        tree compares the internal representations they built — not their predictions.
+        Models that picture matter alike sit on nearby branches; colour marks the data
+        each one learned from.
+      </p>
+      <div class="tree-key">
+        <div class="tree-key-row">
+          <svg width="58" height="16" viewBox="0 0 58 16">
+            <line x1="6" y1="8" x2="30" y2="8" stroke="var(--ink)" stroke-width="1.5" stroke-linecap="round" />
+            <circle cx="6" cy="8" r="3.4" fill="var(--ink-2)" />
+            <circle cx="30" cy="8" r="3.4" fill="var(--ink-2)" />
+          </svg>
+          <span><b>Short branch</b> — the two models build almost the same representation.</span>
+        </div>
+        <div class="tree-key-row">
+          <svg width="58" height="16" viewBox="0 0 58 16">
+            <line x1="6" y1="8" x2="46" y2="8" stroke="var(--ink)" stroke-width="1.5" stroke-linecap="round" />
+            <circle cx="6" cy="8" r="3.4" fill="var(--ink-2)" />
+            <circle cx="46" cy="8" r="3.8" fill="var(--oxblood)" />
+          </svg>
+          <span><b>Long branch</b> — this model represents matter unlike the rest.</span>
+        </div>
+      </div>
+    </section>
+
+    <header class="tree-sectionhead">
+      <p class="it tree-caption">
+        Follow the branches: their length is the difference between models — a longer
+        path between two dots means they picture matter more differently. Where a dot
+        sits around the circle is just spacing.
+      </p>
+      <p class="sc tree-hint">hover a branch or sector to name its models</p>
+      <button type="button" id="info-btn" class="sc tree-info-btn" aria-expanded="false">
+        How to read this
+      </button>
+      <div id="info-pop" class="tree-info-pop" hidden>
+        <dl>
+          <dt>What this is</dt>
+          <dd>A similarity map of interatomic potentials. We ran the same structures
+            through every model and recorded the internal representation each forms.
+            Models that represent those structures alike end up on nearby branches.</dd>
+          <dt>How to read it</dt>
+          <dd>Follow the branches — their length is the only thing that means anything.
+            Two models on a short branch build nearly identical representations; a model
+            out on a long branch represents matter unlike the others. Where a model sits
+            around the circle is just layout.</dd>
+          <dt>Worth noticing</dt>
+          <dd>Models group by the data they were trained on at least as much as by
+            architecture. Two different architectures trained on the same dataset can be
+            closer than two sizes of one architecture trained on different data — which is
+            why the colors (training corpus) tend to bundle.</dd>
+          <dt>Switching datasets</dt>
+          <dd>The map is drawn through whichever reference structures you pick. On
+            in-distribution materials, models bundle by training data; on out-of-distribution
+            molecules they regroup by architecture.</dd>
+          <dt>It isn't an evolutionary tree</dt>
+          <dd>Nothing here descends from anything. Built with neighbor-joining on
+            representational-alignment (CKNNA) distances. Edamadaka et al. (2025),
+            arXiv:2512.03750.</dd>
+        </dl>
+      </div>
+    </header>
+
+    <figure class="tree-figure">
+      <div id="tree" class="tree-svg"></div>
+      <div id="readout" class="tree-readout" hidden></div>
+    </figure>
+
+    <div class="tree-controls">
+      <div class="tree-legend">
+        <p class="sc tree-legend-title" id="legend-title">Colour — training corpus</p>
+        <ul class="tree-legend-list" id="legend-list"></ul>
+      </div>
+      <div class="tree-controls-right">
+        <div class="tree-scale" id="scale"></div>
+        <fieldset class="tree-toggle">
+          <legend class="sc tree-toggle-legend">Reference dataset</legend>
+          <div class="tree-toggle-tabs">
+            {treeData.datasets.map((d, i) => (
+              <>
+                <input
+                  class="tree-toggle-input"
+                  type="radio"
+                  name="tree-ds"
+                  id={`tds-${d.id}`}
+                  value={d.id}
+                  checked={i === 0}
+                />
+                <label for={`tds-${d.id}`} class="sc tree-toggle-tab">{d.dataset}</label>
+              </>
+            ))}
+          </div>
+        </fieldset>
+      </div>
+    </div>
+
+    <p class="tree-note">
+      Evaluation page. The catalogue table and Architecture Families section from the
+      production Models page are omitted here to keep the focus on the visualization.
+    </p>
+  </section>
+
+  <script type="application/json" id="tree-data" set:html={JSON.stringify(treeData)}></script>
+</Page>
+
+<style>
+  .tree-page { max-width: 1180px; margin: 0 auto; }
+
+  .tree-titleblock { margin-bottom: 6px; }
+  .tree-h1 {
+    font-family: var(--serif);
+    font-size: 44px; font-weight: 600; line-height: 1.02;
+    letter-spacing: -0.01em; margin: 0;
+  }
+  .tree-subtitle {
+    font-size: 15px; letter-spacing: 0.06em; color: var(--ink-2);
+    margin: 4px 0 0;
+  }
+
+  .tree-standfirst {
+    display: grid; grid-template-columns: minmax(0, 1fr) auto;
+    gap: 26px 40px; align-items: center;
+    border-top: 1.5px solid var(--ink); border-bottom: 0.5px solid var(--ink);
+    padding: 14px 0 16px; margin: 18px 0 22px;
+  }
+  .tree-standfirst-lede { font-size: 16px; line-height: 1.5; margin: 0; max-width: 62ch; }
+  .tree-key { display: flex; flex-direction: column; gap: 8px; }
+  .tree-key-row {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 11.5px; line-height: 1.3; color: var(--ink-2);
+  }
+  .tree-key-row b { color: var(--ink); font-weight: 600; }
+
+  .tree-sectionhead {
+    position: relative; display: flex; align-items: baseline;
+    gap: 16px; flex-wrap: wrap; margin-bottom: 4px;
+  }
+  .tree-caption { font-size: 14px; color: var(--ink-2); margin: 0; }
+  .tree-hint { font-size: 11px; letter-spacing: 0.08em; color: var(--ink-3); margin: 0; }
+  .tree-info-btn {
+    margin-left: auto; font-size: 11px; letter-spacing: 0.08em;
+    color: var(--ink-2); background: transparent;
+    border: 0.5px solid var(--rule); padding: 4px 10px; cursor: pointer;
+    transition: color 0.12s, border-color 0.12s;
+  }
+  .tree-info-btn:hover { color: var(--ink); border-color: var(--ink); }
+  .tree-info-pop {
+    position: absolute; top: 28px; right: 0; z-index: 5; width: 360px;
+    background: var(--paper-2); border: 0.5px solid var(--ink);
+    padding: 16px 18px; box-shadow: none;
+  }
+  .tree-info-pop dl { margin: 0; }
+  .tree-info-pop dt {
+    font-family: var(--smallcaps); font-size: 12px; letter-spacing: 0.06em;
+    color: var(--ink); margin: 10px 0 2px;
+  }
+  .tree-info-pop dt:first-child { margin-top: 0; }
+  .tree-info-pop dd { margin: 0; font-size: 12.5px; line-height: 1.45; color: var(--ink-2); }
+
+  .tree-figure {
+    position: relative; margin: 8px 0 0; padding: 0;
+  }
+  .tree-svg { width: 100%; }
+  .tree-svg :global(svg) { display: block; }
+
+  .tree-readout {
+    position: absolute; top: 10px; right: 10px; width: 232px;
+    background: var(--paper-2); border: 0.5px solid var(--ink);
+    padding: 12px 14px; font-size: 12.5px; line-height: 1.4;
+    pointer-events: none;
+  }
+  /* Readout card contents are injected at runtime via innerHTML, so they don't
+     get Astro's scoping attribute — target them with :global inside the scoped card. */
+  .tree-readout :global(.ro-name) {
+    font-family: var(--serif); font-style: italic; font-size: 15px;
+    color: var(--ink); margin: 0 0 6px; display: flex; align-items: center; gap: 7px;
+  }
+  .tree-readout :global(dl) {
+    margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 3px 12px;
+  }
+  .tree-readout :global(dt) {
+    font-family: var(--smallcaps); font-size: 11px; color: var(--ink-3);
+  }
+  .tree-readout :global(dd) {
+    margin: 0; font-size: 12px; color: var(--ink-2);
+    font-variant-numeric: tabular-nums; text-align: right;
+  }
+
+  .tree-controls {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    gap: 24px; flex-wrap: wrap; margin-top: 6px;
+    border-top: 0.5px solid var(--rule); padding-top: 14px;
+  }
+  .tree-legend-title { font-size: 10.5px; letter-spacing: 0.10em; color: var(--ink-2); margin: 0 0 7px; }
+  .tree-legend-list { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 5px 18px; }
+  /* Legend rows are injected at runtime — target with :global (see readout note). */
+  .tree-legend-list :global(li) { display: flex; align-items: center; gap: 7px; font-size: 12px; color: var(--ink-2); }
+
+  .tree-controls-right { display: flex; align-items: flex-end; gap: 22px; margin-left: auto; }
+  .tree-scale { padding-bottom: 2px; }
+  .tree-toggle { border: none; margin: 0; padding: 0; }
+  .tree-toggle-legend {
+    display: block; font-size: 10.5px; letter-spacing: 0.10em;
+    color: var(--ink-2); margin: 0 0 6px; padding: 0; text-align: right;
+  }
+  .tree-toggle-tabs {
+    display: flex; align-items: baseline; gap: 0;
+    border-top: 0.5px solid var(--ink); border-bottom: 0.5px solid var(--ink);
+    padding: 4px 0 3px;
+  }
+  .tree-toggle-input { position: absolute; opacity: 0; pointer-events: none; width: 0; height: 0; }
+  .tree-toggle-tab {
+    display: inline-block; font-size: 12px; letter-spacing: 0.14em;
+    color: var(--ink-2); padding: 4px 12px; cursor: pointer; user-select: none;
+    border-left: 0.5px solid var(--ink-2); transition: color 0.12s;
+  }
+  .tree-toggle-tab:first-of-type { border-left: none; }
+  .tree-toggle-tab:hover { color: var(--ink); }
+  .tree-toggle-input:checked + .tree-toggle-tab { color: var(--paper); background: var(--ink); }
+  .tree-toggle-input:focus-visible + .tree-toggle-tab { outline: 1px dotted var(--ink); outline-offset: 2px; }
+
+  .tree-note { margin-top: 30px; font-size: 11.5px; color: var(--ink-3); font-style: italic; }
+</style>
+
+<script>
+  // ---------------------------------------------------------------------------
+  // Ported from the prototype's `class Component`. The ONLY substantive change is
+  // the distance source in buildTree(): real √JSD(CKNNA) matrix, not UMAP coords.
+  // ---------------------------------------------------------------------------
+  type Pt = {
+    modelName: string; label: string; family: string; corpus: string;
+    sizeM: number | null; numParams: number | null; slug: string | null;
+  };
+  type DS = { id: string; dataset: string; n: number; points: Pt[]; labels: string[]; matrix: number[][] };
+
+  const CORPUS: Record<string, { label: string; short: string; color: string }> = {
+    omat: { label: 'OMat24 (PBE)', short: 'OMat24 (PBE)', color: '#b3582f' },
+    mp: { label: 'Materials Project (PBE)', short: 'Mat. Project (PBE)', color: '#2f7d5f' },
+    spice: { label: 'Molecules (SPICE)', short: 'Molecules (SPICE)', color: '#3d59a1' },
+    mad: { label: 'MAD set', short: 'MAD set', color: '#b08820' },
+    other: { label: 'Mixed / unspecified', short: 'Mixed / unspec.', color: '#9a9189' },
+  };
+  const FAM: Record<string, { label: string; code: string; color: string }> = {
+    eqV2: { label: 'Equivariant (EqV2)', code: 'EQV2', color: '#9c5540' },
+    eSEN: { label: 'eSEN', code: 'ESEN', color: '#42774e' },
+    UMA: { label: 'UMA', code: 'UMA', color: '#8c7930' },
+    MACE: { label: 'MACE', code: 'MACE', color: '#4e6194' },
+    ORB: { label: 'Orb', code: 'ORB', color: '#814e7d' },
+    'PET-MAD': { label: 'PET-MAD', code: 'PET-MAD', color: '#96653c' },
+  };
+
+  const esc = (s: any) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  function prettyName(s: string): string {
+    if (!/_/.test(s)) return s;
+    return s.split('_').map((t) => {
+      if (/^mace$/i.test(t)) return 'MACE';
+      if (/^mp0?$/i.test(t)) return 'MP';
+      if (/^mp\d+$/i.test(t)) return t.toUpperCase();
+      return t.charAt(0).toUpperCase() + t.slice(1);
+    }).join(' ');
+  }
+
+  const data: { datasets: DS[] } = JSON.parse(document.getElementById('tree-data')!.textContent!);
+  const byId = new Map(data.datasets.map((d) => [d.id, d]));
+  const colorBy: 'training-corpus' | 'family' = 'training-corpus';
+  const showChords = false;
+
+  const state: { dsId: string; hover: { type: 'leaf' | 'sector'; key: string } | null; infoOpen: boolean } = {
+    dsId: data.datasets[0].id, hover: null, infoOpen: false,
+  };
+  const cache: Record<string, any> = {};
+
+  function buildTree(ds: DS) {
+    if (cache[ds.id]) return cache[ds.id];
+    const pts = ds.points;
+    const N = pts.length;
+    const M = ds.matrix;
+    const dist = (i: number, j: number) => M[i][j]; // ← real √JSD distance, replaces Math.hypot on UMAP xy
+
+    const nodeById = new Map<number, any>();
+    pts.forEach((p, i) => nodeById.set(i, { id: i, leaf: true, p, children: [] }));
+    const key = (a: number, b: number) => (a < b ? a + '_' + b : b + '_' + a);
+    const D = new Map<string, number>();
+    for (let i = 0; i < N; i++) for (let j = i + 1; j < N; j++) D.set(key(i, j), dist(i, j));
+    const getD = (a: number, b: number) => (a === b ? 0 : D.get(key(a, b))!);
+    let active = pts.map((_, i) => i);
+    let nextId = N;
+    while (active.length > 2) {
+      const m = active.length;
+      const R = new Map<number, number>();
+      for (const a of active) { let s = 0; for (const b of active) if (a !== b) s += getD(a, b); R.set(a, s); }
+      let best = Infinity, bi = 0, bj = 0;
+      for (let x = 0; x < active.length; x++) for (let y = x + 1; y < active.length; y++) {
+        const a = active[x], b = active[y];
+        const q = (m - 2) * getD(a, b) - R.get(a)! - R.get(b)!;
+        if (q < best) { best = q; bi = a; bj = b; }
+      }
+      const dij = getD(bi, bj);
+      let li = 0.5 * dij + (R.get(bi)! - R.get(bj)!) / (2 * (m - 2));
+      li = Math.max(0, Math.min(dij, li));
+      const lj = Math.max(0, dij - li);
+      const u = { id: nextId++, leaf: false, children: [{ node: bi, len: li }, { node: bj, len: lj }] };
+      nodeById.set(u.id, u);
+      for (const k of active) { if (k === bi || k === bj) continue; D.set(key(u.id, k), Math.max(0, 0.5 * (getD(bi, k) + getD(bj, k) - dij))); }
+      active = active.filter((a) => a !== bi && a !== bj); active.push(u.id);
+    }
+    const [a, b] = active;
+    const fin = getD(a, b);
+    const root = { id: nextId++, leaf: false, children: [{ node: a, len: fin / 2 }, { node: b, len: fin / 2 }] };
+    nodeById.set(root.id, root);
+
+    const lc = new Map<number, number>();
+    const countLeaves = (id: number): number => { const nd = nodeById.get(id); if (nd.leaf) { lc.set(id, 1); return 1; } const s = nd.children.reduce((t: number, c: any) => t + countLeaves(c.node), 0); lc.set(id, s); return s; };
+    const total = countLeaves(root.id);
+
+    const pos = new Map<number, { x: number; y: number }>();
+    const place = (id: number, wedgeStart: number, px: number, py: number) => {
+      pos.set(id, { x: px, y: py });
+      const nd = nodeById.get(id);
+      if (nd.leaf) return;
+      let ang = wedgeStart;
+      for (const c of nd.children) {
+        const w = (lc.get(c.node)! / total) * 2 * Math.PI;
+        const mid = ang + w / 2;
+        place(c.node, ang, px + c.len * Math.cos(mid), py + c.len * Math.sin(mid));
+        ang += w;
+      }
+    };
+    place(root.id, 0, 0, 0);
+
+    const leafIds = [...nodeById.values()].filter((n) => n.leaf).map((n) => n.id);
+    const cen = { x: 0, y: 0 };
+    leafIds.forEach((id) => { cen.x += pos.get(id)!.x; cen.y += pos.get(id)!.y; });
+    cen.x /= leafIds.length; cen.y /= leafIds.length;
+    const famCentroidAngle = (fam: string) => {
+      const ids = leafIds.filter((id) => nodeById.get(id).p.family === fam);
+      if (!ids.length) return null;
+      let sx = 0, sy = 0; ids.forEach((id) => { sx += pos.get(id)!.x - cen.x; sy += pos.get(id)!.y - cen.y; });
+      return Math.atan2(sy, sx);
+    };
+    const rot = -Math.PI / 2 - (famCentroidAngle('eqV2') ?? 0);
+    const applyRot = (theta: number, flip: boolean) => {
+      pos.forEach((p, id) => {
+        let dx = p.x - cen.x, dy = p.y - cen.y;
+        if (flip) dx = -dx;
+        const nx = dx * Math.cos(theta) - dy * Math.sin(theta);
+        const ny = dx * Math.sin(theta) + dy * Math.cos(theta);
+        pos.set(id, { x: nx, y: ny });
+      });
+    };
+    applyRot(rot, false);
+    const orbIds = leafIds.filter((id) => nodeById.get(id).p.family === 'ORB');
+    if (orbIds.length) {
+      let sx = 0, sy = 0; orbIds.forEach((id) => { sx += pos.get(id)!.x; sy += pos.get(id)!.y; });
+      const a2 = Math.atan2(sy, sx);
+      if (a2 > Math.PI / 2 || a2 < -Math.PI / 2) applyRot(0, true);
+    }
+
+    const C = 520, MAXR = 285;
+    let minx = Infinity, maxx = -Infinity, miny = Infinity, maxy = -Infinity;
+    pos.forEach((p) => { minx = Math.min(minx, p.x); maxx = Math.max(maxx, p.x); miny = Math.min(miny, p.y); maxy = Math.max(maxy, p.y); });
+    const bx = (minx + maxx) / 2, by = (miny + maxy) / 2;
+    const half = Math.max((maxx - minx) / 2, (maxy - miny) / 2) || 1;
+    const scale = MAXR / half;
+    const T = new Map<number, { x: number; y: number }>();
+    pos.forEach((p, id) => T.set(id, { x: C + (p.x - bx) * scale, y: C + (p.y - by) * scale }));
+    const ctr = { x: C, y: C };
+
+    const nn = new Map<string, { name: string; dist: number }>();
+    for (let i = 0; i < N; i++) {
+      let bestD = Infinity, bestJ = -1;
+      for (let j = 0; j < N; j++) { if (i === j) continue; const dd = dist(i, j); if (dd < bestD) { bestD = dd; bestJ = j; } }
+      nn.set(prettyName(pts[i].label), { name: prettyName(pts[bestJ].label), dist: bestD });
+    }
+
+    const branches: any[] = [];
+    const joins: any[] = [];
+    const sizeOf = (m: number | null) => Math.max(3.2, Math.min(6.6, 2.8 + Math.log10((m || 1) + 1) * 1.35));
+    nodeById.forEach((nd) => {
+      const pp = T.get(nd.id)!;
+      if (!nd.leaf) {
+        joins.push({ x: pp.x, y: pp.y });
+        for (const c of nd.children) {
+          const cp = T.get(c.node)!;
+          const cn = nodeById.get(c.node);
+          branches.push({ x1: pp.x, y1: pp.y, x2: cp.x, y2: cp.y, leaf: cn.leaf, meta: cn.leaf ? cn.p : null, name: cn.leaf ? prettyName(cn.p.label) : null });
+        }
+      }
+    });
+    const leaves = leafIds.map((id) => {
+      const nd = nodeById.get(id);
+      const p = nd.p;
+      const t = T.get(id)!;
+      const ang = Math.atan2(t.y - ctr.y, t.x - ctr.x);
+      const rad = Math.hypot(t.x - ctr.x, t.y - ctr.y);
+      return { id, name: prettyName(p.label), family: p.family, corpus: p.corpus, sizeM: p.sizeM, slug: p.slug, x: t.x, y: t.y, ang, rad, r: sizeOf(p.sizeM), lang: ang, lx: 0, ly: 0 };
+    });
+
+    const RINGMIN = 300, MINSEP = 0.060;
+    const sortedByAng = [...leaves].sort((p, q) => p.ang - q.ang);
+    let prevA: number | null = null;
+    for (const lf of sortedByAng) { let aa = lf.ang; if (prevA !== null && aa < prevA + MINSEP) aa = prevA + MINSEP; lf.lang = aa; prevA = aa; }
+    for (const lf of leaves) { const lr = Math.max(lf.rad + 14, RINGMIN); lf.lx = ctr.x + lr * Math.cos(lf.lang); lf.ly = ctr.y + lr * Math.sin(lf.lang); }
+
+    const fams = [...new Set(leaves.map((l) => l.family))];
+    const sec = fams.map((fam) => {
+      const ls = leaves.filter((l) => l.family === fam);
+      let sx = 0, sy = 0; ls.forEach((l) => { sx += Math.cos(l.ang); sy += Math.sin(l.ang); });
+      const maxRad = Math.max(...ls.map((l) => l.rad));
+      return { fam, ang: Math.atan2(sy, sx), rad: Math.min(502, Math.max(432, maxRad + 86)), sang: 0, label: FAM[fam] ? FAM[fam].code : fam.toUpperCase() };
+    });
+    sec.sort((p, q) => p.ang - q.ang);
+    const SSEP = 0.27; let prevS: number | null = null;
+    for (const s of sec) { let aa = s.ang; if (prevS !== null && aa < prevS + SSEP) aa = prevS + SSEP; s.sang = aa; prevS = aa; }
+    const sectors = sec.map((s) => ({ fam: s.fam, label: s.label, x: ctr.x + s.rad * Math.cos(s.sang), y: ctr.y + s.rad * Math.sin(s.sang), anchor: Math.cos(s.sang) < -0.25 ? 'end' : Math.cos(s.sang) > 0.25 ? 'start' : 'middle' }));
+
+    const anchors = new Set<string>();
+    fams.forEach((fam) => { const ls = leaves.filter((l) => l.family === fam); if (ls.length === 1) anchors.add(ls[0].name); });
+
+    const seen = new Set<string>();
+    const chordCands: any[] = [];
+    leaves.forEach((l) => {
+      const near = nn.get(l.name)!;
+      const o = leaves.find((x) => x.name === near.name);
+      if (!o || o.family === l.family) return;
+      const k = [l.name, o.name].sort().join('|');
+      if (seen.has(k)) return; seen.add(k);
+      chordCands.push({ a: l, b: o, d: near.dist });
+    });
+    chordCands.sort((p, q) => p.d - q.d);
+    const chords = chordCands.slice(0, 3).map((c) => ({ x1: c.a.x, y1: c.a.y, x2: c.b.x, y2: c.b.y, cx: ctr.x + ((c.a.x + c.b.x) / 2 - ctr.x) * 0.42, cy: ctr.y + ((c.a.y + c.b.y) / 2 - ctr.y) * 0.42 }));
+
+    // Tight content bbox so the figure isn't padded out by unused viewBox margin.
+    // Computed over EVERY potential label position (not just currently-shown ones)
+    // so the crop is identical whether or not a label is revealed on hover — no reflow.
+    let bx0 = Infinity, by0 = Infinity, bx1 = -Infinity, by1 = -Infinity;
+    const ext = (x: number, y: number) => { if (x < bx0) bx0 = x; if (y < by0) by0 = y; if (x > bx1) bx1 = x; if (y > by1) by1 = y; };
+    branches.forEach((b) => { ext(b.x1, b.y1); ext(b.x2, b.y2); });
+    leaves.forEach((l) => {
+      ext(l.x - l.r, l.y - l.r); ext(l.x + l.r, l.y + l.r);
+      const tw = l.name.length * 6.8 + 12;                 // approx revealed-label width
+      ext(l.lx + Math.cos(l.lang) * tw, l.ly + Math.sin(l.lang) * tw);
+    });
+    sectors.forEach((s) => {
+      const tw = s.label.length * 9 + 6;
+      const dir = s.anchor === 'end' ? -1 : s.anchor === 'start' ? 1 : 0;
+      ext(s.x + dir * tw, s.y); ext(s.x, s.y);
+    });
+    const PAD = 10;
+    const viewBox = { x: bx0 - PAD, y: by0 - PAD, w: bx1 - bx0 + 2 * PAD, h: by1 - by0 + 2 * PAD };
+
+    const out = { branches, joins, leaves, sectors, chords, nn, scalePx: scale * 0.1, ctr, anchors, viewBox };
+    cache[ds.id] = out;
+    return out;
+  }
+
+  function colorOf(m: { corpus?: string; family: string }) {
+    if (colorBy === 'family') return FAM[m.family] ? FAM[m.family].color : '#4a4540';
+    const c = m.corpus || 'other';
+    return CORPUS[c] ? CORPUS[c].color : CORPUS.other.color;
+  }
+
+  function renderTreeSVG(tree: any, hover: typeof state.hover): string {
+    let hl: Set<string> | null = null, hoverName: string | null = null;
+    if (hover && hover.type === 'leaf') {
+      hoverName = hover.key;
+      const lf = tree.leaves.find((l: any) => l.name === hover.key);
+      hl = new Set(tree.leaves.filter((l: any) => l.family === (lf ? lf.family : null)).map((l: any) => l.name));
+    } else if (hover && hover.type === 'sector') {
+      hl = new Set(tree.leaves.filter((l: any) => l.family === hover.key).map((l: any) => l.name));
+    }
+    const shown = new Set<string>(tree.anchors || []);
+    if (hl) hl.forEach((n) => shown.add(n));
+
+    const vb = tree.viewBox;
+    let s = `<svg width="100%" viewBox="${vb.x.toFixed(1)} ${vb.y.toFixed(1)} ${vb.w.toFixed(1)} ${vb.h.toFixed(1)}" style="display:block;">`;
+    s += `<rect x="${vb.x.toFixed(1)}" y="${vb.y.toFixed(1)}" width="${vb.w.toFixed(1)}" height="${vb.h.toFixed(1)}" fill="#faf7f1"></rect>`;
+    if (showChords) tree.chords.forEach((c: any) => { s += `<path d="M ${c.x1} ${c.y1} Q ${c.cx} ${c.cy} ${c.x2} ${c.y2}" fill="none" stroke="#7a1f1f" stroke-width="0.85" stroke-dasharray="2 4" opacity="${hl ? 0.07 : 0.26}"></path>`; });
+    // All branches are ink at a single uniform weight — length is the only signal;
+    // colour lives on the dots only.
+    tree.branches.forEach((b: any) => {
+      const lit = !hl || (b.name && hl.has(b.name));
+      s += `<line x1="${b.x1}" y1="${b.y1}" x2="${b.x2}" y2="${b.y2}" stroke="#1f1c18" stroke-width="1" stroke-linecap="round" opacity="${hl && !lit ? 0.1 : 0.62}"></line>`;
+    });
+    tree.joins.forEach((j: any) => { s += `<circle cx="${j.x}" cy="${j.y}" r="1.5" fill="#1f1c18" opacity="${hl ? 0.1 : 0.3}"></circle>`; });
+    tree.sectors.forEach((se: any) => {
+      const lf = hoverName ? tree.leaves.find((l: any) => l.name === hoverName) : null;
+      const lit = !hover || (hover.type === 'sector' && hover.key === se.fam) || (lf && lf.family === se.fam);
+      s += `<text data-sector="${esc(se.fam)}" x="${se.x}" y="${se.y}" text-anchor="${se.anchor}" dominant-baseline="central" font-family="'IM Fell English SC',Georgia,serif" font-size="15.5" letter-spacing="2" fill="#1f1c18" opacity="${hover ? (lit ? 0.95 : 0.2) : 0.74}" style="cursor:default">${esc(se.label)}</text>`;
+    });
+    tree.leaves.forEach((lf: any) => {
+      const lit = !hl || hl.has(lf.name);
+      const col = colorOf(lf);
+      const showLab = shown.has(lf.name);
+      const isSel = hoverName === lf.name;
+      const dotStroke = isSel ? '#7a1f1f' : '#faf7f1';
+      const dotSW = isSel ? 1.8 : 0.8;
+      const dotR = isSel ? lf.r + 0.8 : lf.r;
+      const lox = Math.cos(lf.lang), loy = Math.sin(lf.lang);
+      s += `<g data-leaf="${esc(lf.name)}" opacity="${hl && !lit ? 0.16 : 1}" style="cursor:pointer">`;
+      if (showLab) {
+        const deg = (lf.lang * 180) / Math.PI;
+        const flip = deg > 90 || deg < -90;
+        const rotDeg = flip ? deg + 180 : deg;
+        const anchor = flip ? 'end' : 'start';
+        const ox = flip ? -6 : 6;
+        const labFill = isSel ? '#7a1f1f' : '#1f1c18';
+        s += `<line x1="${lf.x + lox * (lf.r + 2)}" y1="${lf.y + loy * (lf.r + 2)}" x2="${lf.lx}" y2="${lf.ly}" stroke="#1f1c18" stroke-width="0.4" opacity="${hl && !lit ? 0.05 : 0.24}"></line>`;
+        s += `<circle cx="${lf.x}" cy="${lf.y}" r="${dotR}" fill="${col}" stroke="${dotStroke}" stroke-width="${dotSW}"></circle>`;
+        s += `<text transform="translate(${lf.lx} ${lf.ly}) rotate(${rotDeg})" x="${ox}" y="0" text-anchor="${anchor}" dominant-baseline="central" font-family="'Source Serif 4',Georgia,serif" font-size="12.5" font-style="${lf.slug ? 'italic' : 'normal'}" fill="${labFill}" paint-order="stroke" stroke="#faf7f1" stroke-width="3" stroke-linejoin="round">${esc(lf.name)}</text>`;
+      } else {
+        s += `<circle cx="${lf.x}" cy="${lf.y}" r="${dotR}" fill="${col}" stroke="${dotStroke}" stroke-width="${dotSW}"></circle>`;
+      }
+      s += `<circle cx="${lf.x}" cy="${lf.y}" r="11" fill="transparent"></circle>`;
+      s += '</g>';
+    });
+    s += '</svg>';
+    return s;
+  }
+
+  function renderScaleSVG(px: number): string {
+    const w = Math.round(px);
+    let s = `<svg xmlns="http://www.w3.org/2000/svg" width="${w + 156}" height="22" style="display:block;overflow:visible;">`;
+    s += `<line x1="1" y1="11" x2="${w + 1}" y2="11" stroke="#1f1c18" stroke-width="1.1"></line>`;
+    s += `<line x1="1" y1="6" x2="1" y2="16" stroke="#1f1c18" stroke-width="1.1"></line>`;
+    s += `<line x1="${w + 1}" y1="6" x2="${w + 1}" y2="16" stroke="#1f1c18" stroke-width="1.1"></line>`;
+    s += `<text x="${w + 9}" y="12" dominant-baseline="central" font-family="'JetBrains Mono',monospace" font-size="11" fill="#4a4540">0.10  repr. distance</text>`;
+    s += '</svg>';
+    return s;
+  }
+
+  const elTree = document.getElementById('tree')!;
+  const elScale = document.getElementById('scale')!;
+  const elReadout = document.getElementById('readout')!;
+  const elLegendList = document.getElementById('legend-list')!;
+
+  function renderLegend(tree: any) {
+    const order = colorBy === 'family' ? ['eqV2', 'eSEN', 'UMA', 'MACE', 'ORB', 'PET-MAD'] : ['omat', 'mp', 'spice', 'mad', 'other'];
+    const present = new Set(tree.leaves.map((l: any) => (colorBy === 'family' ? l.family : l.corpus)));
+    const items = order.filter((k) => present.has(k)).map((k) => {
+      const e = colorBy === 'family' ? FAM[k] : CORPUS[k];
+      return `<li><span class="sw" style="background:${e.color};width:11px;height:11px;display:inline-block;flex:0 0 auto"></span>${esc(e.label)}</li>`;
+    });
+    elLegendList.innerHTML = items.join('');
+  }
+
+  function renderReadout(tree: any) {
+    if (!state.hover || state.hover.type !== 'leaf') { elReadout.hidden = true; return; }
+    const lf = tree.leaves.find((l: any) => l.name === state.hover!.key);
+    if (!lf) { elReadout.hidden = true; return; }
+    const nn = tree.nn.get(lf.name);
+    const params = lf.sizeM ? (lf.sizeM >= 1000 ? (lf.sizeM / 1000).toFixed(1) + 'B' : Math.round(lf.sizeM) + 'M') : '—';
+    const famLabel = FAM[lf.family] ? FAM[lf.family].label : lf.family;
+    const corpusLabel = CORPUS[lf.corpus] ? CORPUS[lf.corpus].short : '—';
+    const swatch = colorOf(lf);
+    elReadout.innerHTML =
+      `<p class="ro-name"><span class="ro-swatch" style="background:${swatch};width:10px;height:10px;flex:0 0 auto"></span>${esc(lf.name)}</p>` +
+      `<dl>` +
+      `<dt>Family</dt><dd>${esc(famLabel)}</dd>` +
+      `<dt>Params</dt><dd>${esc(params)}</dd>` +
+      `<dt>Corpus</dt><dd>${esc(corpusLabel)}</dd>` +
+      `<dt>Nearest</dt><dd>${nn ? esc(nn.name) : '—'}</dd>` +
+      `<dt>Distance</dt><dd>${nn ? nn.dist.toFixed(3) : '—'}</dd>` +
+      `</dl>`;
+    elReadout.hidden = false;
+  }
+
+  function render() {
+    const ds = byId.get(state.dsId)!;
+    const tree = buildTree(ds);
+    elTree.innerHTML = renderTreeSVG(tree, state.hover);
+    elScale.innerHTML = renderScaleSVG(tree.scalePx);
+    renderLegend(tree);
+    renderReadout(tree);
+  }
+
+  // ---- events ----
+  elTree.addEventListener('mouseover', (e) => {
+    const t = e.target as Element;
+    if (!t || !t.closest) return;
+    const lg = t.closest('[data-leaf]');
+    if (lg) { const k = lg.getAttribute('data-leaf')!; if (!(state.hover && state.hover.type === 'leaf' && state.hover.key === k)) { state.hover = { type: 'leaf', key: k }; render(); } return; }
+    const sg = t.closest('[data-sector]');
+    if (sg) { const k = sg.getAttribute('data-sector')!; if (!(state.hover && state.hover.type === 'sector' && state.hover.key === k)) { state.hover = { type: 'sector', key: k }; render(); } return; }
+    if (state.hover) { state.hover = null; render(); }
+  });
+  elTree.addEventListener('mouseout', (e) => {
+    const ev = e as MouseEvent;
+    if (ev.relatedTarget && elTree.contains(ev.relatedTarget as Node)) return;
+    if (state.hover) { state.hover = null; render(); }
+  });
+
+  document.querySelectorAll<HTMLInputElement>('.tree-toggle-input').forEach((input) => {
+    input.addEventListener('change', () => {
+      if (input.checked) { state.dsId = input.value; state.hover = null; render(); }
+    });
+  });
+
+  const infoBtn = document.getElementById('info-btn')!;
+  const infoPop = document.getElementById('info-pop')!;
+  infoBtn.addEventListener('click', () => {
+    state.infoOpen = !state.infoOpen;
+    infoPop.hidden = !state.infoOpen;
+    infoBtn.setAttribute('aria-expanded', String(state.infoOpen));
+  });
+  document.addEventListener('click', (e) => {
+    if (!state.infoOpen) return;
+    const t = e.target as Node;
+    if (!infoPop.contains(t) && !infoBtn.contains(t)) { state.infoOpen = false; infoPop.hidden = true; infoBtn.setAttribute('aria-expanded', 'false'); }
+  });
+
+  render();
+</script>
