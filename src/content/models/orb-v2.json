@@ -8,5 +8,5 @@
     { "id": "orb-d3-v2", "params": "25M" },
     { "id": "orb-mptraj-only-v2", "params": "25M" }
   ],
-  "trainingData": ["mptrj"]
+  "trainingData": ["mptrj", "salex"]
 }

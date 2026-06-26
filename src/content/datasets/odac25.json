@@ -1,0 +1,12 @@
+{
+  "name": "ODAC25",
+  "fullName": "Open Direct Air Capture 2025",
+  "domain": "catalysis",
+  "curator": "Meta FAIR-Chem (Sriram, Brabson, Medford, Sholl et al.)",
+  "year": 2025,
+  "size": "~70M DFT single-point calculations across ~15,000 MOFs (CO2/H2O/N2/O2 adsorption); a scale and diversity expansion of ODAC23",
+  "dftLevel": "PBE+D3; VASP",
+  "license": "CC-BY 4.0",
+  "doi": "https://doi.org/10.48550/arXiv.2508.03162",
+  "primaryPaper": "Sriram et al., The Open DAC 2025 Dataset for Sorbent Discovery in Direct Air Capture, arXiv:2508.03162 (2025)."
+}

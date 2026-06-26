@@ -1,0 +1,13 @@
+{
+  "name": "OMC25",
+  "fullName": "Open Molecular Crystals 2025",
+  "domain": "materials",
+  "curator": "Meta FAIR-Chem (Gharakhanyan, Barroso-Luque, Marom, Ulissi, Sriram et al.)",
+  "year": 2025,
+  "size": ">27M molecular-crystal structures (12 elements, up to 300 atoms per cell) from PBE+D3 relaxation trajectories of ~230k crystals built from ~50k OE62 molecules",
+  "dftLevel": "PBE+D3; VASP",
+  "license": "CC-BY 4.0",
+  "doi": "https://doi.org/10.48550/arXiv.2508.02651",
+  "primaryPaper": "Gharakhanyan et al., Open Molecular Crystals 2025 (OMC25) Dataset and Models, arXiv:2508.02651 (2025).",
+  "howToGet": "Gated download on Hugging Face at facebook/OMC25 (CC-BY 4.0, access request required); provided as ASE-DB lmdb files."
+}

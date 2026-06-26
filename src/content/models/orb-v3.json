@@ -13,5 +13,5 @@
     { "id": "orb-v3-direct-inf-omat" },
     { "id": "orb-v3-direct-inf-mpa" }
   ],
-  "trainingData": ["omat24"]
+  "trainingData": ["omat24", "mptrj", "salex"]
 }

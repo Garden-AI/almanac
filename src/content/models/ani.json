@@ -2,6 +2,7 @@
   "name": "ANI",
   "families": ["vanilla"],
   "codeUrl": "https://github.com/aiqm/torchani",
+  "weightsUrl": "https://github.com/aiqm/torchani/tree/main/torchani/resources",
   "paperRefs": ["ani"],
   "checkpoints": [
     { "id": "ani-2x" },
