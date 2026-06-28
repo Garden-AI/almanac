@@ -9,6 +9,12 @@ const architectures = defineCollection({
     name: z.string(),
     descriptor: z.string(),
     body: z.string(),
+    /** Medium-length summary shown on the Models page family card. */
+    brief: z.string().optional(),
+    /** Representative paper for the family, shown on the Models page card. */
+    examplePaper: reference('papers').optional(),
+    /** Display label for the example paper (e.g. "Liao et al., EquiformerV2 (2023)"). */
+    examplePaperLabel: z.string().optional(),
   }),
 });
 
