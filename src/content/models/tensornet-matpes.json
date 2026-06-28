@@ -1,9 +1,9 @@
 {
   "name": "TensorNet",
   "families": ["equivariant"],
-  "codeUrl": "https://github.com/torchmd/torchmd-net",
+  "codeUrl": "https://github.com/materialyzeai/matgl",
+  "huggingFaceId": "materialyze/TensorNet-PES-MatPES-PBE-2025.2",
   "paperRefs": ["tensornet"],
-  "checkpoints": [
-    { "id": "tensornet-matpes-pbe-2025-2", "params": "0.8M" }
-  ]
+  "checkpoints": [{ "id": "tensornet-matpes-pbe-2025-2", "params": "0.8M" }],
+  "trainingData": ["matpes"]
 }

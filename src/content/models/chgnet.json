@@ -2,6 +2,7 @@
   "name": "CHGNet",
   "families": ["mpnn"],
   "codeUrl": "https://github.com/CederGroupHub/chgnet",
+  "weightsUrl": "https://github.com/CederGroupHub/chgnet/tree/main/chgnet/pretrained",
   "paperRefs": ["chgnet"],
   "checkpoints": [
     { "id": "chgnet-default", "params": "0.4M" }

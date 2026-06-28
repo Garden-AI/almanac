@@ -1,0 +1,13 @@
+{
+  "name": "MatPES",
+  "fullName": "Materials Potential Energy Surface",
+  "domain": "materials",
+  "curator": "Materials Virtual Lab / Materials Project (Kaplan, Ko, Liu, Qi, Deng, Riebesell, Ceder, Persson, Ong)",
+  "year": 2025,
+  "size": "~434k PBE single-point structures (v2025.1; v2025.2 adds Bader/DDEC6 charges and de-duplication), DIRECT-sampled from 300K MD seeded by Materials Project entries",
+  "dftLevel": "PBE (r2SCAN companion release); VASP with MatPESStaticSet",
+  "license": "CC-BY 4.0",
+  "doi": "https://doi.org/10.48550/arXiv.2503.04070",
+  "primaryPaper": "Kaplan et al., A Foundational Potential Energy Surface Dataset for Materials, arXiv:2503.04070 (2025).",
+  "howToGet": "Available on Hugging Face Datasets at materialyze/matpes, with bulk download also via MPContribs and tooling at matpes.ai. MatGL hosts MatPES-trained foundation potentials (M3GNet, CHGNet, TensorNet)."
+}

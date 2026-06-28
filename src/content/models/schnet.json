@@ -1,7 +1,7 @@
 {
   "name": "SchNet",
   "families": ["mpnn"],
-  "codeUrl": "https://github.com/facebookresearch/fairchem",
+  "codeUrl": "https://github.com/facebookresearch/fairchem/tree/fairchem_core-1.10.0",
   "paperRefs": ["schnet"],
   "checkpoints": [
     { "id": "schnet-s2ef-oc20-all", "params": "9.1M" },
