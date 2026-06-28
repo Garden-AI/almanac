@@ -2,7 +2,7 @@
   "name": "MatterSim",
   "families": ["mpnn"],
   "codeUrl": "https://github.com/microsoft/mattersim",
-  "huggingFaceId": "microsoft/mattersim",
+  "weightsUrl": "https://github.com/microsoft/mattersim/tree/main/pretrained_models",
   "paperRefs": ["mattersim"],
   "checkpoints": [
     { "id": "mattersim-v1-0-0-5m", "params": "5M" },

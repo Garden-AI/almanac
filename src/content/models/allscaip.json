@@ -1,7 +1,6 @@
 {
   "name": "AllScAIP",
   "families": ["attention"],
-  "huggingFaceId": "facebook/OMol25",
   "codeUrl": "https://github.com/facebookresearch/fairchem",
   "paperRefs": ["allscaip"],
   "checkpoints": [

@@ -1,7 +1,7 @@
 {
   "name": "eSEN",
   "families": ["equivariant"],
-  "codeUrl": "https://github.com/facebookresearch/fairchem",
+  "codeUrl": "https://github.com/facebookresearch/fairchem/tree/fairchem_core-1.10.0",
   "paperRefs": ["esen"],
   "checkpoints": [
     { "id": "esen-30m-mptrj", "params": "30M" },
@@ -11,5 +11,5 @@
     { "id": "esen-sm-conserving-all-omol", "params": "6.3M" },
     { "id": "esen-sm-direct-all-omol", "params": "6.3M" }
   ],
-  "trainingData": ["omol25", "mptrj", "omat24"]
+  "trainingData": ["omol25", "mptrj", "omat24", "salex"]
 }

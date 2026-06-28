@@ -1,10 +1,8 @@
 {
   "name": "PaiNN",
   "families": ["equivariant"],
-  "codeUrl": "https://github.com/facebookresearch/fairchem",
+  "codeUrl": "https://github.com/facebookresearch/fairchem/tree/fairchem_core-1.10.0",
   "paperRefs": ["painn"],
-  "checkpoints": [
-    { "id": "painn-s2ef-oc20-all", "params": "20.1M" }
-  ],
+  "checkpoints": [{ "id": "painn-s2ef-oc20-all", "params": "20.1M" }],
   "trainingData": ["oc20"]
 }
