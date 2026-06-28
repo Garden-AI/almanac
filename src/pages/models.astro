@@ -29,9 +29,10 @@ const models = enriched.sort((a, b) => {
 
 // Architecture Families — full-width below the split (merged in from the deleted
 // /architectures page). Each family's brief, representative paper, and label all
-// come from its architectures-collection JSON; empty families (e.g. `earlier`)
+// come from its architectures-collection JSON; families with no catalog models
 // are dropped, and reappear automatically if ever repopulated.
-const FAMILY_ORDER = ['equivariant', 'ace', 'mpnn', 'vanilla', 'attention', 'earlier'];
+// Roughly earliest-to-latest by each family's lineage / representative paper.
+const FAMILY_ORDER = ['fixed-descriptor', 'mpnn', 'equivariant', 'ace', 'learned-symmetry', 'attention'];
 const families = (await getCollection('architectures')).sort(
   (a, b) => FAMILY_ORDER.indexOf(a.id) - FAMILY_ORDER.indexOf(b.id),
 );
@@ -50,7 +51,7 @@ const familyCards = await Promise.all(
       return {
         id: f.id,
         name: f.data.name,
-        brief: f.data.brief ?? f.data.descriptor,
+        brief: f.data.brief,
         paperLabel: f.data.examplePaperLabel ?? '',
         paperUrl: paper?.data.url ?? null,
       };

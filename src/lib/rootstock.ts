@@ -48,9 +48,18 @@ export const ROOTSTOCK_URL = import.meta.env.PUBLIC_ROOTSTOCK_URL;
 
 export async function getRootstockDump(): Promise<RootstockDump> {
   if (ROOTSTOCK_URL) {
-    const res = await fetch(ROOTSTOCK_URL);
-    if (!res.ok) throw new Error(`Rootstock fetch failed: ${res.status}`);
-    return res.json() as Promise<RootstockDump>;
+    // The live fetch is best-effort: if Rootstock is unreachable (offline
+    // build, backend down), fall back to the captured fixture rather than
+    // crashing the page render. The client-side refresh corrects statuses
+    // once the network is back; until then the baked catalog still renders.
+    try {
+      const res = await fetch(ROOTSTOCK_URL);
+      if (!res.ok) throw new Error(`Rootstock fetch failed: ${res.status}`);
+      return (await res.json()) as RootstockDump;
+    } catch (err) {
+      console.warn('Rootstock dump unavailable, using fixture seed:', err);
+      return fixture as RootstockDump;
+    }
   }
   return fixture as RootstockDump;
 }

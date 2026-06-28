@@ -1,0 +1,6 @@
+{
+  "name": "Fixed Descriptor",
+  "brief": "Computes a fixed descriptor of each atom's local environment in one shot and maps it directly to energy through a small per-element network, with no message passing. The first popular family of neural-network potentials.",
+  "examplePaper": "ani",
+  "examplePaperLabel": "Devereux et al., ANI-2x (2020)"
+}

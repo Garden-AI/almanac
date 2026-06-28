@@ -1,0 +1,6 @@
+{
+  "name": "Learned Symmetry",
+  "brief": "Non-equivariant graph networks that learn rotational consistency from data rather than building symmetry into the architecture.",
+  "examplePaper": "orb-v2",
+  "examplePaperLabel": "Neumann et al., Orb (2024)"
+}

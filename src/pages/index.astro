@@ -46,9 +46,6 @@ const clusters = (await getCollection('clusters')).sort((a, b) => {
 });
 
 const models = await getCollection('models');
-const architectures = await getCollection('architectures');
-const archName = (id: string): string | null =>
-  architectures.find((a) => a.id === id)?.data.name ?? null;
 
 const dump = await getRootstockDump();
 
@@ -81,7 +78,6 @@ type FamilyGroup = {
   modelId: string;
   name: string;
   href: string;
-  arch: string | null;
   count: number;
   rows: FamilyRow[];
 };
@@ -118,7 +114,6 @@ const families: FamilyGroup[] = models
       modelId: m.id,
       name: m.data.name,
       href: url(`/model/${m.id}`),
-      arch: archName(m.data.families[0]?.id ?? ''),
       count: supported.length,
       rows,
     };
@@ -216,18 +211,14 @@ with RootstockCalculator(
       </colgroup>
       <thead>
         <tr>
-          <th class="am-th-slug">Model family / Checkpoint</th>
+          <th class="am-th-slug">
+            <span class="am-th-slug-fam">Model family</span>
+            <span class="am-th-slug-cp">checkpoint</span>
+          </th>
           {clusters.map((c) => (
             <th class="am-th-cluster">
-              <div class="am-th-cluster-name">
-                <a class="ink-link" href={url(`/cluster/${c.id}`)}>{c.data.name}</a>
-              </div>
-              <div class="sc am-th-cluster-inst">
-                {c.data.institutionShort ?? c.data.institution.split('·')[0].trim()}
-              </div>
-              <div class="mono am-th-cluster-gpu">
-                {c.data.gpu ?? '—'}
-              </div>
+              <a class="am-cluster-link" href={url(`/cluster/${c.id}`)}>{c.data.name}</a>
+              <div class="mono am-th-cluster-gpu">{c.data.gpu ?? '—'}</div>
             </th>
           ))}
         </tr>
@@ -242,13 +233,7 @@ with RootstockCalculator(
             >
               <td colspan={colSpan}>
                 <div class="am-fhead-inner">
-                  <a class="am-fhead-name" href={fam.href}>
-                    <span class="am-fhead-name-text">{fam.name}</span>
-                    <span class="am-fhead-arrow" aria-hidden="true">→</span>
-                  </a>
-                  <span class="am-fhead-meta">
-                    {fam.arch ? (<span class="it">{fam.arch}</span>) : null}
-                  </span>
+                  <a class="am-fhead-name" href={fam.href}>{fam.name}</a>
                 </div>
               </td>
             </tr>
@@ -258,7 +243,7 @@ with RootstockCalculator(
                 data-rs-row={r.checkpointId}
                 data-rs-family-id={fam.modelId}
                 data-am-family={fam.modelId}
-                data-am-search={`${fam.name} ${r.checkpointId} ${r.params ?? ''} ${fam.arch ?? ''}`.toLowerCase()}
+                data-am-search={`${fam.name} ${r.checkpointId} ${r.params ?? ''}`.toLowerCase()}
               >
                 <td class="am-slug">
                   <a class="am-slug-link" href={`${fam.href}#${r.checkpointId}`}>{r.checkpointId}</a>
@@ -432,11 +417,30 @@ with RootstockCalculator(
   .am-table tbody td { padding-top: 3px; padding-bottom: 3px; }
   .am-col-size { width: 64px; }
   .am-col-cluster { width: 1%; }
-  .am-table thead th.am-th-cluster { min-width: 140px; text-align: center; vertical-align: bottom; padding: 6px 4px; line-height: 1.2; }
-  .am-th-cluster-name { font-family: var(--smallcaps); font-size: 12.5px; letter-spacing: 0.06em; color: var(--ink); }
-  .am-th-cluster-inst { font-size: 9.5px; letter-spacing: 0.10em; color: var(--ink-2); margin-top: 1px; }
-  .am-th-cluster-gpu { font-size: 9px; color: var(--ink-3); margin-top: 2px; letter-spacing: 0.02em; }
-  .am-th-slug { text-align: left; }
+  .am-table thead th.am-th-cluster { min-width: 140px; text-align: center; vertical-align: bottom; padding: 6px 4px; }
+  .am-cluster-link {
+    font-family: var(--smallcaps);
+    font-size: 14px;
+    letter-spacing: 0.06em;
+    color: var(--ink);
+    text-decoration: none;
+    border-bottom: 0.5px solid transparent;
+    transition: color .12s, border-color .12s;
+  }
+  .am-cluster-link:hover { color: var(--oxblood); border-bottom-color: var(--oxblood); }
+  .am-th-cluster-gpu { font-size: 10px; color: var(--ink-3); margin-top: 3px; letter-spacing: 0.02em; font-weight: 400; }
+  .am-th-slug { text-align: left; vertical-align: bottom; }
+  .am-th-slug-fam { display: block; font-size: 14px; letter-spacing: 0.10em; }
+  .am-th-slug-cp {
+    display: block;
+    margin-top: 2px;
+    padding-left: 12px;
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 400;
+    letter-spacing: 0;
+    color: var(--ink-2);
+  }
 
   .am-row .am-slug {
     font-family: var(--mono);
@@ -479,7 +483,7 @@ with RootstockCalculator(
   .am-fhead-inner {
     display: flex;
     align-items: baseline;
-    justify-content: space-between;
+    justify-content: flex-start;
     gap: 16px;
     flex-wrap: wrap;
   }
@@ -489,30 +493,10 @@ with RootstockCalculator(
     letter-spacing: 0.10em;
     color: var(--ink);
     text-decoration: none;
-    display: inline-flex;
-    align-items: baseline;
-    gap: 7px;
-    white-space: nowrap;
+    border-bottom: 0.5px solid transparent;
+    transition: color .12s, border-color .12s;
   }
-  .am-fhead-name:hover,
-  .am-fhead-name:hover .am-fhead-arrow { color: var(--oxblood); }
-  .am-fhead-arrow {
-    color: var(--ink-3);
-    font-family: var(--serif);
-    letter-spacing: 0;
-    font-size: 14px;
-  }
-  .am-fhead-meta {
-    font-family: var(--serif);
-    font-size: 12px;
-    color: var(--ink-3);
-    display: inline-flex;
-    align-items: baseline;
-    gap: 6px;
-    white-space: nowrap;
-  }
-  .am-fhead-meta .mono   { font-size: 11px; color: var(--ink-2); }
-  .am-fhead-meta .it     { color: var(--ink-2); }
+  .am-fhead-name:hover { color: var(--oxblood); border-bottom-color: var(--oxblood); }
 
   .am-caption {
     margin-top: 10px;

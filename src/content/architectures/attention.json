@@ -1,8 +1,6 @@
 {
   "name": "Attention / Graph-Transformer",
-  "descriptor": "Self-attention transformers for atoms — neighborhoods, and lately whole systems, are attended over rather than message-passed.",
-  "body": "Attention-based potentials replace fixed message-passing aggregation with learned self-attention: each atom weighs its neighbors — and, in the all-to-all variants, every other atom in the system — by content rather than by a hand-chosen edge function. The lineage borrows directly from the transformer architectures of language and vision, adapted to operate on invariant scalar features for throughput rather than enforcing equivariance by construction. The headline references are Qu et al., <i>EScAIP</i> (Efficiently Scaled Attention Interatomic Potential) and the all-to-all node-attention follow-up <i>AllScAIP</i>, which adds a global attention component to recover long-range accuracy. This family overlaps with the Vanilla / Direct-Prediction cluster — both forgo hard equivariance for speed — and with Message-Passing, since attention is a learned generalisation of neighbor aggregation. We list it separately because the scaling behaviour and the all-to-all long-range mechanism are distinctive enough to track on their own.",
-  "brief": "Self-attention transformers adapted to atoms: each atom weighs its neighbors — and, in the all-to-all variants, every other atom in the system — by learned content rather than a fixed aggregation rule. Borrowed from the transformers of language and vision and run on invariant features for throughput, the family trades hard equivariance for scale, with a global attention channel added to recover long-range accuracy.",
+  "brief": "Self-attention transformers (like in LLMs) adapted to atoms. Each atom weighs other atoms by learned content rather than a fixed aggregation rule.",
   "examplePaper": "allscaip",
   "examplePaperLabel": "Qu et al., AllScAIP (2026)"
 }
