@@ -8,25 +8,25 @@ const datasets = (await getCollection('datasets')).sort((a, b) => a.data.year - 
 ---
 <Page title="Datasets — Garden's Almanac" wide>
   <h1 style="margin-top: 3px;">Datasets</h1>
-  <p class="it" style="margin-top: 4px; font-size: 14px; color: var(--ink-2); max-width: 60ch;">
+  <p class="it" style="margin-top: 4px; font-size: var(--fs-base); color: var(--ink-2); max-width: 60ch;">
     The structure libraries from which these models descend.
   </p>
   <div style="margin-top: 8px;"><OrnamentRule width={220} /></div>
 
   <div style="margin-top: 14px;">
-    <p style="font-size: 13px; line-height: 1.5; margin: 0 0 10px; max-width: 720px;">
+    <p style="font-size: var(--fs-md); line-height: 1.5; margin: 0 0 10px; max-width: 720px;">
       The lineage of an MLIP is shaped at least as much by what it was trained on as by its architecture.
       Two equivariant transformers with nearly identical layer counts can produce wildly different relaxation
       paths if one was raised on QM9 and the other on OMat24. The clusters on the
       <a class="ink-link" href={url('/models')}>similarity map</a> track training dataset more reliably than
       they track model family — and on most days, more reliably than the architecture diagrams in the original papers.
     </p>
-    <p style="font-size: 13px; line-height: 1.5; margin: 0 0 14px; max-width: 720px;">
+    <p style="font-size: var(--fs-md); line-height: 1.5; margin: 0 0 14px; max-width: 720px;">
       This section is a working reference, not a comprehensive review of materials and molecular chemistry
       datasets. The entries cover the libraries actually referenced by the catalog.
     </p>
 
-    <table class="almanac" style="font-size: 12.5px;">
+    <table class="almanac" style="font-size: var(--fs-md);">
       <thead>
         <tr>
           <th>Name</th>
@@ -42,13 +42,13 @@ const datasets = (await getCollection('datasets')).sort((a, b) => a.data.year - 
             <td><a class="ink-link it" href={url(`/dataset/${d.id}`)}>{d.data.name}</a></td>
             <td style="text-transform: capitalize;">{d.data.domain}</td>
             <td style="text-align: right;">{d.data.size.split(';')[0]}</td>
-            <td class="mono" style="font-size: 11px;">{d.data.dftLevel}</td>
+            <td class="mono" style="font-size: var(--fs-xs);">{d.data.dftLevel}</td>
             <td style="text-align: right;">{d.data.year}</td>
           </tr>
         ))}
       </tbody>
     </table>
-    <p class="it" style="font-size: 11.5px; color: var(--ink-2); margin-top: 6px;">
+    <p class="it" style="font-size: var(--fs-sm); color: var(--ink-2); margin-top: 6px;">
       Sorted oldest first to read as a timeline of what models had to learn from.
     </p>
   </div>

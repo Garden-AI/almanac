@@ -43,18 +43,18 @@ const totalCheckpoints = envGroups.reduce((n, g) => n + g.checkpoints.length, 0)
 const day = (s: string | null | undefined) => (s ? s.slice(0, 10) : '—');
 ---
 <Page title={`${c.name} — Garden's Almanac`}>
-  <p class="sc" style="font-size: 11.5px; letter-spacing: var(--track-display);">
+  <p class="sc" style="font-size: var(--fs-sm); letter-spacing: var(--track-display);">
     {c.institution}
   </p>
   <h1>{c.name}</h1>
   {c.subtitle && (
-    <p class="it" style="color: var(--ink-2); font-size: 14px;">{c.subtitle}</p>
+    <p class="it" style="color: var(--ink-2); font-size: var(--fs-base);">{c.subtitle}</p>
   )}
   <hr class="title-rule" />
 
   <div class="detail-body">
     <div>
-      <h2 class="sc" style="font-size: 13px;">Specifications</h2>
+      <h2 class="sc" style="font-size: var(--fs-md);">Specifications</h2>
       <table class="almanac cluster-specs" style="margin-top: 6px;">
         <tbody>
           {Object.entries(c.specs).map(([k, v]) => (
@@ -68,21 +68,21 @@ const day = (s: string | null | undefined) => (s ? s.slice(0, 10) : '—');
         </tbody>
       </table>
 
-      <h2 class="sc" style="font-size: 13px; margin-top: 22px;">Available checkpoints</h2>
+      <h2 class="sc" style="font-size: var(--fs-md); margin-top: 22px;">Available checkpoints</h2>
       <div data-rs-cluster-section>
         {manifest ? (
           totalCheckpoints > 0 ? (
             <>
-              <p class="it" style="font-size: 12px; color: var(--ink-2); margin-top: 4px;">
+              <p class="it" style="font-size: var(--fs-sm); color: var(--ink-2); margin-top: 4px;">
                 Live from Rootstock · {totalCheckpoints} checkpoint{totalCheckpoints === 1 ? '' : 's'}
                 {' '}across {envGroups.length} environment{envGroups.length === 1 ? '' : 's'}
               </p>
               {envGroups.map((g) => (
                 <div style="margin-top: 14px;">
                   <div style="display: flex; align-items: baseline; gap: 10px;">
-                    <span class="sc" style="font-size: 11.5px; letter-spacing: var(--track-label);">env</span>
-                    <span class="mono" style="font-size: 12px;">{g.envName}</span>
-                    <span class="it" style="font-size: 11px; color: var(--ink-3);">
+                    <span class="sc" style="font-size: var(--fs-sm); letter-spacing: var(--track-label);">env</span>
+                    <span class="mono" style="font-size: var(--fs-sm);">{g.envName}</span>
+                    <span class="it" style="font-size: var(--fs-xs); color: var(--ink-3);">
                       built {day(g.builtAt)}
                     </span>
                   </div>
@@ -100,7 +100,7 @@ const day = (s: string | null | undefined) => (s ? s.slice(0, 10) : '—');
                         const page = checkpointToPage.get(cp.id);
                         return (
                           <tr>
-                            <td class="mono" style="font-size: 11.5px;">{cp.id}</td>
+                            <td class="mono" style="font-size: var(--fs-sm);">{cp.id}</td>
                             <td>
                               {page ? (
                                 <a class="ink-link it" href={url(`/model/${page.pageId}`)}>{page.pageName}</a>
@@ -118,7 +118,7 @@ const day = (s: string | null | undefined) => (s ? s.slice(0, 10) : '—');
                     </tbody>
                   </table>
                   {g.checkpoints.some((cp) => cp.lastError) && (
-                    <ul style="margin-top: 4px; font-size: 11px; color: var(--ink-2);">
+                    <ul style="margin-top: 4px; font-size: var(--fs-xs); color: var(--ink-2);">
                       {g.checkpoints
                         .filter((cp) => cp.lastError)
                         .map((cp) => (
@@ -152,7 +152,7 @@ const day = (s: string | null | undefined) => (s ? s.slice(0, 10) : '—');
 
       {c.runningOn && (
         <>
-          <h2 class="sc" style="font-size: 13px; margin-top: 22px;">Running on {c.name}</h2>
+          <h2 class="sc" style="font-size: var(--fs-md); margin-top: 22px;">Running on {c.name}</h2>
           <div style="margin-top: 6px; white-space: pre-wrap;">{c.runningOn}</div>
         </>
       )}
@@ -195,7 +195,7 @@ const day = (s: string | null | undefined) => (s ? s.slice(0, 10) : '—');
     }
     table.cluster-specs td[data-spec-label] {
       font-family: var(--smallcaps);
-      font-size: 11px;
+      font-size: var(--fs-xs);
       letter-spacing: var(--track-label);
       color: var(--ink-3);
       margin-bottom: 3px;
@@ -253,7 +253,7 @@ const day = (s: string | null | undefined) => (s ? s.slice(0, 10) : '—');
                   ? `<span class="status-verified">●</span> verified`
                   : `<span class="status-stale">○</span> ${cp.lastError ? 'errored' : 'not recent'}`;
                 return `<tr>
-                  <td class="mono" style="font-size: 11.5px;">${escape(cp.id)}</td>
+                  <td class="mono" style="font-size: var(--fs-sm);">${escape(cp.id)}</td>
                   <td>${pageCell}</td>
                   <td class="mono" style="font-variant-numeric: tabular-nums;">${escape(day(cp.verifiedAt))}</td>
                   <td>${statusCell}</td>
@@ -262,15 +262,15 @@ const day = (s: string | null | undefined) => (s ? s.slice(0, 10) : '—');
               .join('');
             const errors = g.checkpoints.filter((cp) => cp.lastError);
             const errList = errors.length
-              ? `<ul style="margin-top: 4px; font-size: 11px; color: var(--ink-2);">${errors
+              ? `<ul style="margin-top: 4px; font-size: var(--fs-xs); color: var(--ink-2);">${errors
                   .map((cp) => `<li><span class="mono">${escape(cp.id)}</span>: <span class="it">${escape(cp.lastError!)}</span></li>`)
                   .join('')}</ul>`
               : '';
             return `<div style="margin-top: 14px;">
               <div style="display: flex; align-items: baseline; gap: 10px;">
-                <span class="sc" style="font-size: 11.5px; letter-spacing: var(--track-label);">env</span>
-                <span class="mono" style="font-size: 12px;">${escape(g.envName)}</span>
-                <span class="it" style="font-size: 11px; color: var(--ink-3);">built ${escape(day(g.builtAt))}</span>
+                <span class="sc" style="font-size: var(--fs-sm); letter-spacing: var(--track-label);">env</span>
+                <span class="mono" style="font-size: var(--fs-sm);">${escape(g.envName)}</span>
+                <span class="it" style="font-size: var(--fs-xs); color: var(--ink-3);">built ${escape(day(g.builtAt))}</span>
               </div>
               <table class="almanac" style="margin-top: 4px;">
                 <thead><tr><th>Checkpoint</th><th>Page</th><th style="width: 110px;">Verified</th><th style="width: 80px;">Status</th></tr></thead>
@@ -284,7 +284,7 @@ const day = (s: string | null | undefined) => (s ? s.slice(0, 10) : '—');
         const cpWord = total === 1 ? 'checkpoint' : 'checkpoints';
         const envWord = groups.length === 1 ? 'environment' : 'environments';
         target.innerHTML = `
-          <p class="it" style="font-size: 12px; color: var(--ink-2); margin-top: 4px;">
+          <p class="it" style="font-size: var(--fs-sm); color: var(--ink-2); margin-top: 4px;">
             Live from Rootstock · ${total} ${cpWord} across ${groups.length} ${envWord}
           </p>
           ${groupHtml}

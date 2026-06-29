@@ -191,7 +191,7 @@ const familyCount = [...byFamily.keys()].length;
     justify-content: space-between;
     align-items: flex-start;
     margin-top: 8px;
-    font-size: 12px;
+    font-size: var(--fs-sm);
     color: var(--ink-2);
     gap: 16px;
   }
@@ -200,12 +200,12 @@ const familyCount = [...byFamily.keys()].length;
   }
   .map-caption .sc-inline {
     font-family: var(--smallcaps);
-    font-size: 11px;
-    letter-spacing: 0.10em;
+    font-size: var(--fs-xs);
+    letter-spacing: var(--track-label);
   }
   .map-counts {
-    font-size: 10.5px;
-    letter-spacing: 0.10em;
+    font-size: var(--fs-micro);
+    letter-spacing: var(--track-label);
     white-space: nowrap;
   }
 </style>

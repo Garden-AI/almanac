@@ -85,12 +85,12 @@ import treeData from '../data/tree-data.json';
     position: relative; display: flex; align-items: baseline;
     justify-content: space-between; gap: 14px; flex-wrap: wrap; margin-bottom: 10px;
   }
-  .simtree-cap { font-size: 13.5px; color: var(--ink-2); line-height: 1.2; }
+  .simtree-cap { font-size: var(--fs-md); color: var(--ink-2); line-height: 1.2; }
   .simtree-info-wrap { position: relative; display: flex; align-items: center; }
   .simtree-info-btn {
     display: inline-flex; align-items: center; gap: 7px;
     border: 0.5px solid var(--rule); background: transparent; color: var(--ink-2);
-    font-size: 12.5px; letter-spacing: 0.05em; line-height: 1.2;
+    font-size: var(--fs-md); letter-spacing: var(--track-label); line-height: 1.2;
     padding: 5px 12px; cursor: pointer; white-space: nowrap;
     transition: color 0.12s, border-color 0.12s;
   }
@@ -103,15 +103,15 @@ import treeData from '../data/tree-data.json';
     display: flex; justify-content: space-between; align-items: baseline;
     margin-bottom: 10px; border-bottom: 0.5px solid var(--rule-soft); padding-bottom: 7px;
   }
-  .simtree-info-head .sc { font-size: 12px; letter-spacing: 0.10em; }
+  .simtree-info-head .sc { font-size: var(--fs-sm); letter-spacing: var(--track-label); }
   .simtree-info-close {
     border: 0; background: transparent; color: var(--ink-3);
-    font-size: 16px; line-height: 1; cursor: pointer; padding: 0;
+    font-size: var(--fs-lg); line-height: 1; cursor: pointer; padding: 0;
   }
   .simtree-info-close:hover { color: var(--oxblood); }
-  .simtree-info-body { font-size: 12.5px; line-height: 1.5; display: grid; gap: 9px; }
+  .simtree-info-body { font-size: var(--fs-md); line-height: 1.5; display: grid; gap: 9px; }
   .simtree-info-body p { margin: 0; }
-  .simtree-info-k { font-size: 11px; letter-spacing: 0.06em; color: var(--ink-2); }
+  .simtree-info-k { font-size: var(--fs-xs); letter-spacing: var(--track-label); color: var(--ink-2); }
   .simtree-info-foot { color: var(--ink-2); }
   .simtree-info-cite { font-style: normal; }
 
@@ -129,21 +129,21 @@ import treeData from '../data/tree-data.json';
     display: flex; align-items: center; gap: 8px; margin-bottom: 8px;
     padding-bottom: 7px; border-bottom: 0.5px solid var(--rule-soft);
   }
-  .simtree-readout :global(.ro-name) { font-style: italic; font-size: 13.5px; line-height: 1.15; }
+  .simtree-readout :global(.ro-name) { font-style: italic; font-size: var(--fs-md); line-height: 1.15; }
   .simtree-readout :global(dl) {
     margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 4px 12px;
-    font-size: 11.5px; line-height: 1.3;
+    font-size: var(--fs-sm); line-height: 1.3;
   }
   .simtree-readout :global(dt) {
     font-family: var(--smallcaps); text-transform: lowercase;
-    letter-spacing: 0.06em; color: var(--ink-3);
+    letter-spacing: var(--track-label); color: var(--ink-3);
   }
   .simtree-readout :global(dd) { margin: 0; text-align: right; font-variant-numeric: tabular-nums; }
   .simtree-readout :global(.ro-nn) {
     margin-top: 8px; padding-top: 8px; border-top: 0.5px solid var(--rule-soft);
-    font-size: 11.5px; line-height: 1.34;
+    font-size: var(--fs-sm); line-height: 1.34;
   }
-  .simtree-readout :global(.ro-k) { font-size: 11px; letter-spacing: 0.06em; color: var(--ink-3); }
+  .simtree-readout :global(.ro-k) { font-size: var(--fs-xs); letter-spacing: var(--track-label); color: var(--ink-3); }
   .simtree-readout :global(.ro-nnname) { font-style: italic; }
   .simtree-readout :global(.ro-nndist) { color: var(--ink-3); font-variant-numeric: tabular-nums; }
 
@@ -153,16 +153,16 @@ import treeData from '../data/tree-data.json';
     border-top: 0.5px solid var(--rule); padding-top: 13px;
   }
   .simtree-legend { display: flex; flex-direction: column; gap: 7px; min-width: 0; }
-  .simtree-legend-title { font-size: 10.5px; letter-spacing: 0.10em; color: var(--ink-3); }
+  .simtree-legend-title { font-size: var(--fs-micro); letter-spacing: var(--track-label); color: var(--ink-3); }
   .simtree-legend-list { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px 16px; }
-  .simtree-legend-list :global(li) { display: flex; align-items: center; gap: 7px; font-size: 12.5px; color: var(--ink); }
+  .simtree-legend-list :global(li) { display: flex; align-items: center; gap: 7px; font-size: var(--fs-md); color: var(--ink); }
 
   .simtree-controls-right { display: flex; align-items: flex-end; gap: 24px; flex-wrap: wrap; margin-left: auto; }
   .simtree-scalewrap { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
-  .simtree-scale-title { font-size: 10.5px; letter-spacing: 0.10em; color: var(--ink-3); }
+  .simtree-scale-title { font-size: var(--fs-micro); letter-spacing: var(--track-label); color: var(--ink-3); }
   .simtree-toggle { border: none; margin: 0; padding: 0; }
   .simtree-toggle-legend {
-    display: block; font-size: 10.5px; letter-spacing: 0.10em;
+    display: block; font-size: var(--fs-micro); letter-spacing: var(--track-label);
     color: var(--ink-3); margin: 0 0 6px; padding: 0;
   }
   .simtree-toggle-tabs {
@@ -171,7 +171,7 @@ import treeData from '../data/tree-data.json';
   }
   .simtree-toggle-input { position: absolute; opacity: 0; pointer-events: none; width: 0; height: 0; }
   .simtree-toggle-tab {
-    display: inline-block; font-size: 11px; letter-spacing: 0.10em;
+    display: inline-block; font-size: var(--fs-xs); letter-spacing: var(--track-label);
     color: var(--ink-2); padding: 3px 11px; cursor: pointer; user-select: none;
     border-left: 0.5px solid var(--ink-2); transition: color 0.12s;
   }

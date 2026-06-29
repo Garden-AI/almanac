@@ -149,15 +149,15 @@ const familyCards = await Promise.all(
     gap: 20px; flex-wrap: wrap;
   }
   .models-h1 {
-    font-family: var(--serif); font-size: 44px; font-weight: 600;
+    font-family: var(--serif); font-size: var(--fs-h1); font-weight: 600;
     line-height: 1; letter-spacing: -0.01em; margin: 0;
   }
 
   /* View switch — only shown when the split collapses (narrow). */
   .models-viewswitch { display: none; gap: 0 22px; align-items: baseline; }
   .models-viewbtn {
-    font-family: var(--smallcaps); text-transform: lowercase; font-size: 14px;
-    letter-spacing: 0.04em; background: transparent; border: 0;
+    font-family: var(--smallcaps); text-transform: lowercase; font-size: var(--fs-base);
+    letter-spacing: var(--track-label); background: transparent; border: 0;
     border-bottom: 1.5px solid transparent; padding: 3px 0; cursor: pointer;
     line-height: 1.1; color: var(--ink-3);
   }
@@ -172,22 +172,22 @@ const familyCards = await Promise.all(
     border-top: 1.5px solid var(--ink); border-bottom: 0.5px solid var(--ink);
     padding: 14px 0 16px; margin: 16px 0 24px;
   }
-  .models-lede { margin: 0; font-size: 16px; line-height: 1.5; max-width: 64ch; }
+  .models-lede { margin: 0; font-size: var(--fs-lg); line-height: 1.5; max-width: 64ch; }
   .models-lede b { font-weight: 600; }
   .models-key { display: flex; flex-direction: column; gap: 8px; }
-  .models-key-row { display: flex; align-items: center; gap: 10px; font-size: 11.5px; line-height: 1.3; color: var(--ink-2); }
+  .models-key-row { display: flex; align-items: center; gap: 10px; font-size: var(--fs-sm); line-height: 1.3; color: var(--ink-2); }
   .models-key-row b { color: var(--ink); font-weight: 600; }
 
   .models-split { display: flex; align-items: flex-start; }
   .models-rail { flex: 0 0 196px; min-width: 168px; padding-right: 4px; }
-  .models-rail-cap { font-size: 13.5px; color: var(--ink-2); margin: 0 0 10px; line-height: 1.2; }
+  .models-rail-cap { font-size: var(--fs-md); color: var(--ink-2); margin: 0 0 10px; line-height: 1.2; }
   .models-rail-row {
     display: flex; align-items: baseline; justify-content: space-between;
     gap: 10px; padding: 6px 1px; border-bottom: 0.5px solid var(--rule-soft);
   }
-  .models-rail-name { font-size: 14px; min-width: 0; }
+  .models-rail-name { font-size: var(--fs-base); min-width: 0; }
   .models-rail-year {
-    font-size: 11.5px; color: var(--ink-3); flex: 0 0 auto;
+    font-size: var(--fs-sm); color: var(--ink-3); flex: 0 0 auto;
     font-variant-numeric: tabular-nums;
   }
   .models-divider { flex: 0 0 auto; align-self: stretch; border-left: 0.5px solid var(--rule-soft); margin: 0 40px; }
@@ -199,20 +199,20 @@ const familyCards = await Promise.all(
     height: 3px; margin: 0 0 12px;
   }
   .models-families-h2 {
-    font-family: var(--serif); font-size: 30px; font-weight: 600;
+    font-family: var(--serif); font-size: var(--fs-h2); font-weight: 600;
     line-height: 1.04; letter-spacing: -0.008em; margin: 0 0 16px;
   }
   .models-families-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(440px, 1fr)); gap: 0 44px; }
   .models-family { padding: 16px 0 18px; border-top: 0.5px solid var(--rule); }
   .models-family-h3 {
-    font-family: var(--serif); font-size: 19px; font-weight: 600;
+    font-family: var(--serif); font-size: var(--fs-h3); font-weight: 600;
     line-height: 1.15; letter-spacing: -0.003em; margin: 0;
   }
-  .models-family-brief { font-size: 13px; line-height: 1.5; color: var(--ink); margin: 6px 0 0; }
-  .models-family-models { margin-top: 10px; font-size: 12.5px; line-height: 1.7; }
-  .models-family-paper { margin: 6px 0 0; font-size: 12.5px; line-height: 1.6; }
+  .models-family-brief { font-size: var(--fs-md); line-height: 1.5; color: var(--ink); margin: 6px 0 0; }
+  .models-family-models { margin-top: 10px; font-size: var(--fs-md); line-height: 1.7; }
+  .models-family-paper { margin: 6px 0 0; font-size: var(--fs-md); line-height: 1.6; }
   .models-family-k {
-    font-size: 10.5px; letter-spacing: var(--track-label); color: var(--ink-3); margin-right: 4px;
+    font-size: var(--fs-micro); letter-spacing: var(--track-label); color: var(--ink-3); margin-right: 4px;
   }
   .models-family-sep { color: var(--ink-3); margin: 0 6px 0 7px; }
 

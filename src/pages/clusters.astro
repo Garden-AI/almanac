@@ -38,13 +38,13 @@ const rows = clusters.map((c) => {
 ---
 <Page title="Clusters — Garden's Almanac" wide>
   <h1 style="margin-top: 3px;">Clusters</h1>
-  <p class="it" style="margin-top: 4px; font-size: 14px; color: var(--ink-2); max-width: 640px;">
+  <p class="it" style="margin-top: 4px; font-size: var(--fs-base); color: var(--ink-2); max-width: 640px;">
     HPC clusters covered by the Almanac. Each cluster page shows live Rootstock status for every
     installed checkpoint.
   </p>
   <hr class="hairline" style="margin-top: 14px;" />
 
-  <table class="almanac" style="margin-top: 14px; font-size: 13px;">
+  <table class="almanac" style="margin-top: 14px; font-size: var(--fs-md);">
     <thead>
       <tr>
         <th>Name</th>
@@ -60,7 +60,7 @@ const rows = clusters.map((c) => {
         <tr data-rs-cluster-row={r.id}>
           <td><a class="ink-link it" href={url(`/cluster/${r.id}`)}>{r.name}</a></td>
           <td>{r.inst}</td>
-          <td class="mono" style="font-size: 11.5px; color: var(--ink-2);">{r.gpu}</td>
+          <td class="mono" style="font-size: var(--fs-sm); color: var(--ink-2);">{r.gpu}</td>
           <td style="text-align: right; font-variant-numeric: tabular-nums;" data-rs-count={`${r.id}:verified`}>{r.counts.verified}</td>
           <td style="text-align: right; font-variant-numeric: tabular-nums; color: var(--ink-2);" data-rs-count={`${r.id}:lapsed`}>{r.counts.lapsed}</td>
           <td style="text-align: right; font-variant-numeric: tabular-nums; color: var(--ink-3);" data-rs-count={`${r.id}:na`}>{r.counts.na}</td>

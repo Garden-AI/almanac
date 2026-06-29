@@ -21,18 +21,18 @@ const { dataset, modelsTrainedOn } = Astro.props;
 const d = dataset.data;
 ---
 <Page title={`${d.name} — Garden's Almanac`}>
-  <p class="sc" style="font-size: 11.5px; letter-spacing: var(--track-display);">
+  <p class="sc" style="font-size: var(--fs-sm); letter-spacing: var(--track-display);">
     {d.domain}
   </p>
   <h1>{d.fullName}</h1>
-  <p class="it" style="color: var(--ink-2); font-size: 14px;">
+  <p class="it" style="color: var(--ink-2); font-size: var(--fs-base);">
     {d.curator} · {d.year}
   </p>
   <hr class="title-rule" />
 
   <div class="detail-body">
     <div>
-      <h2 class="sc" style="font-size: 13px;">Constitution</h2>
+      <h2 class="sc" style="font-size: var(--fs-md);">Constitution</h2>
       <table class="almanac" style="margin-top: 6px;">
         <tbody>
           <tr><td>Full name</td><td>{d.fullName}</td></tr>
@@ -48,14 +48,14 @@ const d = dataset.data;
 
       {d.howToGet && (
         <>
-          <h2 class="sc" style="font-size: 13px; margin-top: 22px;">How to get it</h2>
+          <h2 class="sc" style="font-size: var(--fs-md); margin-top: 22px;">How to get it</h2>
           <p style="margin-top: 6px;">{d.howToGet}</p>
         </>
       )}
 
       {modelsTrainedOn.length > 0 && (
         <>
-          <h2 class="sc" style="font-size: 13px; margin-top: 22px;">Models trained on {d.name}</h2>
+          <h2 class="sc" style="font-size: var(--fs-md); margin-top: 22px;">Models trained on {d.name}</h2>
           <table class="almanac" style="margin-top: 6px;">
             <thead><tr><th>Model</th></tr></thead>
             <tbody>

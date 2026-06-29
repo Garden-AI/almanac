@@ -76,6 +76,8 @@ Three faces, **one job each** — keep them in their lanes or the page reads as 
 
 Small-caps tracking comes from two tokens, **never ad-hoc em values**: `--track-label` (0.08em) for table/label uses, `--track-display` (0.14em) for masthead nav + eyebrows.
 
+**Type sizes come from the `--fs-*` scale** in `:root` (`--fs-micro` … `--fs-display`), **not ad-hoc px**. Reach for a token; if nothing fits, the scale is probably wrong — fix the token, don't add a one-off px. The **primer wing** (`primer.css`) intentionally keeps its own scale and is out of this system. Two deliberate exceptions remain inline: the mobile-only `.landing-h1` (34px) and the mobile `h1` override (30px) — responsive breakpoint values, not scale steps.
+
 ### Routes
 - `/` — index (links to all entities)
 - `/model/[slug]` — model detail

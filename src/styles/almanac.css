@@ -23,6 +23,20 @@
      nav + eyebrows (larger, looser). See "Typography system" in CLAUDE.md. */
   --track-label: 0.08em;
   --track-display: 0.14em;
+  /* Type-size scale. One named step per role so near-duplicate px values stop
+     reading as accidental. Tune a value here and it flows everywhere. The
+     primer wing (primer.css) keeps its own scale. See CLAUDE.md. */
+  --fs-micro: 10.5px;   /* folio, GPU sub-labels, tiniest legend titles */
+  --fs-xs: 11px;        /* mono checkpoint ids, smallest labels */
+  --fs-sm: 12px;        /* small labels, secondary captions */
+  --fs-md: 13px;        /* dense body, table body, captions */
+  --fs-base: 14px;      /* default body */
+  --fs-lg: 16px;        /* lede / intro */
+  --fs-xl: 18px;        /* large intro */
+  --fs-h3: 20px;        /* card titles, minor headings */
+  --fs-h2: 26px;        /* sub-section headings */
+  --fs-h1: 40px;        /* page titles */
+  --fs-display: 52px;   /* landing hero only */
 }
 
 html, body {
@@ -38,7 +52,7 @@ html, body {
   background: var(--paper);
   color: var(--ink);
   font-family: var(--serif);
-  font-size: 15px;
+  font-size: var(--fs-lg);
   line-height: 1.5;
   padding: 56px 64px 64px;
   box-sizing: border-box;
@@ -81,9 +95,9 @@ html, body {
   color: var(--ink);
 }
 h1, h2, h3, h4 { font-weight: 600; margin: 0; }
-h1 { font-size: 38px; line-height: 1.05; letter-spacing: -0.012em; }
-h2 { font-size: 22px; line-height: 1.15; }
-h3 { font-size: 16px; line-height: 1.2; }
+h1 { font-size: var(--fs-h1); line-height: 1.05; letter-spacing: -0.012em; }
+h2 { font-size: var(--fs-h2); line-height: 1.15; }
+h3 { font-size: var(--fs-lg); line-height: 1.2; }
 .title-rule {
   border: 0; border-top: 1.5px solid var(--ink);
   border-bottom: 0.5px solid var(--ink);
@@ -101,7 +115,7 @@ table.almanac {
   width: 100%;
   border-collapse: collapse;
   font-variant-numeric: tabular-nums;
-  font-size: 13.5px;
+  font-size: var(--fs-md);
 }
 table.almanac th, table.almanac td {
   border-bottom: 0.5px solid var(--rule);
@@ -117,7 +131,7 @@ table.almanac thead th {
   font-family: var(--smallcaps);
   font-weight: 500;
   letter-spacing: var(--track-label);
-  font-size: 11.5px;
+  font-size: var(--fs-sm);
   background: rgba(26, 22, 18, 0.025);
 }
 table.almanac tbody tr:last-child td { border-bottom: 1.5px solid var(--ink); }
@@ -158,7 +172,7 @@ table.fam-table th, table.fam-table td { padding: 2.5px 8px; }
 .site-head .home-link:hover .home-glyph { color: var(--oxblood); }
 .site-head .home-wordmark {
   font-family: var(--smallcaps);
-  font-size: 14px;
+  font-size: var(--fs-base);
   letter-spacing: var(--track-display);
   transition: color 0.15s;
 }
@@ -168,7 +182,7 @@ table.fam-table th, table.fam-table td { padding: 2.5px 8px; }
   align-items: baseline;
   gap: 4px 22px;
   font-family: var(--smallcaps);
-  font-size: 14px;
+  font-size: var(--fs-base);
   letter-spacing: var(--track-display);
   margin-left: auto;
 }
@@ -202,7 +216,7 @@ table.fam-table th, table.fam-table td { padding: 2.5px 8px; }
   }
   .site-head .home-wordmark { display: none; } /* glyph only on phones */
   .site-head-nav {
-    font-size: 11px;
+    font-size: var(--fs-xs);
     letter-spacing: 0.10em;
     gap: 2px 14px;
     margin-left: 0;
@@ -220,7 +234,7 @@ a.ink-link:hover { background: rgba(122, 31, 31, 0.06); }
 
 .cmd {
   font-family: var(--mono);
-  font-size: 12px;
+  font-size: var(--fs-sm);
   background: rgba(26, 22, 18, 0.04);
   border-left: 1.5px solid var(--ink);
   padding: 4px 10px;
@@ -230,14 +244,14 @@ a.ink-link:hover { background: rgba(122, 31, 31, 0.06); }
 }
 
 .margin {
-  font-size: 12.5px;
+  font-size: var(--fs-md);
   line-height: 1.4;
   color: var(--ink-2);
   font-family: var(--serif);
 }
 .margin .label {
   font-family: var(--smallcaps);
-  font-size: 10.5px;
+  font-size: var(--fs-micro);
   letter-spacing: var(--track-label);
   color: var(--ink);
   display: block;
@@ -246,7 +260,7 @@ a.ink-link:hover { background: rgba(122, 31, 31, 0.06); }
 
 .ornament { display: flex; align-items: center; gap: 10px; color: var(--ink); }
 .ornament hr { flex: 1; border: 0; border-top: 0.5px solid var(--ink); }
-.ornament .glyph { font-family: var(--serif); font-size: 14px; }
+.ornament .glyph { font-family: var(--serif); font-size: var(--fs-base); }
 
 /* Two-column body with right-rail marginalia, used by detail pages. */
 .detail-body {
