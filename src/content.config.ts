@@ -1,14 +1,16 @@
 import { defineCollection, reference, z } from 'astro:content';
 import { glob } from 'astro/loaders';
 
-const FAMILY_KEY = z.enum(['equivariant', 'ace', 'message-passing', 'vanilla', 'earlier']);
-
 const architectures = defineCollection({
   loader: glob({ pattern: '**/*.json', base: './src/content/architectures' }),
   schema: z.object({
     name: z.string(),
-    descriptor: z.string(),
-    body: z.string(),
+    /** Summary shown on the Models page family card. */
+    brief: z.string(),
+    /** Representative paper for the family, shown on the Models page card. */
+    examplePaper: reference('papers').optional(),
+    /** Display label for the example paper (e.g. "Liao et al., EquiformerV2 (2023)"). */
+    examplePaperLabel: z.string().optional(),
   }),
 });
 
@@ -136,4 +138,3 @@ const embeddings = defineCollection({
 });
 
 export const collections = { architectures, datasets, models, clusters, papers, embeddings };
-export { FAMILY_KEY };

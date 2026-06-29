@@ -1,6 +1,6 @@
 {
   "name": "Orb-v2",
-  "families": ["vanilla"],
+  "families": ["learned-symmetry"],
   "codeUrl": "https://github.com/orbital-materials/orb-models",
   "paperRefs": ["orb-v2"],
   "checkpoints": [

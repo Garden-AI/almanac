@@ -325,7 +325,7 @@ const showMap = orderedLayouts.length > 0 && defaultLayoutId !== null;
               {families.map((f, i) => f && (
                 <>
                   {i > 0 && <span style="color: var(--ink-3);">, </span>}
-                  <a class="ink-link it" href={url(`/architecture/${f.id}`)}>{f.data.name}</a>
+                  <span class="it">{f.data.name}</span>
                 </>
               ))}
             </dd>
