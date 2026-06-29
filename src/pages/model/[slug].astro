@@ -175,7 +175,7 @@ const showMap = orderedLayouts.length > 0 && defaultLayoutId !== null;
   <div class="model-masthead">
     <h1>{model.data.name}</h1>
     {dateLine && (
-      <p class="it" style="font-size: 14px; color: var(--ink-2); margin-top: 6px;">
+      <p class="it" style="font-size: var(--fs-base); color: var(--ink-2); margin-top: 6px;">
         {dateLine}
       </p>
     )}
@@ -203,7 +203,7 @@ const showMap = orderedLayouts.length > 0 && defaultLayoutId !== null;
             <span class="sc">Weights</span>
             <span style="display: inline-flex; align-items: baseline; gap: 6px;">
               <span aria-hidden="true">🤗</span>
-              <a class="ink-link mono" style="font-size: 12.5px;"
+              <a class="ink-link mono" style="font-size: var(--fs-md);"
                  href={`https://huggingface.co/${model.data.huggingFaceId}`}
                  target="_blank" rel="noopener">{model.data.huggingFaceId}</a>
             </span>
@@ -224,7 +224,7 @@ const showMap = orderedLayouts.length > 0 && defaultLayoutId !== null;
 
   <section class="checkpoint-matrix">
     <div style="overflow-x: auto;">
-      <table class="almanac" style="font-size: 13px;">
+      <table class="almanac" style="font-size: var(--fs-md);">
         <thead>
           <tr>
             <th>Checkpoint</th>
@@ -246,7 +246,7 @@ const showMap = orderedLayouts.length > 0 && defaultLayoutId !== null;
         <tbody>
           {matrix.map(({ checkpoint, cells }) => (
             <tr>
-              <td class="mono" style="font-size: 12.25px;">{checkpoint.id}</td>
+              <td class="mono" style="font-size: var(--fs-sm);">{checkpoint.id}</td>
               <td style="text-align: right; font-variant-numeric: tabular-nums;">
                 {checkpoint.params ?? ''}
               </td>
@@ -276,7 +276,7 @@ const showMap = orderedLayouts.length > 0 && defaultLayoutId !== null;
     <p
       class:list={["it", anyPresence && "am-hidden"]}
       data-rs-empty
-      style="font-size: 12px; color: var(--ink-2); margin-top: 8px;"
+      style="font-size: var(--fs-sm); color: var(--ink-2); margin-top: 8px;"
     >
       No cluster has installed any checkpoint of this model yet.
     </p>
@@ -287,10 +287,10 @@ const showMap = orderedLayouts.length > 0 && defaultLayoutId !== null;
   <div class="model-body">
     <section>
       <header>
-        <div class="sc" style="font-size: 11.5px; letter-spacing: 0.10em;">References</div>
+        <div class="sc" style="font-size: var(--fs-sm); letter-spacing: var(--track-label);">References</div>
       </header>
       {papers.length > 0 ? (
-        <ol style="margin: 8px 0 0; padding-left: 24px; font-size: 13px; line-height: 1.5; color: var(--ink-2);">
+        <ol style="margin: 8px 0 0; padding-left: 24px; font-size: var(--fs-md); line-height: 1.5; color: var(--ink-2);">
           {papers.map((p) => {
             if (!p) return null;
             const cite = composeCitation(p.data);
@@ -307,7 +307,7 @@ const showMap = orderedLayouts.length > 0 && defaultLayoutId !== null;
           })}
         </ol>
       ) : (
-        <p class="it" style="font-size: 12.5px; color: var(--ink-3); margin-top: 8px;">
+        <p class="it" style="font-size: var(--fs-md); color: var(--ink-3); margin-top: 8px;">
           — no references catalogued yet —
         </p>
       )}
@@ -315,7 +315,7 @@ const showMap = orderedLayouts.length > 0 && defaultLayoutId !== null;
 
     <aside class="spec-rail">
       <header>
-        <div class="sc" style="font-size: 11.5px; letter-spacing: 0.10em;">Specifications</div>
+        <div class="sc" style="font-size: var(--fs-sm); letter-spacing: var(--track-label);">Specifications</div>
       </header>
       <dl class="spec-list">
         {families.length > 0 && (
@@ -347,7 +347,7 @@ const showMap = orderedLayouts.length > 0 && defaultLayoutId !== null;
         {model.data.cachePath && (
           <>
             <dt class="sc">Cache path</dt>
-            <dd><code class="mono" style="font-size: 12px; color: var(--ink-2); word-break: break-all;">{model.data.cachePath}</code></dd>
+            <dd><code class="mono" style="font-size: var(--fs-sm); color: var(--ink-2); word-break: break-all;">{model.data.cachePath}</code></dd>
           </>
         )}
       </dl>
@@ -357,7 +357,7 @@ const showMap = orderedLayouts.length > 0 && defaultLayoutId !== null;
   {notesHtml && (
     <section class="model-notes">
       <hr class="hairline" style="margin: 18px 0 10px;" />
-      <div class="sc" style="font-size: 11.5px; letter-spacing: 0.10em;">Notes</div>
+      <div class="sc" style="font-size: var(--fs-sm); letter-spacing: var(--track-label);">Notes</div>
       <div class="notes-body" set:html={notesHtml} />
     </section>
   )}
@@ -367,8 +367,8 @@ const showMap = orderedLayouts.length > 0 && defaultLayoutId !== null;
       <hr class="hairline" style="margin: 24px 0 12px;" />
       <header class="model-map-head">
         <div>
-          <div class="sc" style="font-size: 11.5px; letter-spacing: 0.10em;">Position on the similarity map</div>
-          <p class="it" style="margin: 4px 0 0; font-size: 13px; color: var(--ink-2); max-width: 56ch;">
+          <div class="sc" style="font-size: var(--fs-sm); letter-spacing: var(--track-label);">Position on the similarity map</div>
+          <p class="it" style="margin: 4px 0 0; font-size: var(--fs-md); color: var(--ink-2); max-width: 56ch;">
             {model.data.name} is highlighted. Neighbors are nearest-by-CKNNA on the selected reference dataset.
             Click any italic label to jump to that model.
           </p>
@@ -404,7 +404,7 @@ const showMap = orderedLayouts.length > 0 && defaultLayoutId !== null;
 
 <style>
   .model-masthead h1 {
-    font-size: 46px;
+    font-size: var(--fs-h1);
     line-height: 1.0;
     font-weight: 600;
     letter-spacing: -0.005em;
@@ -424,14 +424,14 @@ const showMap = orderedLayouts.length > 0 && defaultLayoutId !== null;
   }
   .masthead-link .sc {
     font-family: var(--smallcaps);
-    font-size: 10.5px;
-    letter-spacing: 0.12em;
+    font-size: var(--fs-micro);
+    letter-spacing: var(--track-label);
     color: var(--ink-3);
   }
 
   .checkpoint-matrix .matrix-legend {
     margin-top: 8px;
-    font-size: 12px;
+    font-size: var(--fs-sm);
     color: var(--ink-2);
     display: flex;
     gap: 14px;
@@ -458,12 +458,12 @@ const showMap = orderedLayouts.length > 0 && defaultLayoutId !== null;
     row-gap: 5px;
     column-gap: 10px;
     margin: 10px 0 0;
-    font-size: 13px;
+    font-size: var(--fs-md);
   }
   .spec-list dt {
     font-family: var(--smallcaps);
-    font-size: 11px;
-    letter-spacing: 0.10em;
+    font-size: var(--fs-xs);
+    letter-spacing: var(--track-label);
     color: var(--ink-3);
     padding-top: 1px;
     margin: 0;
@@ -472,7 +472,7 @@ const showMap = orderedLayouts.length > 0 && defaultLayoutId !== null;
 
   .notes-body {
     margin-top: 8px;
-    font-size: 13.5px;
+    font-size: var(--fs-md);
     line-height: 1.55;
     color: var(--ink);
     max-width: 720px;
@@ -505,8 +505,8 @@ const showMap = orderedLayouts.length > 0 && defaultLayoutId !== null;
   .map-toggle { border: none; margin: 0; padding: 0; flex: 0 0 auto; margin-left: auto; }
   .map-toggle-legend {
     display: block;
-    font-size: 10.5px;
-    letter-spacing: 0.10em;
+    font-size: var(--fs-micro);
+    letter-spacing: var(--track-label);
     color: var(--ink-2);
     margin: 0 0 6px;
     padding: 0;
@@ -522,8 +522,8 @@ const showMap = orderedLayouts.length > 0 && defaultLayoutId !== null;
   .map-toggle-input { position: absolute; opacity: 0; pointer-events: none; width: 0; height: 0; }
   .map-toggle-tab {
     display: inline-block;
-    font-size: 12px;
-    letter-spacing: 0.14em;
+    font-size: var(--fs-sm);
+    letter-spacing: var(--track-label);
     color: var(--ink-2);
     padding: 4px 12px;
     cursor: pointer;

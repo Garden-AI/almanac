@@ -67,19 +67,31 @@ Pages following this pattern as of this writing: `pages/index.astro` (matrix + m
 ### Page chrome
 `src/layouts/Page.astro` is the shared shell: running head + folio + paper background, wrapping a `<slot />`. Loads Google Fonts (Source Serif 4, IM Fell English SC, JetBrains Mono). All design tokens live in `src/styles/almanac.css` as `:root` custom properties.
 
+### Typography system
+Three faces, **one job each** — keep them in their lanes or the page reads as noise:
+- **Source Serif 4** (`--serif`) → reading + identity: H1s, body copy, **and model-family names in the matrix** (the table's primary scan target — serif 600, near-zero tracking, so it out-reads the mono IDs beneath it).
+- **IM Fell English SC** (`--smallcaps`, via the `.sc` helper) → labels + nav only: masthead wordmark/nav, column headers, eyebrows, the legend. Set label text in **true lowercase** so it renders as uniform small caps (no oversized initial cap).
+- **JetBrains Mono** (`--mono`) → data only: checkpoint IDs, GPU types, code. (The matrix's lowercase **checkpoint** sub-header is deliberately mono too, mirroring the IDs it labels — the one intentional exception to "column heads are IM Fell SC".)
+- **Oxblood** (`--oxblood`) → links + verified/lapsed status marks only. Never decoration.
+
+Small-caps tracking comes from two tokens, **never ad-hoc em values**: `--track-label` (0.08em) for table/label uses, `--track-display` (0.14em) for masthead nav + eyebrows.
+
+**Type sizes come from the `--fs-*` scale** in `:root` (`--fs-micro` … `--fs-display`), **not ad-hoc px**. Reach for a token; if nothing fits, the scale is probably wrong — fix the token, don't add a one-off px. The **primer wing** (`primer.css`) intentionally keeps its own scale and is out of this system. Two deliberate exceptions remain inline: the mobile-only `.landing-h1` (34px) and the mobile `h1` override (30px) — responsive breakpoint values, not scale steps.
+
 ### Routes
 - `/` — index (links to all entities)
 - `/model/[slug]` — model detail
 - `/dataset/[slug]` — dataset detail with reverse-index of models trained on it
 - `/cluster/[slug]` — cluster page; reads live env status from Rootstock, plus a `<details>` listing all envs (including ones no catalog model claims yet)
-- `/architecture/[slug]` — family page
 
-Each is currently scaffolded with one example record (UMA Medium, OMat24, Della, Equivariant). Adding more is a matter of dropping JSON files into `src/content/{type}/`.
+Architecture families have **no detail route** — they render only as the "Architecture Families" section on `/models`, sourced from the `architectures` collection (`name` + `brief` + example paper). Each model's "Family" field is plain text, not a link.
+
+Adding records is a matter of dropping JSON files into `src/content/{type}/`.
 
 ## Editing rules (from the design handoff)
 
 - **No shadows, no border-radius, no gradients.** The almanac aesthetic is paper-and-ink — hairline rules only.
 - **Tabular-nums on every numeric column.**
-- **Anchor every cross-reference.** Model/dataset/cluster names in tables render as `<a class="ink-link" />`.
+- **Anchor every cross-reference.** Model/dataset/cluster names are links. Prose uses `.ink-link` (persistent oxblood underline); dense tables use a hover-reveal underline instead (`.am-slug-link`, `.am-cluster-link`, `.am-fhead-name`) so the matrix stays calm at rest. No element carries a resting link indicator inside the matrix.
 - **Status glyphs are Unicode**: `●` verified within thirty days, `○` installed but not recently verified (covers stale and errored), `—` not installed. Half-moon (`◐`) is removed.
 - **Don't invent new colors.** Tokens in `almanac.css` were tuned for the paper feel.

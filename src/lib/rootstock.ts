@@ -120,6 +120,29 @@ export function cellStateFor(
   return 'verified';
 }
 
+/**
+ * Status-mark SVG for one compatibility-matrix cell. Shared verbatim by the
+ * build-time render (Astro frontmatter) and the client live-refresh script so
+ * the two can never drift — they import THIS function, not a hand-copied twin.
+ *
+ * `dim` (fully-unsupported rows) softens the n/a hatch. The n/a SVG fills its
+ * cell via `position:absolute` (the `.am-cell` is `position:relative`), so the
+ * hatch covers the whole cell rather than a short band; `var(--*)` tokens
+ * resolve against the page CSS in both render paths.
+ */
+export function cellSvg(state: CellState, dim = false): string {
+  const stroke = dim ? '#a67878' : 'var(--oxblood)';
+  if (state === 'verified') {
+    return `<svg width="14" height="14" viewBox="0 0 14 14" aria-label="verified"><circle cx="7" cy="7" r="3.6" fill="${stroke}" /></svg>`;
+  }
+  if (state === 'lapsed') {
+    return `<svg width="14" height="14" viewBox="0 0 14 14" aria-label="lapsed"><circle cx="7" cy="7" r="3.4" fill="none" stroke="${stroke}" stroke-width="1" /></svg>`;
+  }
+  const id = dim ? 'am-hatch-d' : 'am-hatch-n';
+  const op = dim ? 0.28 : 0.45;
+  return `<svg aria-label="not applicable" style="position: absolute; inset: 0; width: 100%; height: 100%; display: block;"><defs><pattern id="${id}" patternUnits="userSpaceOnUse" width="7" height="7" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="7" stroke="var(--ink)" stroke-width="0.9" opacity="${op}" /></pattern></defs><rect x="0" y="0" width="100%" height="100%" fill="url(#${id})" /></svg>`;
+}
+
 export interface ClusterEnvGroup {
   envName: string;
   status: string;
