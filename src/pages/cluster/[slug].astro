@@ -43,7 +43,7 @@ const totalCheckpoints = envGroups.reduce((n, g) => n + g.checkpoints.length, 0)
 const day = (s: string | null | undefined) => (s ? s.slice(0, 10) : '—');
 ---
 <Page title={`${c.name} — Garden's Almanac`}>
-  <p class="sc" style="font-size: 11.5px; letter-spacing: 0.14em;">
+  <p class="sc" style="font-size: 11.5px; letter-spacing: var(--track-display);">
     {c.institution}
   </p>
   <h1>{c.name}</h1>
@@ -80,7 +80,7 @@ const day = (s: string | null | undefined) => (s ? s.slice(0, 10) : '—');
               {envGroups.map((g) => (
                 <div style="margin-top: 14px;">
                   <div style="display: flex; align-items: baseline; gap: 10px;">
-                    <span class="sc" style="font-size: 11.5px; letter-spacing: 0.10em;">env</span>
+                    <span class="sc" style="font-size: 11.5px; letter-spacing: var(--track-label);">env</span>
                     <span class="mono" style="font-size: 12px;">{g.envName}</span>
                     <span class="it" style="font-size: 11px; color: var(--ink-3);">
                       built {day(g.builtAt)}
@@ -196,7 +196,7 @@ const day = (s: string | null | undefined) => (s ? s.slice(0, 10) : '—');
     table.cluster-specs td[data-spec-label] {
       font-family: var(--smallcaps);
       font-size: 11px;
-      letter-spacing: 0.10em;
+      letter-spacing: var(--track-label);
       color: var(--ink-3);
       margin-bottom: 3px;
     }
@@ -268,7 +268,7 @@ const day = (s: string | null | undefined) => (s ? s.slice(0, 10) : '—');
               : '';
             return `<div style="margin-top: 14px;">
               <div style="display: flex; align-items: baseline; gap: 10px;">
-                <span class="sc" style="font-size: 11.5px; letter-spacing: 0.10em;">env</span>
+                <span class="sc" style="font-size: 11.5px; letter-spacing: var(--track-label);">env</span>
                 <span class="mono" style="font-size: 12px;">${escape(g.envName)}</span>
                 <span class="it" style="font-size: 11px; color: var(--ink-3);">built ${escape(day(g.builtAt))}</span>
               </div>

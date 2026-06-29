@@ -40,9 +40,9 @@ const datasets = (await getCollection('datasets')).sort((a, b) => a.data.year - 
         {datasets.map((d) => (
           <tr>
             <td><a class="ink-link it" href={url(`/dataset/${d.id}`)}>{d.data.name}</a></td>
-            <td class="sc" style="font-size: 11px;">{d.data.domain}</td>
+            <td style="text-transform: capitalize;">{d.data.domain}</td>
             <td style="text-align: right;">{d.data.size.split(';')[0]}</td>
-            <td class="sc" style="font-size: 11px;">{d.data.dftLevel}</td>
+            <td class="mono" style="font-size: 11px;">{d.data.dftLevel}</td>
             <td style="text-align: right;">{d.data.year}</td>
           </tr>
         ))}

@@ -287,7 +287,7 @@ const showMap = orderedLayouts.length > 0 && defaultLayoutId !== null;
   <div class="model-body">
     <section>
       <header>
-        <div class="sc" style="font-size: 11.5px; letter-spacing: 0.10em;">References</div>
+        <div class="sc" style="font-size: 11.5px; letter-spacing: var(--track-label);">References</div>
       </header>
       {papers.length > 0 ? (
         <ol style="margin: 8px 0 0; padding-left: 24px; font-size: 13px; line-height: 1.5; color: var(--ink-2);">
@@ -315,7 +315,7 @@ const showMap = orderedLayouts.length > 0 && defaultLayoutId !== null;
 
     <aside class="spec-rail">
       <header>
-        <div class="sc" style="font-size: 11.5px; letter-spacing: 0.10em;">Specifications</div>
+        <div class="sc" style="font-size: 11.5px; letter-spacing: var(--track-label);">Specifications</div>
       </header>
       <dl class="spec-list">
         {families.length > 0 && (
@@ -357,7 +357,7 @@ const showMap = orderedLayouts.length > 0 && defaultLayoutId !== null;
   {notesHtml && (
     <section class="model-notes">
       <hr class="hairline" style="margin: 18px 0 10px;" />
-      <div class="sc" style="font-size: 11.5px; letter-spacing: 0.10em;">Notes</div>
+      <div class="sc" style="font-size: 11.5px; letter-spacing: var(--track-label);">Notes</div>
       <div class="notes-body" set:html={notesHtml} />
     </section>
   )}
@@ -367,7 +367,7 @@ const showMap = orderedLayouts.length > 0 && defaultLayoutId !== null;
       <hr class="hairline" style="margin: 24px 0 12px;" />
       <header class="model-map-head">
         <div>
-          <div class="sc" style="font-size: 11.5px; letter-spacing: 0.10em;">Position on the similarity map</div>
+          <div class="sc" style="font-size: 11.5px; letter-spacing: var(--track-label);">Position on the similarity map</div>
           <p class="it" style="margin: 4px 0 0; font-size: 13px; color: var(--ink-2); max-width: 56ch;">
             {model.data.name} is highlighted. Neighbors are nearest-by-CKNNA on the selected reference dataset.
             Click any italic label to jump to that model.
@@ -425,7 +425,7 @@ const showMap = orderedLayouts.length > 0 && defaultLayoutId !== null;
   .masthead-link .sc {
     font-family: var(--smallcaps);
     font-size: 10.5px;
-    letter-spacing: 0.12em;
+    letter-spacing: var(--track-label);
     color: var(--ink-3);
   }
 
@@ -463,7 +463,7 @@ const showMap = orderedLayouts.length > 0 && defaultLayoutId !== null;
   .spec-list dt {
     font-family: var(--smallcaps);
     font-size: 11px;
-    letter-spacing: 0.10em;
+    letter-spacing: var(--track-label);
     color: var(--ink-3);
     padding-top: 1px;
     margin: 0;
@@ -506,7 +506,7 @@ const showMap = orderedLayouts.length > 0 && defaultLayoutId !== null;
   .map-toggle-legend {
     display: block;
     font-size: 10.5px;
-    letter-spacing: 0.10em;
+    letter-spacing: var(--track-label);
     color: var(--ink-2);
     margin: 0 0 6px;
     padding: 0;
