@@ -2,7 +2,7 @@
   "name": "Delta",
   "institution": "National Center for Supercomputing Applications",
   "institutionShort": "NCSA",
-  "gpu": "NVIDIA A100 / A40",
+  "gpu": "NVIDIA A100",
   "order": 4,
   "subtitle": "NCSA's NSF-funded GPU supercomputer and an ACCESS resource, combining NVIDIA A100 and A40 GPU partitions.",
   "specs": {

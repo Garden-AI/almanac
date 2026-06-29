@@ -42,7 +42,7 @@ const totalCheckpoints = envGroups.reduce((n, g) => n + g.checkpoints.length, 0)
 
 const day = (s: string | null | undefined) => (s ? s.slice(0, 10) : '—');
 ---
-<Page title={`${c.name} — Garden's Almanac`}>
+<Page title={`${c.name} — Garden's Almanac`} wide>
   <p class="sc" style="font-size: var(--fs-sm); letter-spacing: var(--track-display);">
     {c.institution}
   </p>

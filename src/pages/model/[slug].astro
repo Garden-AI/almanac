@@ -2,7 +2,7 @@
 import { getCollection, getEntry } from 'astro:content';
 import { marked } from 'marked';
 import Page from '../../layouts/Page.astro';
-import { getRootstockDump, findVerification, cellStateFor, type CellState } from '../../lib/rootstock';
+import { getRootstockDump, findVerification, cellStateFor, envFilesForModel, renderEnvBody, type CellState } from '../../lib/rootstock';
 import { url } from '../../lib/url';
 import { formatMonthYear, yearOf } from '../../lib/format';
 
@@ -75,6 +75,28 @@ for (const c of allClusters) {
 }
 const anyPresence = Object.values(clusterHasPresence).some(Boolean);
 
+// Environments section: the verbatim env file Rootstock installs for this
+// model, one tab per installed cluster (matrix order). Build-time seed only —
+// the client re-derives the tab set + file bodies from the live dump (env text
+// is live, per the build-vs-live rule in CLAUDE.md). `envConfig` gives the
+// client what it needs to recompute against live data (cluster order + the
+// model's checkpoint ids).
+const checkpointIds = model.data.checkpoints.map((cp) => cp.id);
+const envFiles = envFilesForModel(
+  dump,
+  allClusters.map((c) => ({ id: c.id, name: c.data.name })),
+  checkpointIds,
+);
+const envConfig = {
+  clusters: allClusters.map((c) => ({ id: c.id, name: c.data.name })),
+  checkpoints: checkpointIds,
+};
+const envProvenance = (f: { clusterName: string; builtAt: string | null }) =>
+  `Shown verbatim — Rootstock installs this file unmodified. ${f.clusterName} · built ${(f.builtAt ?? '').slice(0, 10)}.`;
+// JSON embedded in <script type="application/json"> — neutralize any `<` so a
+// stray `</script>` in env source can't close the tag early.
+const jsonAttr = (v: unknown) => JSON.stringify(v).replace(/</g, '\\u003c');
+
 const glyphHtml = (state: CellState): string => {
   if (state === 'verified') {
     return '<span class="status-verified" title="Verified within the last 30 days" aria-label="verified">●</span>';
@@ -141,7 +163,7 @@ const composeCitation = (data: { authors?: string[]; title?: string; venue?: str
 
 const notesHtml = model.data.notes ? marked.parse(model.data.notes) : null;
 ---
-<Page title={`${model.data.name} — Garden's Almanac`}>
+<Page title={`${model.data.name} — Garden's Almanac`} wide>
   <div class="model-masthead">
     <h1>{model.data.name}</h1>
     {dateLine && (
@@ -246,6 +268,41 @@ const notesHtml = model.data.notes ? marked.parse(model.data.notes) : null;
     >
       No cluster has installed any checkpoint of this model yet.
     </p>
+  </section>
+
+  <section class:list={["env-section", envFiles.length === 0 && "am-hidden"]} data-env-section>
+    <hr class="hairline" style="margin: 24px 0 0;" />
+    <div class="sc" style="font-size: var(--fs-sm); letter-spacing: var(--track-label); margin-top: 12px;">Environments</div>
+    <p class="env-intro">
+      The exact environment Rootstock installs for this model, per cluster. Select the cluster you intend to run on.
+    </p>
+
+    <div class="am-env-tabs" data-env-tabs>
+      {envFiles.map((f, i) => (
+        <button type="button" class:list={["am-env-tab", i === 0 && "is-active"]} data-env-tab={String(i)}>
+          {f.clusterName}
+        </button>
+      ))}
+    </div>
+
+    <div class="am-env-block" data-env-block>
+      <div class="am-env-chrome">
+        <span class="am-env-filename" data-env-filename>{envFiles[0]?.filename ?? ''}</span>
+        <button type="button" class="am-env-copy" data-env-copy aria-label="Copy environment file">
+          <svg width="11" height="11" viewBox="0 0 16 16" aria-hidden="true" style="flex: 0 0 auto;">
+            <rect x="5" y="5" width="9" height="9" rx="0.5" fill="none" stroke="currentColor" stroke-width="1.2" />
+            <path d="M11 5V3.5a.5.5 0 0 0-.5-.5H2.5a.5.5 0 0 0-.5.5V11a.5.5 0 0 0 .5.5H5" fill="none" stroke="currentColor" stroke-width="1.2" />
+          </svg>
+          <span data-env-copy-label>copy</span>
+        </button>
+      </div>
+      <div class="am-env-body" data-env-body set:html={envFiles[0] ? renderEnvBody(envFiles[0].source) : ''} />
+    </div>
+    <p class="am-env-caption" data-env-caption>{envFiles[0] ? envProvenance(envFiles[0]) : ''}</p>
+    <p class="am-env-error am-hidden" data-env-error>Couldn't load the current environments from Rootstock.</p>
+
+    <script type="application/json" data-env-config set:html={jsonAttr(envConfig)}></script>
+    <script type="application/json" data-env-seed set:html={jsonAttr(envFiles)}></script>
   </section>
 
   <hr class="hairline" style="margin: 18px 0 10px;" />
@@ -422,7 +479,14 @@ const notesHtml = model.data.notes ? marked.parse(model.data.notes) : null;
 
 <script>
   import { loadLiveDump } from '../../lib/rootstock-client';
-  import { findVerification, cellStateFor, type CellState } from '../../lib/rootstock';
+  import {
+    findVerification,
+    cellStateFor,
+    envFilesForModel,
+    renderEnvBody,
+    type CellState,
+    type ModelEnvFile,
+  } from '../../lib/rootstock';
 
   const glyphHtml = (state: CellState): string => {
     if (state === 'verified') {
@@ -458,4 +522,101 @@ const notesHtml = model.data.notes ? marked.parse(model.data.notes) : null;
       });
     })
     .catch((err) => console.warn('Rootstock live refresh failed', err));
+
+  // ── Environments section ──────────────────────────────────────────────
+  // Build emits a best-effort seed (fixture source) plus a config blob; here
+  // we wire local tab-switching off the seed, then re-derive the whole section
+  // from the live dump. Tabs switch with no further network. On a genuine live
+  // fetch failure we show the error state and never fall back to seed text; if
+  // no live URL is configured at all (the offline-clean default), the fixture
+  // seed is authoritative and we keep it.
+  function setupEnvSection() {
+    const section = document.querySelector<HTMLElement>('[data-env-section]');
+    if (!section) return;
+
+    const readJson = <T,>(sel: string): T =>
+      JSON.parse(section.querySelector(sel)!.textContent || 'null') as T;
+    const config = readJson<{ clusters: { id: string; name: string }[]; checkpoints: string[] }>('[data-env-config]');
+
+    const tabsEl = section.querySelector<HTMLElement>('[data-env-tabs]')!;
+    const blockEl = section.querySelector<HTMLElement>('[data-env-block]')!;
+    const filenameEl = section.querySelector<HTMLElement>('[data-env-filename]')!;
+    const bodyEl = section.querySelector<HTMLElement>('[data-env-body]')!;
+    const captionEl = section.querySelector<HTMLElement>('[data-env-caption]')!;
+    const errorEl = section.querySelector<HTMLElement>('[data-env-error]')!;
+    const copyBtn = section.querySelector<HTMLElement>('[data-env-copy]')!;
+    const copyLabel = section.querySelector<HTMLElement>('[data-env-copy-label]')!;
+
+    let files: ModelEnvFile[] = readJson<ModelEnvFile[]>('[data-env-seed]') ?? [];
+    let active = 0;
+    let copyTimer: number | undefined;
+
+    const resetCopy = () => {
+      if (copyTimer) clearTimeout(copyTimer);
+      copyLabel.textContent = 'copy';
+      copyBtn.classList.remove('is-copied');
+    };
+
+    const paint = () => {
+      tabsEl.innerHTML = files
+        .map((f, i) =>
+          `<button type="button" class="am-env-tab${i === active ? ' is-active' : ''}" data-env-tab="${i}">${f.clusterName}</button>`,
+        )
+        .join('');
+      tabsEl.querySelectorAll<HTMLElement>('[data-env-tab]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          active = Number(btn.dataset.envTab);
+          resetCopy();
+          paint();
+        });
+      });
+      const f = files[active];
+      if (!f) return;
+      filenameEl.textContent = f.filename;
+      bodyEl.innerHTML = renderEnvBody(f.source);
+      const date = (f.builtAt ?? '').slice(0, 10);
+      captionEl.textContent = `Shown verbatim — Rootstock installs this file unmodified. ${f.clusterName} · built ${date}.`;
+    };
+
+    copyBtn.addEventListener('click', () => {
+      const f = files[active];
+      if (!f) return;
+      const done = () => {
+        copyLabel.textContent = 'copied';
+        copyBtn.classList.add('is-copied');
+        if (copyTimer) clearTimeout(copyTimer);
+        copyTimer = window.setTimeout(resetCopy, 1600);
+      };
+      try {
+        if (navigator.clipboard?.writeText) navigator.clipboard.writeText(f.source).then(done, done);
+        else done();
+      } catch {
+        done();
+      }
+    });
+
+    paint();
+    section.classList.toggle('am-hidden', files.length === 0);
+
+    loadLiveDump()
+      .then((dump) => {
+        files = envFilesForModel(dump, config.clusters, config.checkpoints);
+        active = 0;
+        resetCopy();
+        blockEl.classList.remove('am-hidden');
+        captionEl.classList.remove('am-hidden');
+        errorEl.classList.add('am-hidden');
+        paint();
+        section.classList.toggle('am-hidden', files.length === 0);
+      })
+      .catch((err: unknown) => {
+        // No live URL configured → keep the fixture seed (offline-clean default).
+        if (/not set/i.test((err as Error)?.message ?? '')) return;
+        // Genuine live-fetch failure → error state, never stale file text.
+        blockEl.classList.add('am-hidden');
+        captionEl.classList.add('am-hidden');
+        errorEl.classList.remove('am-hidden');
+      });
+  }
+  setupEnvSection();
 </script>
