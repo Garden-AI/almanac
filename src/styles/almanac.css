@@ -18,6 +18,11 @@
   --serif-italic: 'Source Serif 4', Georgia, serif;
   --smallcaps: 'IM Fell English SC', 'Source Serif 4', Georgia, serif;
   --mono: 'JetBrains Mono', 'IBM Plex Mono', Menlo, Consolas, monospace;
+  /* Small-caps tracking, two bands so IM Fell instances stay consistent by
+     construction. --track-label: table/label uses. --track-display: masthead
+     nav + eyebrows (larger, looser). See "Typography system" in CLAUDE.md. */
+  --track-label: 0.08em;
+  --track-display: 0.14em;
 }
 
 html, body {
@@ -53,7 +58,7 @@ html, body {
 
 .sc {
   font-family: var(--smallcaps);
-  letter-spacing: 0.06em;
+  letter-spacing: var(--track-label);
   font-feature-settings: "smcp" 1, "c2sc" 1;
   text-transform: lowercase;
 }
@@ -76,7 +81,7 @@ html, body {
   color: var(--ink);
 }
 h1, h2, h3, h4 { font-weight: 600; margin: 0; }
-h1 { font-size: 38px; line-height: 1.05; letter-spacing: -0.005em; }
+h1 { font-size: 38px; line-height: 1.05; letter-spacing: -0.012em; }
 h2 { font-size: 22px; line-height: 1.15; }
 h3 { font-size: 16px; line-height: 1.2; }
 .title-rule {
@@ -111,7 +116,7 @@ table.almanac thead th {
   border-bottom: 0.5px solid var(--ink);
   font-family: var(--smallcaps);
   font-weight: 500;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--track-label);
   font-size: 11.5px;
   background: rgba(26, 22, 18, 0.025);
 }
@@ -154,7 +159,7 @@ table.fam-table th, table.fam-table td { padding: 2.5px 8px; }
 .site-head .home-wordmark {
   font-family: var(--smallcaps);
   font-size: 14px;
-  letter-spacing: 0.12em;
+  letter-spacing: var(--track-display);
   transition: color 0.15s;
 }
 .site-head-nav {
@@ -164,7 +169,7 @@ table.fam-table th, table.fam-table td { padding: 2.5px 8px; }
   gap: 4px 22px;
   font-family: var(--smallcaps);
   font-size: 14px;
-  letter-spacing: 0.12em;
+  letter-spacing: var(--track-display);
   margin-left: auto;
 }
 .site-head-nav a {
@@ -233,7 +238,7 @@ a.ink-link:hover { background: rgba(122, 31, 31, 0.06); }
 .margin .label {
   font-family: var(--smallcaps);
   font-size: 10.5px;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--track-label);
   color: var(--ink);
   display: block;
   margin-bottom: 2px;

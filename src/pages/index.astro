@@ -6,6 +6,7 @@ import {
   getRootstockDump,
   findVerification,
   cellStateFor,
+  cellSvg,
   type CellState,
 } from '../lib/rootstock';
 import { url } from '../lib/url';
@@ -49,28 +50,11 @@ const models = await getCollection('models');
 
 const dump = await getRootstockDump();
 
-// Cell SVG — keeps the existing app's 14×14 status-mark sizing and hatch
-// geometry. The new `dim` flag (for fully-unsupported rows) softens the
-// stroke and drops hatch opacity per the handoff's dim treatment.
-const cellSvg = (state: CellState, dim: boolean): string => {
-  const stroke = dim ? '#a67878' : 'var(--oxblood)';
-  if (state === 'verified') {
-    return `<svg width="14" height="14" viewBox="0 0 14 14" aria-label="verified"><circle cx="7" cy="7" r="3.6" fill="${stroke}" /></svg>`;
-  }
-  if (state === 'lapsed') {
-    return `<svg width="14" height="14" viewBox="0 0 14 14" aria-label="lapsed"><circle cx="7" cy="7" r="3.4" fill="none" stroke="${stroke}" stroke-width="1" /></svg>`;
-  }
-  const id = dim ? 'am-hatch-d' : 'am-hatch-n';
-  const op = dim ? 0.18 : 0.35;
-  return `<svg width="100%" height="14" viewBox="0 0 40 14" preserveAspectRatio="none" aria-label="not applicable" style="display: block;"><defs><pattern id="${id}" patternUnits="userSpaceOnUse" width="5" height="5" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="5" stroke="var(--ink)" stroke-width="0.5" opacity="${op}" /></pattern></defs><rect x="0" y="3" width="40" height="8" fill="url(#${id})" /></svg>`;
-};
-
 // Group: one row per checkpoint, families = one section per model. Families
 // sorted alphabetical case-insensitive by display name (per the brief);
 // within a family, checkpoint order is the source order from the JSON.
 type FamilyRow = {
   checkpointId: string;
-  params: string | undefined;
   cells: Array<{ cluster: typeof clusters[number]; state: CellState }>;
   dim: boolean;
 };
@@ -99,7 +83,6 @@ const families: FamilyGroup[] = models
       });
       return {
         checkpointId: cp.id,
-        params: cp.params,
         cells,
         dim: cells.every((x) => x.state === 'na'),
       };
@@ -120,7 +103,6 @@ const families: FamilyGroup[] = models
   })
   .sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()));
 
-const totalCheckpoints = families.reduce((acc, f) => acc + f.count, 0);
 const colSpan = 1 + clusters.length;
 
 const clusterCards = clusters.map((c) => ({
@@ -155,9 +137,9 @@ with RootstockCalculator(
     </p>
     <nav class="landing-cta" aria-label="Getting started">
       <a class="ink-link" href="https://garden-ai.github.io/rootstock/run-python/">Run with ASE</a>
-      <span class="landing-cta-sep" aria-hidden="true">|</span>
+      <span class="landing-cta-sep" aria-hidden="true"></span>
       <a class="ink-link" href="https://garden-ai.github.io/rootstock/run-tools/">Integrate with Other Tools</a>
-      <span class="landing-cta-sep" aria-hidden="true">|</span>
+      <span class="landing-cta-sep" aria-hidden="true"></span>
       <a class="ink-link" href="https://garden-ai.github.io/rootstock/run-agents/">Run with an Agent</a>
     </nav>
   </section>
@@ -184,29 +166,66 @@ with RootstockCalculator(
 
   {/* DESKTOP: the matrix is the centrepiece. */}
   <section class="am-wrap">
-    <div class="am-controls" role="search" aria-label="Search availability matrix">
-      <label class="am-search-wrap">
-        <span class="am-control-icon" aria-hidden="true">
-          <svg width="14" height="14" viewBox="0 0 16 16">
-            <circle cx="7" cy="7" r="4.25" fill="none" stroke="currentColor" stroke-width="1.2" />
-            <path d="M10.2 10.2L13.2 13.2" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" />
-          </svg>
-        </span>
-        <input
-          class="am-search"
-          data-am-search
-          type="search"
-          aria-label="Search models"
-          placeholder="Search models, e.g., equiformer, escn..."
-          autocomplete="off"
-        />
-      </label>
+    <div class="am-controls">
+      <div class="am-search-box" role="search" aria-label="Search availability matrix">
+        <label class="am-search-wrap">
+          <span class="am-control-icon" aria-hidden="true">
+            <svg width="14" height="14" viewBox="0 0 16 16">
+              <circle cx="7" cy="7" r="4.25" fill="none" stroke="currentColor" stroke-width="1.2" />
+              <path d="M10.2 10.2L13.2 13.2" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" />
+            </svg>
+          </span>
+          <input
+            class="am-search"
+            data-am-search
+            type="search"
+            aria-label="Search models"
+            placeholder="Search models, e.g., equiformer, escn..."
+            autocomplete="off"
+          />
+        </label>
+      </div>
+      <details class="am-key">
+        <summary class="am-key-summary">
+          <span class="am-key-head">
+            How we verify models
+            <span class="am-key-caret" aria-hidden="true">▸</span>
+          </span>
+          <span class="status-key am-key-compact">
+            <span class="status-key-item">
+              <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><circle cx="7" cy="7" r="3.6" fill="var(--oxblood)" /></svg>
+              <span class="sc">verified</span>
+            </span>
+            <span class="status-key-item">
+              <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><circle cx="7" cy="7" r="3.4" fill="none" stroke="var(--oxblood)" stroke-width="1" /></svg>
+              <span class="sc">lapsed</span>
+            </span>
+            <span class="status-key-item">
+              <svg width="30" height="15" viewBox="0 0 30 15" aria-hidden="true"><defs><pattern id="am-key-hatch-1" patternUnits="userSpaceOnUse" width="7" height="7" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="7" stroke="var(--ink)" stroke-width="0.9" opacity="0.45" /></pattern></defs><rect x="0" y="0" width="30" height="15" fill="url(#am-key-hatch-1)" /></svg>
+              <span class="sc">not supported</span>
+            </span>
+          </span>
+        </summary>
+        <dl class="am-key-glossary">
+          <div class="am-key-row">
+            <dt><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><circle cx="7" cy="7" r="3.6" fill="var(--oxblood)" /></svg><span class="sc">verified</span></dt>
+            <dd>Run from Rootstock on this cluster in the last 30 days.</dd>
+          </div>
+          <div class="am-key-row">
+            <dt><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><circle cx="7" cy="7" r="3.4" fill="none" stroke="var(--oxblood)" stroke-width="1" /></svg><span class="sc">lapsed</span></dt>
+            <dd>Installed here, but not verified in the last 30 days.</dd>
+          </div>
+          <div class="am-key-row">
+            <dt><svg width="30" height="15" viewBox="0 0 30 15" aria-hidden="true"><defs><pattern id="am-key-hatch-2" patternUnits="userSpaceOnUse" width="7" height="7" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="7" stroke="var(--ink)" stroke-width="0.9" opacity="0.45" /></pattern></defs><rect x="0" y="0" width="30" height="15" fill="url(#am-key-hatch-2)" /></svg><span class="sc">not supported</span></dt>
+            <dd>Not installed on this cluster.</dd>
+          </div>
+        </dl>
+      </details>
     </div>
 
     <table class="almanac am-table" aria-label="Availability matrix">
       <colgroup>
         <col class="am-col-slug" />
-        <col class="am-col-size" />
         {clusters.map((c) => <col class="am-col-cluster" data-cluster={c.id} />)}
       </colgroup>
       <thead>
@@ -243,7 +262,7 @@ with RootstockCalculator(
                 data-rs-row={r.checkpointId}
                 data-rs-family-id={fam.modelId}
                 data-am-family={fam.modelId}
-                data-am-search={`${fam.name} ${r.checkpointId} ${r.params ?? ''}`.toLowerCase()}
+                data-am-search={`${fam.name} ${r.checkpointId}`.toLowerCase()}
               >
                 <td class="am-slug">
                   <a class="am-slug-link" href={`${fam.href}#${r.checkpointId}`}>{r.checkpointId}</a>
@@ -261,26 +280,6 @@ with RootstockCalculator(
         ))}
       </tbody>
     </table>
-
-    <div class="am-caption">
-      <span class="it am-caption-stats">
-        <span data-rs-count="total">{totalCheckpoints}</span> checkpoints · {clusters.length} clusters
-      </span>
-      <span class="status-key" aria-label="Availability key">
-        <span class="status-key-item">
-          <svg width="11" height="11" viewBox="0 0 14 14" aria-hidden="true"><circle cx="7" cy="7" r="3.4" fill="var(--oxblood)" /></svg>
-          <span class="sc">verified</span>
-        </span>
-        <span class="status-key-item">
-          <svg width="11" height="11" viewBox="0 0 14 14" aria-hidden="true"><circle cx="7" cy="7" r="3" fill="none" stroke="var(--oxblood)" stroke-width="1" /></svg>
-          <span class="sc">lapsed</span>
-        </span>
-        <span class="status-key-item">
-          <svg width="16" height="11" viewBox="0 0 16 11" aria-hidden="true"><defs><pattern id="am-key-hatch" patternUnits="userSpaceOnUse" width="5" height="5" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="5" stroke="var(--ink)" stroke-width="0.5" opacity="0.35" /></pattern></defs><rect x="0" y="2" width="16" height="7" fill="url(#am-key-hatch)" /></svg>
-          <span class="sc">not supported</span>
-        </span>
-      </span>
-    </div>
   </section>
 
   <section class="howto">
@@ -303,16 +302,16 @@ with RootstockCalculator(
   /* Title block — left-aligned, single column, no woodcut. */
   .landing-title { margin-top: 8px; }
   .landing-eyebrow {
-    font-size: 17px;
-    letter-spacing: 0.16em;
+    font-size: 13px;
+    letter-spacing: var(--track-display);
     color: var(--ink-2);
-    margin: 0 0 4px;
+    margin: 0 0 6px;
   }
   .landing-h1 {
     font-family: var(--serif);
     font-size: 52px;
-    line-height: 1.02;
-    letter-spacing: 0;
+    line-height: 1.0;
+    letter-spacing: -0.012em;
     font-weight: 600;
     margin: 0;
     text-wrap: balance;
@@ -327,33 +326,98 @@ with RootstockCalculator(
   }
   .landing-cta {
     display: flex;
-    align-items: baseline;
+    align-items: center;
     flex-wrap: wrap;
-    gap: 4px 14px;
+    gap: 8px 18px;
     margin-top: 16px;
     font-size: 16px;
   }
   .landing-cta-sep {
-    color: var(--ink-3);
-    opacity: 0.6;
+    width: 1px;
+    height: 15px;
+    background: var(--rule-soft);
   }
 
   .status-key {
     display: inline-flex;
     align-items: center;
     flex-wrap: wrap;
-    gap: 6px 16px;
-    font-size: 11.5px;
+    gap: 6px 18px;
+    font-size: 15px;
     line-height: 1.25;
-    color: var(--ink-2);
+    color: var(--ink);
   }
   .status-key-item {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
   }
-  .status-key-item .sc {
-    letter-spacing: 0.08em;
+
+  /* Progressive disclosure: collapsed shows the compact key under a "How we
+     verify models" header; expanding swaps that key for the full glossary
+     (glyph + label + definition), so the states are never shown twice at once.
+     Flat, no elevation (paper-and-ink), zero-JS via <details>. */
+  .am-key { text-align: right; }
+  .am-key-summary {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;       /* header on top, key beneath — right-aligned */
+    gap: 7px;
+    cursor: pointer;
+    list-style: none;
+    outline: none;
+  }
+  .am-key:not([open]) .am-key-summary { min-height: 38px; justify-content: center; }
+  .am-key-summary::-webkit-details-marker { display: none; }
+  .am-key-head {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-family: var(--smallcaps);
+    text-transform: lowercase;
+    letter-spacing: var(--track-label);
+    font-size: 13px;
+    color: var(--ink);
+    transition: color 0.12s;
+  }
+  .am-key-caret {
+    font-family: var(--serif);
+    font-size: 11px;
+    color: var(--ink-3);
+    transition: transform 0.15s, color 0.12s;
+  }
+  .am-key[open] .am-key-caret { transform: rotate(90deg); }
+  .am-key-summary:hover .am-key-head,
+  .am-key-summary:hover .am-key-caret { color: var(--oxblood); }
+  .am-key-summary:focus-visible .am-key-head {
+    color: var(--oxblood);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  .am-key[open] .am-key-compact { display: none; }
+  .am-key-glossary {
+    display: grid;
+    gap: 7px 0;
+    max-width: 460px;
+    margin: 10px 0 2px auto;     /* hang under the header, right-aligned block */
+    text-align: left;
+  }
+  .am-key-row {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 12px;
+    align-items: baseline;
+  }
+  .am-key-row dt {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+  }
+  .am-key-row dd {
+    margin: 0;
+    font-size: 13.5px;
+    line-height: 1.4;
     color: var(--ink-2);
   }
 
@@ -363,7 +427,16 @@ with RootstockCalculator(
    * app's values where this overlaps with prior matrix styling. */
   .am-wrap { margin-top: 24px; }
   .am-controls {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px 28px;
     margin-bottom: 18px;
+  }
+  .am-search-box {
+    flex: 1 1 340px;
+    min-width: 0;
   }
   .am-search-wrap {
     display: block;
@@ -416,13 +489,13 @@ with RootstockCalculator(
   /* Body rows use the existing app's tight row height; the family-header row
      (`.am-fhead td`) needs a more-specific selector to escape this rule. */
   .am-table tbody td { padding-top: 3px; padding-bottom: 3px; }
-  .am-col-size { width: 64px; }
   .am-col-cluster { width: 1%; }
   .am-table thead th.am-th-cluster { min-width: 140px; text-align: center; vertical-align: bottom; padding: 6px 4px; }
   .am-cluster-link {
     font-family: var(--smallcaps);
     font-size: 14px;
-    letter-spacing: 0.06em;
+    letter-spacing: var(--track-label);
+    text-transform: lowercase;
     color: var(--ink);
     text-decoration: none;
     border-bottom: 0.5px solid transparent;
@@ -431,7 +504,7 @@ with RootstockCalculator(
   .am-cluster-link:hover { color: var(--oxblood); border-bottom-color: var(--oxblood); }
   .am-th-cluster-gpu { font-size: 10px; color: var(--ink-3); margin-top: 3px; letter-spacing: 0.02em; font-weight: 400; }
   .am-th-slug { text-align: left; vertical-align: bottom; }
-  .am-th-slug-fam { display: block; font-size: 14px; letter-spacing: 0.10em; }
+  .am-th-slug-fam { display: block; font-size: 14px; letter-spacing: var(--track-label); text-transform: lowercase; }
   .am-th-slug-cp {
     display: block;
     margin-top: 2px;
@@ -488,10 +561,14 @@ with RootstockCalculator(
     gap: 16px;
     flex-wrap: wrap;
   }
+  /* The table's primary scan target: Source Serif semibold (not IM Fell SC),
+     so family names read as the most legible element and the mono checkpoint
+     IDs beneath sit clearly subordinate. See "Typography system" in CLAUDE.md. */
   .am-fhead-name {
-    font-family: var(--smallcaps);
-    font-size: 14px;
-    letter-spacing: 0.10em;
+    font-family: var(--serif);
+    font-weight: 600;
+    font-size: 15px;
+    letter-spacing: -0.005em;
     color: var(--ink);
     text-decoration: none;
     border-bottom: 0.5px solid transparent;
@@ -499,17 +576,6 @@ with RootstockCalculator(
   }
   .am-fhead-name:hover { color: var(--oxblood); border-bottom-color: var(--oxblood); }
 
-  .am-caption {
-    margin-top: 10px;
-    font-size: 11.5px;
-    color: var(--ink-2);
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 8px 24px;
-  }
-  .am-caption-stats { min-width: 0; }
 
   /* How-to block — full width below the matrix; two-column on desktop. */
   .howto { margin-top: 32px; }
@@ -576,7 +642,7 @@ with RootstockCalculator(
   .cluster-card .cc-inst {
     font-family: var(--smallcaps);
     font-size: 11px;
-    letter-spacing: 0.10em;
+    letter-spacing: var(--track-label);
     color: var(--ink-2);
     margin-top: 6px;
     display: block;
@@ -592,7 +658,7 @@ with RootstockCalculator(
   .cluster-card .cc-row dt {
     font-family: var(--smallcaps);
     font-size: 10.5px;
-    letter-spacing: 0.10em;
+    letter-spacing: var(--track-label);
     color: var(--ink-3);
     padding-top: 2px;
     margin: 0;
@@ -629,17 +695,8 @@ with RootstockCalculator(
 
 <script>
   import { loadLiveDump } from '../lib/rootstock-client';
-  import { findVerification, cellStateFor, type CellState } from '../lib/rootstock';
+  import { findVerification, cellStateFor, cellSvg, type CellState } from '../lib/rootstock';
 
-  const cellSvg = (state: CellState): string => {
-    if (state === 'verified') {
-      return `<svg width="14" height="14" viewBox="0 0 14 14" aria-label="verified"><circle cx="7" cy="7" r="3.6" fill="var(--oxblood)" /></svg>`;
-    }
-    if (state === 'lapsed') {
-      return `<svg width="14" height="14" viewBox="0 0 14 14" aria-label="lapsed"><circle cx="7" cy="7" r="3.4" fill="none" stroke="var(--oxblood)" stroke-width="1" /></svg>`;
-    }
-    return `<svg width="100%" height="14" viewBox="0 0 40 14" preserveAspectRatio="none" aria-label="not applicable" style="display: block;"><defs><pattern id="am-hatch-n" patternUnits="userSpaceOnUse" width="5" height="5" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="5" stroke="var(--ink)" stroke-width="0.5" opacity="0.35" /></pattern></defs><rect x="0" y="3" width="40" height="8" fill="url(#am-hatch-n)" /></svg>`;
-  };
 
   // Text search composes with the live-data hide: search hides rows that
   // don't match the query via the `hidden` attribute, but never *un*hides a
@@ -702,10 +759,6 @@ with RootstockCalculator(
       document.querySelectorAll<HTMLElement>('[data-rs-family]').forEach((tr) => {
         const famId = tr.dataset.rsFamily ?? '';
         tr.classList.toggle('am-hidden', (familySupportedCount[famId] ?? 0) === 0);
-      });
-      const totalCheckpoints = Object.values(familySupportedCount).reduce((a, b) => a + b, 0);
-      document.querySelectorAll<HTMLElement>('[data-rs-count]').forEach((el) => {
-        if (el.dataset.rsCount === 'total') el.textContent = String(totalCheckpoints);
       });
       applySearch();
     })
