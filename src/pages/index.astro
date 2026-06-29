@@ -149,9 +149,9 @@ with RootstockCalculator(
     <p class="sc landing-eyebrow">Garden's</p>
     <h1 class="landing-h1">Almanac of Matter Models</h1>
     <p class="landing-subtitle">
-      A guide to Machine Learned Interatomic Potentials pre-installed on shared HPC clusters.
+      A field guide to matter models, starting with machine-learned interatomic potentials pre-installed on shared HPC clusters.
       {' '}<a class="ink-link" href="https://garden-ai.github.io/rootstock/">Rootstock</a> lets you
-      run any of them through a drop-in ASE calculator.
+      run any MLIP through a drop-in ASE calculator.
     </p>
     <nav class="landing-cta" aria-label="Getting started">
       <a class="ink-link" href="https://garden-ai.github.io/rootstock/run-python/">Run with ASE</a>
@@ -286,11 +286,12 @@ with RootstockCalculator(
   <section class="howto">
     <div class="howto-grid">
       <div class="howto-prose">
-        <div class="sc howto-head">How it works</div>
+        <h2 class="howto-head">Swap models without managing environments</h2>
         <p>
-          Each model is pre-installed in its own isolated environment. Rootstock runs it as a
-          subprocess on the same node and exchanges positions and forces over a local socket — so
-          you can swap models without changing your dependencies.
+          Admins pre-install each MLIP in its own isolated environment.
+          You just need to install the thin <code>rootstock</code> Python package, which runs the
+          model in a subprocess and gives you an ASE calculator that talks to it.
+          You can swap between all the models supported on a cluster without changing your dependencies.
         </p>
       </div>
       <Code code={codeSnippet} lang="python" theme={almanacCodeTheme} />
@@ -322,7 +323,7 @@ with RootstockCalculator(
     line-height: 1.4;
     color: var(--ink);
     margin: 14px 0 0;
-    max-width: 660px;
+    max-width: 840px;
   }
   .landing-cta {
     display: flex;
@@ -513,10 +514,13 @@ with RootstockCalculator(
   /* How-to block — full width below the matrix; two-column on desktop. */
   .howto { margin-top: 32px; }
   .howto-head {
-    font-size: 15px;
-    letter-spacing: 0.14em;
+    font-family: var(--serif);
+    font-size: 22px;
+    font-weight: 600;
+    line-height: 1.15;
+    letter-spacing: 0;
     color: var(--ink);
-    margin-bottom: 12px;
+    margin: 0 0 10px;
   }
   .howto-grid {
     display: grid;
@@ -531,6 +535,12 @@ with RootstockCalculator(
   }
   .howto-prose p { margin: 0 0 8px; }
   .howto-prose p:last-child { margin-bottom: 0; }
+  .howto-prose code {
+    font-family: var(--mono);
+    font-size: 0.86em;
+    background: rgba(26, 22, 18, 0.05);
+    padding: 1px 4px;
+  }
   .howto :global(pre) {
     margin: 0;
     font-family: var(--mono);

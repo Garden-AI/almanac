@@ -16,7 +16,7 @@ const homePath = homeHref.replace(/\/$/, '') || '/';
 const isHome = path === homePath;
 const wordmark = "Garden's Almanac of Matter Models";
 
-const footerNav = [
+const primaryNav = [
   { href: url('/'), label: 'Home' },
   { href: url('/models'), label: 'Models' },
   { href: url('/clusters'), label: 'Clusters' },
@@ -60,19 +60,13 @@ const isCurrent = (href: string) => norm(href) === norm(path);
           </a>
         )}
         <nav class="site-head-nav" aria-label="Primary">
-          {footerNav.map((l) => (
+          {primaryNav.map((l) => (
             <a href={l.href} aria-current={isCurrent(l.href) ? 'page' : undefined}>{l.label}</a>
           ))}
         </nav>
       </header>
       <slot />
-      <footer class="site-foot">
-        <nav aria-label="Primary">
-          {footerNav.map((l) => (
-            <a href={l.href} aria-current={isCurrent(l.href) ? 'page' : undefined}>{l.label}</a>
-          ))}
-        </nav>
-      </footer>
+      <footer class="site-foot"></footer>
     </article>
   </body>
 </html>

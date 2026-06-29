@@ -153,7 +153,7 @@ table.fam-table th, table.fam-table td { padding: 2.5px 8px; }
 .site-head .home-link:hover .home-glyph { color: var(--oxblood); }
 .site-head .home-wordmark {
   font-family: var(--smallcaps);
-  font-size: 12.5px;
+  font-size: 14px;
   letter-spacing: 0.12em;
   transition: color 0.15s;
 }
@@ -163,7 +163,7 @@ table.fam-table th, table.fam-table td { padding: 2.5px 8px; }
   align-items: baseline;
   gap: 4px 22px;
   font-family: var(--smallcaps);
-  font-size: 12px;
+  font-size: 14px;
   letter-spacing: 0.12em;
   margin-left: auto;
 }
@@ -188,26 +188,6 @@ table.fam-table th, table.fam-table td { padding: 2.5px 8px; }
   padding-top: 16px;
   margin-top: 40px;
 }
-.site-foot nav {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px 28px;
-  font-family: var(--smallcaps);
-  font-size: 12px;
-  letter-spacing: 0.12em;
-}
-.site-foot nav a {
-  color: var(--ink);
-  text-decoration: none;
-  border-bottom: 1px solid transparent;
-  padding: 2px 0;
-  transition: color 0.15s, border-color 0.15s;
-}
-.site-foot nav a:hover { color: var(--oxblood); border-bottom-color: var(--oxblood); }
-.site-foot nav a[aria-current='page'] {
-  color: var(--oxblood);
-  border-bottom-color: var(--oxblood);
-}
 
 @media (max-width: 720px) {
   .site-head {
@@ -224,7 +204,6 @@ table.fam-table th, table.fam-table td { padding: 2.5px 8px; }
   }
   .site-head-mark--blank { display: none; } /* don't reserve empty slot */
   .site-foot { margin-top: 28px; padding-top: 12px; }
-  .site-foot nav { gap: 2px 18px; }
 }
 
 a.ink-link {
