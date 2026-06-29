@@ -155,6 +155,179 @@ export interface ClusterEnvGroup {
   }>;
 }
 
+/* ─────────────────────────────────────────────────────────────────────────
+ * Model-detail "Environments" section: the verbatim env file Rootstock
+ * installs for a model, per installed cluster. All of the following is shared
+ * by the build-time seed render and the client live-refresh so the two render
+ * byte-identically (same rule as `cellSvg`).
+ * ──────────────────────────────────────────────────────────────────────── */
+
+export interface ModelEnvFile {
+  /** Cluster slug. */
+  cluster: string;
+  /** Cluster display name (tab label). */
+  clusterName: string;
+  /** Manifest env key the model's checkpoints live in. */
+  env: string;
+  /** Basename shown in the listing chrome (never the on-cluster path). */
+  filename: string;
+  /** Verbatim env `.py` source, shown unmodified (provenance). */
+  source: string;
+  builtAt: string | null;
+}
+
+/** Stable per-family basename: terse and verbose variants of one family env
+ *  collapse to the same name (`mace` & `mace_env` → `mace_env.py`). */
+export function envFileName(env: string): string {
+  const base = env.endsWith('_env') ? env : `${env}_env`;
+  return `${base}.py`;
+}
+
+/** Env files for the model-detail Environments tabs: one per *installed*
+ *  cluster, in the given cluster order, sourced from whichever env carries the
+ *  model's checkpoints on that cluster (first match — they share one env in
+ *  practice). Clusters with no installed checkpoint produce no entry (no tab),
+ *  so the tab set is derived from install status, never a hardcoded list. */
+export function envFilesForModel(
+  dump: RootstockDump,
+  clusters: Array<{ id: string; name: string }>,
+  checkpointIds: string[],
+): ModelEnvFile[] {
+  const files: ModelEnvFile[] = [];
+  for (const c of clusters) {
+    const manifest = findManifest(dump, c.id);
+    if (!manifest) continue;
+    let env: string | null = null;
+    for (const cp of checkpointIds) {
+      const v = findVerification(dump, c.id, cp);
+      if (v) {
+        env = v.env;
+        break;
+      }
+    }
+    if (!env) continue;
+    const e = manifest.environments[env];
+    if (!e) continue;
+    files.push({
+      cluster: c.id,
+      clusterName: c.name,
+      env,
+      filename: envFileName(env),
+      source: e.source ?? '',
+      builtAt: e.built_at,
+    });
+  }
+  return files;
+}
+
+function escEnv(s: string): string {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+const ENV_KEYWORDS = new Set(
+  ('def return from import if elif else for while in is not and or None True ' +
+    'False class with as try except finally raise lambda yield pass break ' +
+    'continue global nonlocal assert del str int float bool list dict set tuple')
+    .split(' '),
+);
+
+/**
+ * One line of Python → HTML, paper-palette syntax theme: keywords sienna,
+ * strings olive, numbers teal, comments grey. Oxblood is never used here (it's
+ * reserved for links/status). Quoted substrings inside a comment keep the
+ * string color, so version pins in the PEP-723 `# /// script` block read at
+ * full contrast — the values a user comes to check.
+ */
+function highlightEnvLine(ln: string): string {
+  const span = (v: string, t: string) => `<span style="color:var(${v})">${t}</span>`;
+  let out = '';
+  let i = 0;
+  const n = ln.length;
+  while (i < n) {
+    const ch = ln[i];
+    if (ch === '"' || ch === "'") {
+      const q = ch;
+      let j = i + 1;
+      while (j < n && ln[j] !== q) {
+        if (ln[j] === '\\') j++;
+        j++;
+      }
+      out += span('--syn-str', escEnv(ln.slice(i, Math.min(j + 1, n))));
+      i = j + 1;
+      continue;
+    }
+    if (ch === '#') {
+      const rest = ln.slice(i);
+      let k = 0;
+      while (k < rest.length) {
+        const c2 = rest[k];
+        if (c2 === '"' || c2 === "'") {
+          let m = k + 1;
+          while (m < rest.length && rest[m] !== c2) m++;
+          out += span('--syn-str', escEnv(rest.slice(k, Math.min(m + 1, rest.length))));
+          k = m + 1;
+          continue;
+        }
+        let m = k;
+        while (m < rest.length && rest[m] !== '"' && rest[m] !== "'") m++;
+        out += span('--syn-com', escEnv(rest.slice(k, m)));
+        k = m;
+      }
+      break;
+    }
+    if (/[A-Za-z_]/.test(ch)) {
+      let j = i;
+      while (j < n && /[A-Za-z0-9_]/.test(ln[j])) j++;
+      const w = ln.slice(i, j);
+      out += ENV_KEYWORDS.has(w) ? span('--syn-kw', escEnv(w)) : escEnv(w);
+      i = j;
+      continue;
+    }
+    if (/[0-9]/.test(ch)) {
+      let j = i;
+      while (j < n && /[0-9.]/.test(ln[j])) j++;
+      out += span('--syn-num', escEnv(ln.slice(i, j)));
+      i = j;
+      continue;
+    }
+    out += escEnv(ch);
+    i++;
+  }
+  return out;
+}
+
+/**
+ * Full inner HTML of the code body: one numbered row per line, with a
+ * line-number gutter and docstring-aware coloring (triple-quoted blocks render
+ * entirely in the comment color). Rendered verbatim — no reformatting. Shared
+ * by the build seed and the client tab-switch so the two never drift.
+ */
+export function renderEnvBody(source: string): string {
+  const lines = source.split('\n');
+  let inDoc = false;
+  const rows = lines.map((ln, i) => {
+    const has3 = ln.includes('"""');
+    let html: string;
+    if (inDoc) {
+      html = `<span style="color:var(--syn-com)">${escEnv(ln)}</span>`;
+      if (has3) inDoc = false;
+    } else if (has3) {
+      const count = (ln.match(/"""/g) || []).length;
+      if (count % 2 === 1) inDoc = true;
+      html = `<span style="color:var(--syn-com)">${escEnv(ln)}</span>`;
+    } else {
+      html = highlightEnvLine(ln) || '&#8203;';
+    }
+    return (
+      '<div class="am-env-line">' +
+      `<span class="am-env-gutter">${i + 1}</span>` +
+      `<span class="am-env-code">${html}</span>` +
+      '</div>'
+    );
+  });
+  return `<div class="am-env-rows">${rows.join('')}</div>`;
+}
+
 /** Env-grouped checkpoint listing for a single cluster (cluster page). */
 export function envGroupsForCluster(
   dump: RootstockDump,

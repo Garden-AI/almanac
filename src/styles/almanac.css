@@ -37,6 +37,14 @@
   --fs-h2: 26px;        /* sub-section headings */
   --fs-h1: 40px;        /* page titles */
   --fs-display: 52px;   /* landing hero only */
+  /* Code-listing palette (model-detail Environments section). Low-chroma and
+     warm so the block reads as part of the almanac, not a foreign editor.
+     Oxblood is deliberately absent — it stays reserved for links/status. */
+  --code-bg: #fdfdfb;   /* near-white code surface       */
+  --syn-kw: #9a5524;    /* keywords (sienna)             */
+  --syn-str: #5f7340;   /* strings + version pins (olive) */
+  --syn-num: #3f6f78;   /* numbers (teal)                */
+  --syn-com: #8d857a;   /* comments + docstrings (grey)  */
 }
 
 html, body {
@@ -275,6 +283,12 @@ a.ink-link:hover { background: rgba(122, 31, 31, 0.06); }
 }
 .detail-rail .margin + .margin { margin-top: 18px; }
 
+/* Detail pages share the wide (1200px) shell with the catalog pages so their
+   tables and code listings have room. Running prose in the main column would
+   otherwise stretch to ~110 characters, so cap its measure; tables, reference
+   lists, and the code block keep the full column width. */
+.detail-body > div:first-child p { max-width: 680px; }
+
 @media (max-width: 720px) {
   .detail-body { grid-template-columns: 1fr; }
   .detail-rail { border-left: 0; padding-left: 0; }
@@ -286,3 +300,119 @@ a.ink-link:hover { background: rgba(122, 31, 31, 0.06); }
 .status-verified { color: var(--ink); }
 .status-stale    { color: var(--ink-2); }
 .status-na       { color: var(--ink-3); }
+
+/* ── Environments section (model detail) ──────────────────────────────────
+   Global, not page-scoped: the code body and the tab row are injected via
+   set:html / client innerHTML, so they never carry Astro's scope attribute
+   and would miss scoped rules. */
+.env-intro {
+  font-size: var(--fs-md);
+  line-height: 1.5;
+  color: var(--ink-2);
+  margin: 6px 0 0;
+  max-width: 620px;
+}
+
+.am-env-tabs {
+  display: flex;
+  align-items: flex-end;
+  gap: 0 2px;
+  margin-top: 16px;
+  border-bottom: 0.5px solid var(--rule-soft);
+}
+.am-env-tab {
+  font-family: var(--smallcaps);
+  text-transform: lowercase;
+  font-size: var(--fs-md);
+  letter-spacing: var(--track-label);
+  padding: 6px 13px;
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -0.5px;        /* active underline overlaps the row rule */
+  line-height: 1.2;
+  color: var(--ink-3);
+  transition: color 0.12s, border-color 0.12s;
+}
+.am-env-tab.is-active {
+  color: var(--oxblood);
+  border-bottom-color: var(--oxblood);
+}
+
+.am-env-block {
+  border: 0.5px solid var(--rule);
+  background: var(--paper-2);
+  margin-top: 14px;
+}
+.am-env-chrome {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 7px 12px 6px;
+  border-bottom: 0.5px solid var(--rule-soft);
+}
+.am-env-filename {
+  font-family: var(--mono);
+  font-size: var(--fs-sm);
+  color: var(--oxblood);
+  word-break: break-all;
+}
+.am-env-copy {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 0.5px solid var(--rule);
+  background: transparent;
+  font-family: var(--smallcaps);
+  text-transform: lowercase;
+  font-size: var(--fs-sm);
+  letter-spacing: var(--track-label);
+  line-height: 1.1;
+  padding: 4px 10px;
+  cursor: pointer;
+  color: var(--ink-2);
+}
+.am-env-copy.is-copied { color: var(--oxblood); }
+
+.am-env-body {
+  overflow: auto;
+  max-height: 460px;            /* ≈ 22 lines, then internal scroll */
+  padding: 11px 14px;
+  background: var(--code-bg);
+  font-family: var(--mono);
+  font-size: var(--fs-md);
+  line-height: 1.7;
+  /* Ligatures OFF: JetBrains Mono otherwise renders `>=` as `≥`,
+     misrepresenting the verbatim version pins. */
+  font-variant-ligatures: none;
+  font-feature-settings: 'liga' 0, 'calt' 0;
+}
+.am-env-rows { min-width: max-content; }  /* horizontal scroll on long lines */
+.am-env-line { display: flex; }
+.am-env-gutter {
+  flex: 0 0 auto;
+  width: 2.2em;
+  text-align: right;
+  padding-right: 12px;
+  margin-right: 14px;
+  color: var(--ink-3);
+  user-select: none;
+  -webkit-user-select: none;
+  border-right: 0.5px solid var(--rule-soft);
+}
+.am-env-code { white-space: pre; }
+
+.am-env-caption {
+  font-size: var(--fs-xs);
+  line-height: 1.4;
+  color: var(--ink-3);
+  font-style: italic;
+  margin: 8px 0 0;
+}
+.am-env-error {
+  font-size: var(--fs-md);
+  color: var(--ink-2);
+  margin: 14px 0 0;
+}
