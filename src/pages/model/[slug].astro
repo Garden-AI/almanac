@@ -4,7 +4,7 @@ import { marked } from 'marked';
 import Page from '../../layouts/Page.astro';
 import { getRootstockDump, findVerification, cellStateFor, type CellState } from '../../lib/rootstock';
 import { url } from '../../lib/url';
-import { formatBytes, formatMonthYear, yearOf } from '../../lib/format';
+import { formatMonthYear, yearOf } from '../../lib/format';
 
 export async function getStaticPaths() {
   const models = await getCollection('models');
@@ -199,7 +199,6 @@ const notesHtml = model.data.notes ? marked.parse(model.data.notes) : null;
           <tr>
             <th>Checkpoint</th>
             <th style="width: 80px; text-align: right;">Params</th>
-            <th style="width: 80px; text-align: right;">Size</th>
             {allClusters.map((c) => (
               <th
                 class:list={["am-mx-col", !clusterHasPresence[c.id] && "am-hidden"]}
@@ -219,9 +218,6 @@ const notesHtml = model.data.notes ? marked.parse(model.data.notes) : null;
               <td class="mono" style="font-size: var(--fs-sm);">{checkpoint.id}</td>
               <td style="text-align: right; font-variant-numeric: tabular-nums;">
                 {checkpoint.params ?? ''}
-              </td>
-              <td style="text-align: right; font-variant-numeric: tabular-nums; color: var(--ink-2);">
-                {formatBytes(checkpoint.weightsBytes)}
               </td>
               {cells.map((cell) => (
                 <td
