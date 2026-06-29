@@ -113,7 +113,8 @@ const clusterCards = clusters.map((c) => ({
   counts: perCluster[c.id],
 }));
 
-const codeSnippet = `from ase.build import bulk
+const codeSnippet = `# Running on perlmutter
+from ase.build import bulk
 from rootstock import RootstockCalculator
 
 atoms = bulk("Cu", "fcc", a=3.6) * (5, 5, 5)
@@ -581,9 +582,9 @@ with RootstockCalculator(
   .howto { margin-top: 32px; }
   .howto-head {
     font-family: var(--serif);
-    font-size: var(--fs-h2);
+    font-size: var(--fs-h3);
     font-weight: 600;
-    line-height: 1.15;
+    line-height: 1.2;
     letter-spacing: 0;
     color: var(--ink);
     margin: 0 0 10px;
@@ -610,7 +611,7 @@ with RootstockCalculator(
   .howto :global(pre) {
     margin: 0;
     font-family: var(--mono);
-    font-size: var(--fs-micro);
+    font-size: var(--fs-base);
     line-height: 1.5;
     padding: 10px 12px;
     overflow-x: auto;
