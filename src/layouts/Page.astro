@@ -4,10 +4,9 @@ import { url } from '../lib/url';
 
 interface Props {
   title: string;
-  wide?: boolean;
 }
 
-const { title, wide = false } = Astro.props;
+const { title } = Astro.props;
 const rootstockUrl = import.meta.env.PUBLIC_ROOTSTOCK_URL;
 
 const homeHref = url('/');
@@ -41,7 +40,7 @@ const isCurrent = (href: string) => norm(href) === norm(path);
     />
   </head>
   <body>
-    <article class:list={['page', { 'page--wide': wide }]}>
+    <article class="page">
       <header class="site-head">
         {isHome ? (
           <span class="site-head-mark site-head-mark--blank" aria-hidden="true" />

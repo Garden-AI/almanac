@@ -3,9 +3,8 @@ import { getCollection } from 'astro:content';
 import Page from '../layouts/Page.astro';
 import {
   getRootstockDump,
-  findVerification,
-  cellStateFor,
-  type CellState,
+  clusterModels,
+  renderClusterModelsHtml,
 } from '../lib/rootstock';
 import { url } from '../lib/url';
 
@@ -18,84 +17,253 @@ const clusters = (await getCollection('clusters')).sort((a, b) => {
 const models = await getCollection('models');
 const dump = await getRootstockDump();
 
-const rows = clusters.map((c) => {
-  const counts = { verified: 0, lapsed: 0, na: 0 } as Record<CellState, number>;
-  for (const m of models) {
-    for (const cp of m.data.checkpoints) {
-      const state = cellStateFor(findVerification(dump, c.id, cp.id));
-      counts[state]++;
-    }
+// Reverse index: canonical checkpoint id → catalog model. "Family" in this
+// design is the model. Shared with the client script as JSON so the live
+// refresh re-derives the same grouping.
+const index: Record<string, { name: string; slug: string }> = {};
+for (const m of models) {
+  for (const cp of m.data.checkpoints) {
+    index[cp.id] = { name: m.data.name, slug: m.id };
   }
+}
+
+const modelHref = (slug: string) => url(`/model/${slug}`);
+
+const entries = clusters.map((c) => {
+  const cm = clusterModels(dump, c.id, index);
   return {
     id: c.id,
     name: c.data.name,
-    inst: c.data.institution,
-    instShort: c.data.institutionShort ?? c.data.institution.split('·')[0].trim(),
+    facility: c.data.institution,
+    facilityShort: c.data.institutionShort ?? '',
+    docsUrl: c.data.documentation ?? null,
     gpu: c.data.gpu ?? '—',
-    counts,
+    gotchas: c.data.gotchas ?? [],
+    modelCount: cm.modelCount,
+    modelsHtml: renderClusterModelsHtml(cm, modelHref),
   };
 });
 ---
-<Page title="Clusters — Garden's Almanac" wide>
-  <h1 style="margin-top: 3px;">Clusters</h1>
-  <p class="it" style="margin-top: 4px; font-size: var(--fs-base); color: var(--ink-2); max-width: 640px;">
-    HPC clusters covered by the Almanac. Each cluster page shows live Rootstock status for every
-    installed checkpoint.
-  </p>
-  <hr class="hairline" style="margin-top: 14px;" />
+<Page title="Supported Clusters — Garden's Almanac">
+  <div style="margin-bottom: 6px;">
+    <h1>Supported Clusters</h1>
+    <p style="font-size: var(--fs-lg); color: var(--ink-2); margin-top: 12px; max-width: 560px;">
+      Clusters where MLIPs are ready to run with
+      {' '}<a class="ink-link" href="https://garden-ai.github.io/rootstock/">Rootstock</a>.
+    </p>
+  </div>
 
-  <table class="almanac" style="margin-top: 14px; font-size: var(--fs-md);">
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Institution</th>
-        <th>GPU</th>
-        <th style="text-align: right; width: 80px;">Verified</th>
-        <th style="text-align: right; width: 70px;">Lapsed</th>
-        <th style="text-align: right; width: 60px;">N/A</th>
-      </tr>
-    </thead>
-    <tbody>
-      {rows.map((r) => (
-        <tr data-rs-cluster-row={r.id}>
-          <td><a class="ink-link it" href={url(`/cluster/${r.id}`)}>{r.name}</a></td>
-          <td>{r.inst}</td>
-          <td class="mono" style="font-size: var(--fs-sm); color: var(--ink-2);">{r.gpu}</td>
-          <td style="text-align: right; font-variant-numeric: tabular-nums;" data-rs-count={`${r.id}:verified`}>{r.counts.verified}</td>
-          <td style="text-align: right; font-variant-numeric: tabular-nums; color: var(--ink-2);" data-rs-count={`${r.id}:lapsed`}>{r.counts.lapsed}</td>
-          <td style="text-align: right; font-variant-numeric: tabular-nums; color: var(--ink-3);" data-rs-count={`${r.id}:na`}>{r.counts.na}</td>
-        </tr>
-      ))}
-    </tbody>
-  </table>
+  {entries.map((e) => (
+    <section class="cl" id={e.id} data-cl={e.id}>
+      <div class="cl-head">
+        <div class="cl-head-main">
+          <h2 class="cl-name">{e.name}</h2>
+          <p class="cl-facility">
+            {e.facility}{e.facilityShort && <span class="cl-facility-short"> ({e.facilityShort})</span>}
+          </p>
+        </div>
+        <div class="cl-head-meta">
+          <span class="cl-gpu">verified on {e.gpu}</span>
+          {e.docsUrl && (
+            <a class="cl-docs" href={e.docsUrl} target="_blank" rel="noopener">
+              Cluster docs <span class="cl-docs-arrow">↗</span>
+            </a>
+          )}
+        </div>
+      </div>
 
-  <script type="application/json" data-rs-clusters-meta set:html={JSON.stringify({
-    clusterIds: clusters.map((c) => c.id),
-    checkpointIds: models.flatMap((m) => m.data.checkpoints.map((cp) => cp.id)),
+      <button type="button" class="cl-toggle" data-cl-toggle={e.id} aria-expanded="false">
+        <svg class="cl-chev" width="9" height="9" viewBox="0 0 10 10" aria-hidden="true">
+          <path d="M3 1.5L7 5L3 8.5" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+        <span class="cl-count" data-rs-models-label={e.id}>
+          {e.modelCount} {e.modelCount === 1 ? 'model' : 'models'}
+        </span>
+      </button>
+
+      <div class="cl-detail">
+
+        {e.gotchas.length > 0 && (
+          <div class="cl-heads">
+            <span class="sc cl-heads-label">heads up</span>
+            <ul class="cl-heads-list">
+              {e.gotchas.map((g) => <li>{g}</li>)}
+            </ul>
+          </div>
+        )}
+
+        <div data-rs-models={e.id} set:html={e.modelsHtml} />
+      </div>
+    </section>
+  ))}
+
+  <script type="application/json" data-rs-meta set:html={JSON.stringify({
+    clusterIds: entries.map((e) => e.id),
+    index,
+    baseUrl: import.meta.env.BASE_URL,
+    startExpanded: false,
   })} />
 </Page>
 
+<style>
+  .cl {
+    border-top: 0.5px solid var(--rule);
+    padding: 30px 0;
+  }
+  .cl-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px 24px;
+    flex-wrap: wrap;
+  }
+  .cl-head-main { min-width: 0; }
+  .cl-head-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 5px;
+    text-align: right;
+  }
+  .cl-gpu {
+    font-family: var(--serif-italic);
+    font-style: italic;
+    font-size: 15px;
+    color: var(--ink-2);
+    white-space: nowrap;
+  }
+  .cl-name {
+    font-size: var(--fs-h2);
+    font-weight: 600;
+    line-height: 1.12;
+    letter-spacing: -0.004em;
+    margin: 0;
+  }
+  .cl-docs {
+    font-family: var(--serif-italic);
+    font-style: italic;
+    font-size: 15px;
+    color: var(--oxblood);
+    text-decoration: none;
+    border-bottom: 0.5px solid var(--oxblood);
+    white-space: nowrap;
+  }
+  .cl-docs:hover { background: rgba(122, 31, 31, 0.06); }
+  .cl-docs-arrow { font-style: normal; color: var(--ink-3); }
+  .cl-facility {
+    font-family: var(--serif-italic);
+    font-style: italic;
+    font-size: 15px;
+    line-height: 1.4;
+    color: var(--ink-2);
+    margin: 6px 0 0;
+    max-width: 560px;
+  }
+  .cl-facility-short { font-style: normal; color: var(--ink-3); }
+
+  .cl-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 18px;
+    padding: 5px 0;
+    background: transparent;
+    border: 0;
+    cursor: pointer;
+    color: var(--ink);
+    font-family: var(--serif);
+    line-height: 1.2;
+    transition: color 0.12s;
+  }
+  .cl-chev {
+    flex: 0 0 auto;
+    color: var(--ink-3);
+    transition: transform 0.15s ease;
+  }
+  .cl-count { font-size: var(--fs-lg); color: var(--ink); }
+  .cl-toggle:hover,
+  .cl-toggle:hover .cl-count,
+  .cl-toggle:hover .cl-chev { color: var(--oxblood); }
+
+  /* Collapsed by default; the client script adds .is-open. Inner sections
+     (Heads up / model groups) carry their own top margin, so the detail's
+     leading gap comes from whichever section opens it. */
+  .cl-detail { display: none; }
+  .cl.is-open .cl-detail { display: block; }
+  .cl.is-open .cl-chev { transform: rotate(90deg); }
+
+  .cl-heads {
+    margin-top: 18px;
+    padding-left: 14px;
+    border-left: 1.5px solid var(--oxblood);
+  }
+  .cl-heads-label { font-size: var(--fs-md); color: var(--oxblood); }
+  .cl-heads-list {
+    margin: 5px 0 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    font-size: var(--fs-base);
+    line-height: 1.45;
+    color: var(--ink-2);
+  }
+</style>
+
 <script>
   import { loadLiveDump } from '../lib/rootstock-client';
-  import { findVerification, cellStateFor, type CellState } from '../lib/rootstock';
+  import { clusterModels, renderClusterModelsHtml } from '../lib/rootstock';
 
-  const meta = document.querySelector('[data-rs-clusters-meta]');
-  if (meta?.textContent) {
-    const { clusterIds, checkpointIds } = JSON.parse(meta.textContent) as {
+  const metaEl = document.querySelector('[data-rs-meta]');
+  if (metaEl?.textContent) {
+    const meta = JSON.parse(metaEl.textContent) as {
       clusterIds: string[];
-      checkpointIds: string[];
+      index: Record<string, { name: string; slug: string }>;
+      baseUrl: string;
+      startExpanded: boolean;
     };
+    const base = meta.baseUrl.replace(/\/$/, '');
+    const modelHref = (slug: string) => `${base}/model/${slug}`;
+
+    const setOpen = (section: Element, open: boolean) => {
+      section.classList.toggle('is-open', open);
+      section.querySelector('[data-cl-toggle]')?.setAttribute('aria-expanded', String(open));
+    };
+
+    const sections = Array.from(document.querySelectorAll<HTMLElement>('[data-cl]'));
+    for (const s of sections) {
+      s.querySelector('[data-cl-toggle]')?.addEventListener('click', () =>
+        setOpen(s, !s.classList.contains('is-open')),
+      );
+    }
+    if (meta.startExpanded) sections.forEach((s) => setOpen(s, true));
+
+    // Arriving at /clusters#polaris (e.g. from the matrix) auto-expands that
+    // cluster and scrolls it into view, rather than landing on a closed header.
+    const openHash = () => {
+      const slug = decodeURIComponent(location.hash.replace(/^#/, ''));
+      if (!slug) return;
+      const s = document.getElementById(slug);
+      if (s?.matches('[data-cl]')) {
+        setOpen(s, true);
+        s.scrollIntoView({ block: 'start' });
+      }
+    };
+    openHash();
+    window.addEventListener('hashchange', openHash);
+
+    // Status is live: re-derive the model split, "{N} models", and relative
+    // times from the live dump, rewriting each cluster's models region in place
+    // (the toggle/expand state lives on the outer section, so it's preserved).
     loadLiveDump()
       .then((dump) => {
-        for (const cid of clusterIds) {
-          const c: Record<CellState, number> = { verified: 0, lapsed: 0, na: 0 };
-          for (const cpId of checkpointIds) {
-            c[cellStateFor(findVerification(dump, cid, cpId))]++;
-          }
-          (['verified', 'lapsed', 'na'] as const).forEach((k) => {
-            const el = document.querySelector(`[data-rs-count="${cid}:${k}"]`);
-            if (el) el.textContent = String(c[k]);
-          });
+        for (const cid of meta.clusterIds) {
+          const cm = clusterModels(dump, cid, meta.index);
+          const label = document.querySelector(`[data-rs-models-label="${cid}"]`);
+          if (label) label.textContent = `${cm.modelCount} ${cm.modelCount === 1 ? 'model' : 'models'}`;
+          const region = document.querySelector(`[data-rs-models="${cid}"]`);
+          if (region) region.innerHTML = renderClusterModelsHtml(cm, modelHref);
         }
       })
       .catch((err) => console.warn('Rootstock live refresh failed', err));

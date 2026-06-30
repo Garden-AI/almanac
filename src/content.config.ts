@@ -94,16 +94,17 @@ const clusters = defineCollection({
     /** Slug must match `manifests[].cluster` from the Rootstock dump. */
     name: z.string(),
     institution: z.string(),
-    /** Short label (e.g. "ALCF") used in the compatibility-matrix column header. */
+    /** Short label (e.g. "ALCF") used in the matrix column header. */
     institutionShort: z.string().optional(),
-    /** Short GPU label (e.g. "NVIDIA A100") used in the matrix header. */
+    /** GPU the cluster's MLIPs are tested on (e.g. "NVIDIA A100 40GB").
+     *  Shown in the matrix header and as "Tested on" on /clusters. */
     gpu: z.string().optional(),
-    /** Display order in the compatibility matrix, ascending. */
+    /** Display order in the matrix + /clusters list, ascending. */
     order: z.number().int().optional(),
-    subtitle: z.string().optional(),
-    specs: z.record(z.string(), z.string()),
-    runningOn: z.string().optional(),
-    notes: z.string().optional(),
+    /** Official cluster docs URL (the "Cluster docs ↗" link on /clusters). */
+    documentation: z.string().url().optional(),
+    /** Short "Heads up" notes for the /clusters page. Usually empty. */
+    gotchas: z.array(z.string()).optional(),
   }),
 });
 
