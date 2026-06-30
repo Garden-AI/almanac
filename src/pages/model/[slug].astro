@@ -163,7 +163,7 @@ const composeCitation = (data: { authors?: string[]; title?: string; venue?: str
 
 const notesHtml = model.data.notes ? marked.parse(model.data.notes) : null;
 ---
-<Page title={`${model.data.name} — Garden's Almanac`} wide>
+<Page title={`${model.data.name} — Garden's Almanac`}>
   <div class="model-masthead">
     <h1>{model.data.name}</h1>
     {dateLine && (
@@ -227,7 +227,7 @@ const notesHtml = model.data.notes ? marked.parse(model.data.notes) : null;
                 data-rs-col={c.id}
                 style="width: 84px; text-align: center;"
               >
-                <a class="ink-link" href={url(`/cluster/${c.id}`)} style="border-bottom-color: transparent;">
+                <a class="ink-link" href={url(`/clusters#${c.id}`)} style="border-bottom-color: transparent;">
                   {c.data.name}
                 </a>
               </th>

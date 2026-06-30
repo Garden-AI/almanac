@@ -54,27 +54,19 @@ html, body {
   text-wrap: pretty;
 }
 
-/* Page container: prototypes were locked at 880×1120; here it becomes
-   a max-width reading column centered on the "endpaper" body bg. */
+/* Page container: a single max-width canvas centered on the "endpaper" body
+   bg. One width sitewide — every page uses it. */
 .page {
   background: var(--paper);
   color: var(--ink);
   font-family: var(--serif);
   font-size: var(--fs-lg);
   line-height: 1.5;
-  padding: 56px 64px 64px;
+  padding: 56px 36px 64px;
   box-sizing: border-box;
   position: relative;
-  max-width: 880px;
-  margin: 0 auto;
-}
-
-/* Landscape variant for the Compatibility Matrix and other reference pages
-   that need a wider canvas. */
-.page--wide {
   max-width: 1200px;
-  padding-left: 36px;
-  padding-right: 36px;
+  margin: 0 auto;
   min-height: 100vh;
 }
 
@@ -239,6 +231,21 @@ a.ink-link {
   cursor: pointer;
 }
 a.ink-link:hover { background: rgba(122, 31, 31, 0.06); }
+
+/* Hover-reveal links for the /clusters page (family names + checkpoint ids):
+   rest as plain ink, turn oxblood + underlined on hover. Resting color is a
+   single class so `.clk:hover` outranks it without `!important`. Defined
+   globally (not scoped) because the same markup is emitted by the build seed
+   AND re-emitted client-side on live refresh — see renderClusterModelsHtml. */
+.clk {
+  text-decoration: none;
+  border-bottom: 0.5px solid transparent;
+  transition: color 0.12s, border-color 0.12s;
+}
+.clk-ink  { color: var(--ink); }
+.clk-ink2 { color: var(--ink-2); }
+.clk-ink3 { color: var(--ink-3); }
+.clk:hover { color: var(--oxblood); border-bottom-color: var(--oxblood); }
 
 .cmd {
   font-family: var(--mono);

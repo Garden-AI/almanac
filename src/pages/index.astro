@@ -127,7 +127,7 @@ with RootstockCalculator(
     atoms.calc = calc
     print(atoms.get_potential_energy())`;
 ---
-<Page title="Garden's Almanac of Matter Models — 2026 Edition" wide>
+<Page title="Garden's Almanac of Matter Models — 2026 Edition">
   <section class="landing-title">
     <p class="sc landing-eyebrow">Garden's</p>
     <h1 class="landing-h1">Almanac of Matter Models</h1>
@@ -148,7 +148,7 @@ with RootstockCalculator(
   {/* MOBILE: per-cluster cards stand in for the matrix below 720px. */}
   <section class="cluster-cards" aria-label="Clusters">
     {clusterCards.map((c) => (
-      <a class="cluster-card" href={url(`/cluster/${c.id}`)}>
+      <a class="cluster-card" href={url(`/clusters#${c.id}`)}>
         <span class="cc-arrow" aria-hidden="true">→</span>
         <div class="cc-name">{c.name}</div>
         <span class="cc-inst">{c.inst}</span>
@@ -237,7 +237,7 @@ with RootstockCalculator(
           </th>
           {clusters.map((c) => (
             <th class="am-th-cluster">
-              <a class="am-cluster-link" href={url(`/cluster/${c.id}`)}>{c.data.name}</a>
+              <a class="am-cluster-link" href={url(`/clusters#${c.id}`)}>{c.data.name}</a>
               <div class="mono am-th-cluster-gpu">{c.data.gpu ?? '—'}</div>
             </th>
           ))}

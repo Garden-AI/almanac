@@ -328,6 +328,160 @@ export function renderEnvBody(source: string): string {
   return `<div class="am-env-rows">${rows.join('')}</div>`;
 }
 
+/* ─────────────────────────────────────────────────────────────────────────
+ * Consolidated /clusters page: per-cluster "{N} models" with checkpoints
+ * grouped by model family and split verified / lapsed. Pure derivations +
+ * an HTML renderer shared verbatim by the build seed and the client live
+ * refresh (same parity rule as `cellSvg` / `renderEnvBody`).
+ * ──────────────────────────────────────────────────────────────────────── */
+
+/** Human "8 days ago" style label for a verification timestamp. `now` is
+ *  passed (not read internally) so build and client agree on the clock. */
+export function relativeTime(verifiedAt: string | null, now: number): string {
+  if (!verifiedAt) return '—';
+  const t = Date.parse(verifiedAt);
+  if (Number.isNaN(t)) return '—';
+  const d = Math.floor((now - t) / 86_400_000);
+  if (d <= 0) return 'today';
+  if (d === 1) return 'yesterday';
+  if (d < 14) return `${d} days ago`;
+  if (d < 56) return `${Math.round(d / 7)} weeks ago`;
+  const m = Math.round(d / 30.4);
+  return `${m} ${m === 1 ? 'month' : 'months'} ago`;
+}
+
+export interface ClusterCheckpointRow {
+  id: string;
+  verifiedAt: string | null;
+  when: string;
+}
+export interface ClusterFamilyGroup {
+  name: string;
+  slug: string;
+  rows: ClusterCheckpointRow[];
+}
+export interface ClusterModels {
+  /** Distinct model families with ≥1 recently-verified checkpoint. Drives the
+   *  "{N} models" toggle — lapsed-only families don't count. */
+  modelCount: number;
+  verifiedFamilies: ClusterFamilyGroup[];
+  lapsedFamilies: ClusterFamilyGroup[];
+}
+
+/**
+ * Group a cluster's *installed* checkpoints by model family, split each
+ * family into verified vs lapsed, newest-first. The `index` maps a canonical
+ * checkpoint id → its catalog model; checkpoints with no catalog entry
+ * (orphans) are dropped silently — catalog identity is build-time, so a row
+ * that isn't a page doesn't appear here. Family order is first-seen.
+ */
+export function clusterModels(
+  dump: RootstockDump,
+  clusterSlug: string,
+  index: Record<string, { name: string; slug: string }>,
+  now: number = Date.now(),
+): ClusterModels {
+  interface Fam {
+    name: string;
+    slug: string;
+    verified: ClusterCheckpointRow[];
+    lapsed: ClusterCheckpointRow[];
+  }
+  const order: string[] = [];
+  const fams = new Map<string, Fam>();
+  const seen = new Set<string>();
+
+  for (const g of envGroupsForCluster(dump, clusterSlug)) {
+    for (const cp of g.checkpoints) {
+      if (seen.has(cp.id)) continue; // one env wins if a cp appears twice
+      seen.add(cp.id);
+      const model = index[cp.id];
+      if (!model) continue; // orphan → drop
+      let fam = fams.get(model.slug);
+      if (!fam) {
+        fam = { name: model.name, slug: model.slug, verified: [], lapsed: [] };
+        fams.set(model.slug, fam);
+        order.push(model.slug);
+      }
+      const state = cellStateFor(
+        { env: '', verifiedAt: cp.verifiedAt, verifiedDevice: null, lastError: cp.lastError },
+        now,
+      );
+      const row: ClusterCheckpointRow = {
+        id: cp.id,
+        verifiedAt: cp.verifiedAt,
+        when: relativeTime(cp.verifiedAt, now),
+      };
+      (state === 'verified' ? fam.verified : fam.lapsed).push(row);
+    }
+  }
+
+  const byDateDesc = (a: ClusterCheckpointRow, b: ClusterCheckpointRow) =>
+    (b.verifiedAt ? Date.parse(b.verifiedAt) : 0) - (a.verifiedAt ? Date.parse(a.verifiedAt) : 0);
+  const verifiedFamilies: ClusterFamilyGroup[] = [];
+  const lapsedFamilies: ClusterFamilyGroup[] = [];
+  for (const slug of order) {
+    const fam = fams.get(slug)!;
+    if (fam.verified.length)
+      verifiedFamilies.push({ name: fam.name, slug: fam.slug, rows: fam.verified.sort(byDateDesc) });
+    if (fam.lapsed.length)
+      lapsedFamilies.push({ name: fam.name, slug: fam.slug, rows: fam.lapsed.sort(byDateDesc) });
+  }
+  return { modelCount: verifiedFamilies.length, verifiedFamilies, lapsedFamilies };
+}
+
+function escCluster(s: string): string {
+  return s.replace(/[&<>"']/g, (c) =>
+    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!,
+  );
+}
+
+/**
+ * Inner HTML for one cluster's "{verified}/{lapsed} families" region. Emitted
+ * by the build seed (`set:html`) and re-emitted by the client on live refresh
+ * (`innerHTML`) so the two render byte-identically. Hover-reveal links use the
+ * global `.clk` classes (resting color is a single class so `.clk:hover` wins
+ * without `!important`); everything else is inline-styled token references.
+ * `modelHref` resolves a model slug to its page URL in whichever context.
+ */
+export function renderClusterModelsHtml(
+  m: ClusterModels,
+  modelHref: (slug: string) => string,
+): string {
+  if (m.verifiedFamilies.length === 0 && m.lapsedFamilies.length === 0) {
+    return '<p class="it" style="color: var(--ink-3); margin: 24px 0 0; font-size: var(--fs-base);">No checkpoints installed on this cluster yet.</p>';
+  }
+  const group = (fam: ClusterFamilyGroup, muted: boolean): string => {
+    const famCls = muted ? 'clk clk-ink2' : 'clk clk-ink';
+    const cpCls = muted ? 'clk clk-ink3 mono' : 'clk clk-ink mono';
+    const whenColor = muted ? 'var(--ink-3)' : 'var(--ink-2)';
+    const href = escCluster(modelHref(fam.slug));
+    const rows = fam.rows
+      .map(
+        (r) => `<div style="display: flex; align-items: baseline; justify-content: space-between; gap: 16px;">
+            <a class="${cpCls}" href="${href}" style="font-size: var(--fs-md); word-break: break-all;">${escCluster(r.id)}</a>
+            <span class="it" style="font-size: var(--fs-md); color: ${whenColor}; white-space: nowrap;">${escCluster(r.when)}</span>
+          </div>`,
+      )
+      .join('');
+    return `<div style="display: grid; grid-template-columns: 160px 1fr; gap: 7px 28px; align-items: baseline; padding: 12px 0; border-top: 0.5px solid var(--rule-soft);">
+        <a class="${famCls}" href="${href}" style="font-size: 15px; font-weight: 600; letter-spacing: -0.002em; line-height: 1.5; justify-self: start;">${escCluster(fam.name)}</a>
+        <div style="display: flex; flex-direction: column; gap: 8px;">${rows}</div>
+      </div>`;
+  };
+
+  let html = '';
+  if (m.verifiedFamilies.length) {
+    html += '<p class="sc" style="font-size: var(--fs-md); color: var(--ink-2); margin: 26px 0 0;">verified recently</p>';
+    html += m.verifiedFamilies.map((f) => group(f, false)).join('');
+  }
+  if (m.lapsedFamilies.length) {
+    html += '<p class="sc" style="font-size: var(--fs-md); color: var(--ink-3); margin: 28px 0 0;">installed, not verified recently</p>';
+    html += m.lapsedFamilies.map((f) => group(f, true)).join('');
+  }
+  return html;
+}
+
 /** Env-grouped checkpoint listing for a single cluster (cluster page). */
 export function envGroupsForCluster(
   dump: RootstockDump,
