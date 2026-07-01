@@ -147,12 +147,12 @@ table.fam-table th, table.fam-table td { padding: 2.5px 8px; }
    nav still anchors the top. */
 .site-head {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: 24px;
   border-bottom: 0.5px solid var(--rule);
   padding-bottom: 12px;
-  margin-bottom: 28px;
+  margin-bottom: 22px;
   flex-wrap: wrap;
 }
 .site-head-mark {
@@ -163,13 +163,18 @@ table.fam-table th, table.fam-table td { padding: 2.5px 8px; }
   text-decoration: none;
   min-height: 20px;
 }
-.site-head-mark--blank { visibility: hidden; }
-.site-head .home-glyph {
-  color: var(--ink-2);
-  transition: color 0.15s;
+.site-head .home-leek {
+  height: 42px;
+  width: auto;
+  display: block;
+  /* Ink engraving on a cream field a touch lighter than the paper bg; `darken`
+     replaces that lighter cream with the page (background vanishes) while
+     keeping the darker linework — so no visible image edge. */
+  mix-blend-mode: darken;
+  transition: opacity 0.15s;
 }
 .site-head .home-link:hover { color: var(--oxblood); }
-.site-head .home-link:hover .home-glyph { color: var(--oxblood); }
+.site-head .home-link:hover .home-leek { opacity: 0.72; }
 .site-head .home-wordmark {
   font-family: var(--smallcaps);
   font-size: var(--fs-base);
@@ -214,14 +219,13 @@ table.fam-table th, table.fam-table td { padding: 2.5px 8px; }
     padding-bottom: 8px;
     gap: 10px 16px;
   }
-  .site-head .home-wordmark { display: none; } /* glyph only on phones */
+  .site-head .home-wordmark { display: none; } /* leek only on phones */
   .site-head-nav {
     font-size: var(--fs-xs);
     letter-spacing: 0.10em;
     gap: 2px 14px;
     margin-left: 0;
   }
-  .site-head-mark--blank { display: none; } /* don't reserve empty slot */
   .site-foot { margin-top: 28px; padding-top: 12px; }
 }
 

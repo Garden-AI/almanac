@@ -113,7 +113,7 @@ const clusterCards = clusters.map((c) => ({
   counts: perCluster[c.id],
 }));
 
-const codeSnippet = `# Running on perlmutter
+const codeSnippet = `# In a Perlmutter job/session
 from ase.build import bulk
 from rootstock import RootstockCalculator
 
@@ -129,20 +129,12 @@ with RootstockCalculator(
 ---
 <Page title="Garden's Almanac of Matter Models — 2026 Edition">
   <section class="landing-title">
-    <p class="sc landing-eyebrow">Garden's</p>
-    <h1 class="landing-h1">Almanac of Matter Models</h1>
+    <h1>Model availability by cluster</h1>
     <p class="landing-subtitle">
-      A field guide to matter models, starting with machine-learned interatomic potentials pre-installed on shared HPC clusters.
+      These machine-learned interatomic potentials are pre-installed on shared HPC clusters.
       {' '}<a class="ink-link" href="https://garden-ai.github.io/rootstock/">Rootstock</a> lets you
-      run any MLIP through a drop-in ASE calculator.
+      run them all through the same drop-in ASE calculator.
     </p>
-    <nav class="landing-cta" aria-label="Getting started">
-      <a class="ink-link" href="https://garden-ai.github.io/rootstock/run-python/">Run with ASE</a>
-      <span class="landing-cta-sep" aria-hidden="true"></span>
-      <a class="ink-link" href="https://garden-ai.github.io/rootstock/run-tools/">Integrate with Other Tools</a>
-      <span class="landing-cta-sep" aria-hidden="true"></span>
-      <a class="ink-link" href="https://garden-ai.github.io/rootstock/run-agents/">Run with an Agent</a>
-    </nav>
   </section>
 
   {/* MOBILE: per-cluster cards stand in for the matrix below 720px. */}
@@ -158,7 +150,7 @@ with RootstockCalculator(
         </dl>
         <div class="cc-status">
           <span><span style="color: var(--oxblood);">●</span> <span data-rs-cluster-count={`${c.id}:verified`}>{c.counts.verified}</span> verified</span>
-          <span style="color: var(--ink-2);">○ <span data-rs-cluster-count={`${c.id}:lapsed`}>{c.counts.lapsed}</span> lapsed</span>
+          <span style="color: var(--ink-2);">○ <span data-rs-cluster-count={`${c.id}:lapsed`}>{c.counts.lapsed}</span> installed</span>
           <span class="it">// <span data-rs-cluster-count={`${c.id}:na`}>{c.counts.na}</span> not applicable</span>
         </div>
       </a>
@@ -168,60 +160,39 @@ with RootstockCalculator(
   {/* DESKTOP: the matrix is the centrepiece. */}
   <section class="am-wrap">
     <div class="am-controls">
-      <div class="am-search-box" role="search" aria-label="Search availability matrix">
-        <label class="am-search-wrap">
-          <span class="am-control-icon" aria-hidden="true">
-            <svg width="14" height="14" viewBox="0 0 16 16">
-              <circle cx="7" cy="7" r="4.25" fill="none" stroke="currentColor" stroke-width="1.2" />
-              <path d="M10.2 10.2L13.2 13.2" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" />
-            </svg>
-          </span>
-          <input
-            class="am-search"
-            data-am-search
-            type="search"
-            aria-label="Search models"
-            placeholder="Search models, e.g., equiformer, escn..."
-            autocomplete="off"
-          />
-        </label>
+      <div class="status-key">
+        <span class="status-key-item">
+          <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><circle cx="7" cy="7" r="3.6" fill="var(--oxblood)" /></svg>
+          <span class="sc">verified</span>
+          <span class="status-key-desc">— ran in last 30 days</span>
+        </span>
+        <span class="status-key-item">
+          <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><circle cx="7" cy="7" r="3.4" fill="none" stroke="var(--oxblood)" stroke-width="1" /></svg>
+          <span class="sc">installed</span>
+          <span class="status-key-desc">— not recently verified</span>
+        </span>
+        <span class="status-key-item">
+          <svg width="30" height="15" viewBox="0 0 30 15" aria-hidden="true"><defs><pattern id="am-key-hatch-1" patternUnits="userSpaceOnUse" width="7" height="7" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="7" stroke="var(--ink)" stroke-width="0.9" opacity="0.45" /></pattern></defs><rect x="0" y="0" width="30" height="15" fill="url(#am-key-hatch-1)" /></svg>
+          <span class="sc">not installed</span>
+          <span class="status-key-desc">— not on this cluster</span>
+        </span>
       </div>
-      <details class="am-key">
-        <summary class="am-key-summary">
-          <span class="am-key-head">
-            How we verify models
-            <span class="am-key-caret" aria-hidden="true">▸</span>
-          </span>
-          <span class="status-key am-key-compact">
-            <span class="status-key-item">
-              <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><circle cx="7" cy="7" r="3.6" fill="var(--oxblood)" /></svg>
-              <span class="sc">verified</span>
-            </span>
-            <span class="status-key-item">
-              <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><circle cx="7" cy="7" r="3.4" fill="none" stroke="var(--oxblood)" stroke-width="1" /></svg>
-              <span class="sc">lapsed</span>
-            </span>
-            <span class="status-key-item">
-              <svg width="30" height="15" viewBox="0 0 30 15" aria-hidden="true"><defs><pattern id="am-key-hatch-1" patternUnits="userSpaceOnUse" width="7" height="7" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="7" stroke="var(--ink)" stroke-width="0.9" opacity="0.45" /></pattern></defs><rect x="0" y="0" width="30" height="15" fill="url(#am-key-hatch-1)" /></svg>
-              <span class="sc">not supported</span>
-            </span>
-          </span>
-        </summary>
-        <dl class="am-key-glossary">
-          <div class="am-key-row">
-            <dt><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><circle cx="7" cy="7" r="3.6" fill="var(--oxblood)" /></svg><span class="sc">verified</span></dt>
-            <dd>Run from Rootstock on this cluster in the last 30 days.</dd>
-          </div>
-          <div class="am-key-row">
-            <dt><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><circle cx="7" cy="7" r="3.4" fill="none" stroke="var(--oxblood)" stroke-width="1" /></svg><span class="sc">lapsed</span></dt>
-            <dd>Installed here, but not verified in the last 30 days.</dd>
-          </div>
-          <div class="am-key-row">
-            <dt><svg width="30" height="15" viewBox="0 0 30 15" aria-hidden="true"><defs><pattern id="am-key-hatch-2" patternUnits="userSpaceOnUse" width="7" height="7" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="7" stroke="var(--ink)" stroke-width="0.9" opacity="0.45" /></pattern></defs><rect x="0" y="0" width="30" height="15" fill="url(#am-key-hatch-2)" /></svg><span class="sc">not supported</span></dt>
-            <dd>Not installed on this cluster.</dd>
-          </div>
-        </dl>
-      </details>
+      <label class="am-search-wrap" role="search">
+        <span class="am-control-icon" aria-hidden="true">
+          <svg width="14" height="14" viewBox="0 0 16 16">
+            <circle cx="7" cy="7" r="4.25" fill="none" stroke="currentColor" stroke-width="1.2" />
+            <path d="M10.2 10.2L13.2 13.2" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" />
+          </svg>
+        </span>
+        <input
+          class="am-search"
+          data-am-search
+          type="search"
+          aria-label="Filter models by name"
+          placeholder="Filter by model name"
+          autocomplete="off"
+        />
+      </label>
     </div>
 
     <table class="almanac am-table" aria-label="Availability matrix">
@@ -286,13 +257,21 @@ with RootstockCalculator(
   <section class="howto">
     <div class="howto-grid">
       <div class="howto-prose">
-        <h2 class="howto-head">Swap models without managing environments</h2>
+        <h2 class="howto-head">Swtich MLIPs without rebuilding environments</h2>
         <p>
-          Admins pre-install each MLIP in its own isolated environment.
-          You just need to install the thin <code>rootstock</code> Python package, which runs the
-          model in a subprocess and gives you an ASE calculator that talks to it.
-          You can swap between all the models supported on a cluster without changing your dependencies.
+          Cluster admins pre-install each MLIP with its own dependencies.
+          You just install the lightweight <code>rootstock</code> package in your working environment and pick a supported checkpoint. 
+          Behind the ASE calculator, Rootstock starts the model as a subprocess in the model’s pre-installed environment.
+          That lets you switch MLIPs without rebuilding your project dependencies.
         </p>
+        <div class="howto-cta">
+          <p class="sc howto-cta-label">Get started</p>
+          <nav class="howto-cta-links" aria-label="Run with Rootstock">
+            <a class="ink-link" href="https://garden-ai.github.io/rootstock/run-python/">Run with ASE</a>
+            <a class="ink-link" href="https://garden-ai.github.io/rootstock/run-tools/">Integrate with other tools</a>
+            <a class="ink-link" href="https://garden-ai.github.io/rootstock/run-agents/">Run with an agent</a>
+          </nav>
+        </div>
       </div>
       <Code code={codeSnippet} lang="python" theme={almanacCodeTheme} />
     </div>
@@ -300,52 +279,28 @@ with RootstockCalculator(
 </Page>
 
 <style>
-  /* Title block — left-aligned, single column, no woodcut. */
+  /* Page H1 ("Model availability by cluster") uses the global h1 — same serif
+     weight/size as the Models / Clusters titles. The publication name lives in
+     the masthead now, so the index no longer carries its own display title. */
   .landing-title { margin-top: 8px; }
-  .landing-eyebrow {
-    font-size: var(--fs-xl);
-    letter-spacing: var(--track-display);
-    color: var(--ink-2);
-    margin: 0 0 6px;
-  }
-  .landing-h1 {
-    font-family: var(--serif);
-    font-size: var(--fs-display);
-    line-height: 1.0;
-    letter-spacing: -0.012em;
-    font-weight: 600;
-    margin: 0;
-    text-wrap: balance;
-    max-width: 720px;
-  }
+  /* Intro paragraph, directly under the H1 — left-anchored. */
   .landing-subtitle {
+    max-width: 720px;
     font-size: var(--fs-xl);
     line-height: 1.4;
     color: var(--ink);
     margin: 14px 0 0;
-    max-width: 840px;
   }
-  .landing-cta {
+
+  /* Always-visible legend: glyph + small-caps label + a plain-language gloss,
+     so a reader gets each state's meaning at a glance (no disclosure). */
+  .status-key {
     display: flex;
     align-items: center;
     flex-wrap: wrap;
-    gap: 8px 18px;
-    margin-top: 16px;
-    font-size: var(--fs-lg);
-  }
-  .landing-cta-sep {
-    width: 1px;
-    height: 15px;
-    background: var(--rule-soft);
-  }
-
-  .status-key {
-    display: inline-flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 6px 18px;
-    font-size: var(--fs-lg);
-    line-height: 1.25;
+    gap: 7px 22px;
+    font-size: var(--fs-base);
+    line-height: 1.3;
     color: var(--ink);
   }
   .status-key-item {
@@ -353,72 +308,9 @@ with RootstockCalculator(
     align-items: center;
     gap: 8px;
   }
-
-  /* Progressive disclosure: collapsed shows the compact key under a "How we
-     verify models" header; expanding swaps that key for the full glossary
-     (glyph + label + definition), so the states are never shown twice at once.
-     Flat, no elevation (paper-and-ink), zero-JS via <details>. */
-  .am-key { text-align: right; }
-  .am-key-summary {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;       /* header on top, key beneath — right-aligned */
-    gap: 7px;
-    cursor: pointer;
-    list-style: none;
-    outline: none;
-  }
-  .am-key:not([open]) .am-key-summary { min-height: 38px; justify-content: center; }
-  .am-key-summary::-webkit-details-marker { display: none; }
-  .am-key-head {
-    display: inline-flex;
-    align-items: center;
-    gap: 7px;
-    font-family: var(--smallcaps);
-    text-transform: lowercase;
-    letter-spacing: var(--track-label);
-    font-size: var(--fs-md);
-    color: var(--ink);
-    transition: color 0.12s;
-  }
-  .am-key-caret {
-    font-family: var(--serif);
-    font-size: var(--fs-xs);
-    color: var(--ink-3);
-    transition: transform 0.15s, color 0.12s;
-  }
-  .am-key[open] .am-key-caret { transform: rotate(90deg); }
-  .am-key-summary:hover .am-key-head,
-  .am-key-summary:hover .am-key-caret { color: var(--oxblood); }
-  .am-key-summary:focus-visible .am-key-head {
-    color: var(--oxblood);
-    text-decoration: underline;
-    text-underline-offset: 3px;
-  }
-  .am-key[open] .am-key-compact { display: none; }
-  .am-key-glossary {
-    display: grid;
-    gap: 7px 0;
-    max-width: 460px;
-    margin: 10px 0 2px auto;     /* hang under the header, right-aligned block */
-    text-align: left;
-  }
-  .am-key-row {
-    display: grid;
-    grid-template-columns: auto 1fr;
-    gap: 12px;
-    align-items: baseline;
-  }
-  .am-key-row dt {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    white-space: nowrap;
-  }
-  .am-key-row dd {
-    margin: 0;
-    font-size: var(--fs-md);
-    line-height: 1.4;
+  .status-key-desc {
+    font-family: var(--serif-italic);
+    font-style: italic;
     color: var(--ink-2);
   }
 
@@ -427,40 +319,47 @@ with RootstockCalculator(
    * for the slug column, status marks, and cluster headers stays at the existing
    * app's values where this overlaps with prior matrix styling. */
   .am-wrap { margin-top: 24px; }
+  /* The H1 names the table now; this band is just the cell-reading key + filter
+     on one line: legend left, filter right-docked to the table's right edge,
+     above the table rule. If the legend grows too wide to share the line, the
+     filter wraps to its own line but `margin-left:auto` keeps it right-docked. */
   .am-controls {
     display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
+    align-items: baseline;
     flex-wrap: wrap;
-    gap: 12px 28px;
-    margin-bottom: 18px;
+    gap: 10px 28px;
+    margin-bottom: 12px;
   }
-  .am-search-box {
-    flex: 1 1 340px;
-    min-width: 0;
-  }
+  /* Filter: quiet secondary control, right-docked to the table edge. Underline-
+     style — a single hairline bottom rule matching the table's rules, no box,
+     no fill — so the glyph + italic placeholder sit on the line at legend
+     weight. It relates to the table directly below it. */
   .am-search-wrap {
     display: block;
     position: relative;
-    min-width: 0;
+    flex: 0 0 auto;
+    margin-left: auto;
+    width: 280px;
+    max-width: 100%;
   }
   .am-search {
     box-sizing: border-box;
     width: 100%;
-    min-height: 38px;
-    padding: 9px 12px 9px 34px;
-    border: 0.5px solid var(--rule-soft);
-    border-radius: 4px;
-    background: rgba(250, 247, 241, 0.72);
+    padding: 2px 2px 4px 22px;
+    border: 0;
+    border-bottom: 0.5px solid var(--rule);
+    background: transparent;
     color: var(--ink);
     font-family: var(--serif);
-    font-size: var(--fs-md);
-    line-height: 1.2;
-    transition: border-color 0.14s, background 0.14s;
+    font-size: var(--fs-base);
+    line-height: 1.3;
+    transition: border-color 0.14s;
   }
   .am-search::placeholder {
     color: var(--ink-3);
-    opacity: 0.78;
+    font-family: var(--serif-italic);
+    font-style: italic;
+    opacity: 1;
   }
   .am-control-icon {
     color: var(--ink-3);
@@ -471,15 +370,13 @@ with RootstockCalculator(
   }
   .am-search-wrap .am-control-icon {
     position: absolute;
-    left: 12px;
-    top: 50%;
-    transform: translateY(-50%);
+    left: 1px;
+    bottom: 4px;
     pointer-events: none;
   }
   .am-search:focus {
     outline: 0;
-    border-color: rgba(122, 31, 31, 0.62);
-    background: rgba(250, 247, 241, 0.96);
+    border-bottom-color: var(--oxblood);
   }
   .am-table { table-layout: auto; width: 100%; }
   .am-table [hidden],
@@ -602,6 +499,21 @@ with RootstockCalculator(
   }
   .howto-prose p { margin: 0 0 8px; }
   .howto-prose p:last-child { margin-bottom: 0; }
+  /* Quickstart links: the "now use it" half of the closing zone, paired with
+     the code block. Grouped under a quiet eyebrow, not loose floating items. */
+  .howto-cta { margin-top: 20px; }
+  .howto-cta-label {
+    font-size: var(--fs-lg);
+    color: var(--ink-2);
+    margin: 0 0 8px;
+  }
+  .howto-cta-links {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 5px;
+    font-size: var(--fs-lg);
+  }
   .howto-prose code {
     font-family: var(--mono);
     font-size: 0.86em;
@@ -686,9 +598,7 @@ with RootstockCalculator(
   @media (max-width: 720px) {
     .am-wrap { display: none; }
     .cluster-cards { display: block; }
-    .landing-h1 { font-size: 34px; }
     .landing-subtitle { font-size: var(--fs-lg); }
-    .landing-cta { font-size: var(--fs-base); gap: 4px 12px; }
     .howto-grid { grid-template-columns: 1fr; gap: 16px; }
     .howto-prose { font-size: var(--fs-lg); }
   }
