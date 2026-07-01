@@ -16,12 +16,14 @@ import { url } from '../../lib/url';
     sits, what energies the electrons are allowed to have, how the whole system would respond to a
     push or a field. The training set saw all of that. The potential was shown only a sliver. The
     question for this chapter is which parts of the electronic world survive the trip into a fitted
-    function. The axis of the split is simple: is the property an energy, or a derivative of one? If
-    yes, a potential can reach it. If no, it cannot — and the reason why not will take some unpacking.
+    function. One test decides it: can the property be written in terms of total energies — as a
+    derivative of one, or a difference between two? If it can, a potential can reach it. If it
+    cannot, no potential can.
   </p>
 
   <p>
-    One converged DFT run at a fixed geometry hands you all three at once:
+    One converged DFT run at a fixed geometry produces raw material for all three tiers of this
+    ledger at once:
   </p>
 
   <figure class="fig fig--ledger">
@@ -31,12 +33,12 @@ import { url } from '../../lib/url';
       <div class="tier t1">
         <div class="tier-tag">Tier 1 — kept by every potential</div>
         <p class="tier-items">total energy · forces on each atom · stress on the cell</p>
-        <p class="tier-note">…and everything that is a <em>derivative</em> of these: phonons, elastic constants, thermal expansion, free energies.</p>
+        <p class="tier-note">…and everything that follows from them: phonons, elastic constants, and — by thermal averaging — free energies and thermal expansion.</p>
       </div>
 
       <div class="tier t2">
         <div class="tier-tag">Tier 2 — reachable if you ask for it in the data</div>
-        <p class="tier-items">electron affinity · ionisation potential · redox potential · the fundamental gap</p>
+        <p class="tier-items">electron affinity · ionization potential · redox potential · the fundamental gap</p>
         <p class="tier-note">These are <em>energy differences between charge or spin states</em> — energies again, of different states of the same nuclei.</p>
       </div>
 
@@ -81,27 +83,29 @@ import { url } from '../../lib/url';
   <h2><span class="num">§ 2</span>Tier 2 — electronic properties hiding inside energy differences</h2>
 
   <p>
-    A natural place to stop would be: electronic properties live in the wavefunction, an energy model
-    has no wavefunction, so electronic properties are off-limits. That line is drawn one tier too
-    high. A whole class of properties that people file under "electronic" are not wavefunction
-    properties at all. They are <strong>differences in total energy between two states of charge or
-    spin</strong> — and total energies are exactly what an energy model traffics in.
+    The same nuclei can hold electrons in more than one way. Remove one electron and the molecule is
+    a cation; add one, an anion; flip a spin, and it sits in a different spin state. Each of these is
+    a complete system with its own total energy over the same nuclear positions. A whole class of
+    properties filed under "electronic" are nothing more than <strong>differences between those
+    total energies</strong> — and total energies are exactly what an energy model traffics in.
   </p>
 
   <p>
     Take the <strong>electron affinity</strong>: the energy released when a neutral molecule grabs
     one more electron. It is the energy of the neutral molecule minus the energy of the same molecule
-    carrying an extra electron — the anion. The <strong>ionisation potential</strong> is the mirror
-    image: neutral minus cation, the energy to remove an electron. Redox potential and the
-    fundamental gap work the same way, by a <strong>two-calculation subtraction</strong> — run the
-    calculation twice, once per charge state, and subtract (the method goes by the name ΔSCF). Each is arithmetic on the total energies of differently-charged
-    or differently-spin-polarised versions of the <em>same nuclei</em>. None of them asks you to look
+    carrying an extra electron — the anion. The <strong>ionization potential</strong> is the mirror
+    image: cation minus neutral, the energy to remove an electron. The redox potential works the
+    same way, by a <strong>two-calculation subtraction</strong> — run the calculation twice, once
+    per charge state, and subtract (the method goes by the name ΔSCF) — and the fundamental gap is
+    one step more, the ionization potential minus the electron affinity, three charge states in
+    all. Each is arithmetic on the total energies of differently-charged or
+    differently-spin-polarized versions of the <em>same nuclei</em>. None of them asks you to look
     inside a wavefunction.
   </p>
 
   <figure class="fig">
     <div class="fig-frame">
-      <svg viewBox="0 0 720 250" role="img" aria-label="Three horizontal energy levels for the same molecule: the cation highest, the neutral in the middle, the anion lowest. The ionisation potential is the gap from neutral up to cation; the electron affinity is the gap from anion up to neutral.">
+      <svg viewBox="0 0 720 250" role="img" aria-label="Three horizontal energy levels for the same molecule: the cation highest, the neutral in the middle, the anion lowest. The ionization potential is the gap from neutral up to cation; the electron affinity is the gap from anion up to neutral.">
         <text x="360" y="30" text-anchor="middle" class="svg-label">same nuclei, three charge states</text>
 
         <!-- cation (highest energy) -->
@@ -133,7 +137,7 @@ import { url } from '../../lib/url';
         </defs>
       </svg>
     </div>
-    <figcaption><span class="fig-num">Fig. 2</span>The same molecule at three charge states. The gap upward to the cation is the ionisation potential; the gap downward to the anion is the electron affinity. Both are subtractions of total energies.</figcaption>
+    <figcaption><span class="fig-num">Fig. 2</span>The same molecule at three charge states. The gap upward to the cation is the ionization potential; the gap downward to the anion is the electron affinity. Both are subtractions of total energies.</figcaption>
   </figure>
 
   <p>
@@ -152,29 +156,29 @@ import { url } from '../../lib/url';
     These networks predict energy and forces. They do not contain explicit long-range electrostatics
     or a charge-equilibration step — there is no machinery inside that solves where charge flows
     across the molecule. They reach the redox and affinity numbers by having learned the energies of
-    the right states, not by modelling the electrostatic physics that produces them.
+    the right states, not by modeling the electrostatic physics that produces them.
   </aside>
 
   <p>
-    The striking part is that it works at all. Energy-and-force models trained on OMol25 predict
-    redox potentials and electron affinities competitively with low-cost DFT. The result is not
-    uniform, though, and the split is worth naming. On <strong>organometallic systems</strong> — metal
-    centres wrapped in organic ligands, the workhorses of catalysis — the accuracy is strong: UMA's
-    reduction-potential and electron-affinity errors on the OMol25 test set, about 0.26 volts and 0.17
-    electron-volts respectively, are smaller than those from common semiempirical and low-cost DFT
-    methods benchmarked on the same reference. On <strong>main-group species</strong> — ordinary
-    light-element molecules — it is only on par with those cheap methods, and some models do poorly.
-    The comparison is against the ωB97M-V reference (a range-separated hybrid functional, the same one
-    that labelled OMol25); how well that reference itself matches experiment is a separate question.
+    In an independent benchmark against measured
+    reduction potentials and electron affinities — experimental numbers, not DFT — models trained
+    on OMol25 compete with low-cost quantum chemistry. The result is not uniform. On
+    <strong>organometallic systems</strong> — metal centers wrapped in organic ligands, the
+    workhorses of catalysis — the best UMA variants land within about 0.26 volts on reduction
+    potentials and 0.17 electron-volts on electron affinities, smaller errors than the usual
+    semiempirical and cheap-DFT shortcuts manage. On <strong>main-group species</strong> — ordinary
+    light-element molecules — the learned models are merely on par with those shortcuts, and some
+    miss reduction potentials by more than a volt. The split is the mirror image of the traditional
+    methods', which have always been strongest on the main group and weakest on metals.
   </p>
 
   <p>
-    The reference level explains part of the unevenness. OMol25 was computed at the
+    None of it would be reachable without the right reference data. OMol25 was computed at the
     ωB97M-V/def2-TZVPD level — a range-separated hybrid functional paired with a basis set that
     includes <em>diffuse</em> functions, the loosely-bound tails an electron needs when it is barely
     held by a molecule. Those diffuse tails are exactly what an anion has and a neutral does not, so
-    they matter precisely for electron affinities. The accuracy ceiling of the learned model is
-    whatever that reference can do; you pay for Tier 2 in reference calculations, not in a new kind of
+    they matter precisely for electron affinities. The learned model's ceiling is whatever its
+    reference can do; you pay for Tier 2 in reference calculations, not in a new kind of
     network.
   </p>
 
@@ -184,26 +188,27 @@ import { url } from '../../lib/url';
     Now the wall. Some properties are not energy differences between states. They are properties of
     the electronic <em>spectrum</em> at fixed nuclei: the band structure resolved by momentum, the
     optical absorption with its excitonic peaks, the dielectric function, magnetic response,
-    conductivity. There is a clean architectural reason no energy model reaches these, and it is
-    worth stating once, plainly.
+    conductivity. The reason no energy model reaches these is architectural.
   </p>
 
   <p>
     A potential's entire output is one scalar, <em>E</em>(<em>R</em>) — the energy as a function of
     where the nuclei sit. Forces, phonons, elastic constants, free energies are all derivatives of
-    that scalar with respect to nuclear position. A spectrum is not. A spectrum is an
-    <strong>eigenvalue property</strong>: the list of energies an electron is allowed to have,
-    obtained by diagonalising the electronic Hamiltonian — the operator that governs the electrons —
-    at a <em>fixed</em> geometry. Differentiating <em>E</em>(<em>R</em>) asks how the ground-state
+    that scalar with respect to nuclear position. A spectrum is not. A spectrum is a fact about the
+    <strong>electronic Hamiltonian</strong> — the operator that governs the electrons — at a
+    <em>fixed</em> geometry. Diagonalize that operator and you get the energies an electron is
+    allowed to have: the band structure. The rest of Tier 3 — absorption, the dielectric function,
+    conductivity — is response built on those allowed states: how the electrons answer light or a
+    field. Differentiating <em>E</em>(<em>R</em>) asks how the ground-state
     energy changes as you move atoms. The spectrum asks something the ground-state energy never
     recorded: what the electrons could do without moving an atom at all. No amount of differentiating
-    <em>E</em>(<em>R</em>) produces the spectrum ε(ω), the intensity of response at each frequency ω.
-    The information was never in the object you are differentiating.
+    <em>E</em>(<em>R</em>) produces a spectrum. The information was never in the object being
+    differentiated.
   </p>
 
   <figure class="fig">
     <div class="fig-frame">
-      <svg viewBox="0 0 720 286" role="img" aria-label="Two model output spaces side by side. An energy model outputs a scalar E(R), which you differentiate to get forces and phonons. A Hamiltonian model outputs an operator, which you diagonalise to get spectra. A dashed line divides them.">
+      <svg viewBox="0 0 720 286" role="img" aria-label="Two model output spaces side by side. An energy model outputs a scalar E(R), which you differentiate to get forces and phonons. A Hamiltonian model outputs an operator, which you diagonalize to get spectra. A dashed line divides them.">
         <line x1="360" y1="28" x2="360" y2="262" stroke="var(--rule)" stroke-width="0.75" stroke-dasharray="3 4" />
 
         <!-- LEFT: energy model -->
@@ -222,10 +227,10 @@ import { url } from '../../lib/url';
         <rect x="470" y="58" width="140" height="44" fill="none" stroke="var(--ink)" stroke-width="1.6" />
         <text x="540" y="85" text-anchor="middle" class="svg-serif" style="font-size:15px;">Ĥ(R) — an operator</text>
         <line x1="540" y1="102" x2="540" y2="150" stroke="var(--ink)" stroke-width="1.2" marker-end="url(#ch5fork)" />
-        <text x="550" y="130" class="svg-small">diagonalise</text>
+        <text x="550" y="130" class="svg-small">diagonalize</text>
         <text x="540" y="172" text-anchor="middle" class="svg-serif-it">band structure · density of states</text>
-        <text x="540" y="192" text-anchor="middle" class="svg-serif-it">optical absorption</text>
-        <text x="540" y="212" text-anchor="middle" class="svg-serif-it">dielectric · magnetic response</text>
+        <text x="540" y="192" text-anchor="middle" class="svg-small">…and, with response theory on top:</text>
+        <text x="540" y="212" text-anchor="middle" class="svg-serif-it">absorption · dielectric · conductivity</text>
         <text x="540" y="246" text-anchor="middle" class="svg-small">(Tier 3 lives here)</text>
 
         <defs>
@@ -235,18 +240,19 @@ import { url } from '../../lib/url';
         </defs>
       </svg>
     </div>
-    <figcaption><span class="fig-num">Fig. 3</span>The fork is in the output. An energy model emits a scalar you differentiate. A Tier-3 model emits an electronic object you diagonalise. These are different machines, not a better-trained and a worse-trained version of one machine.</figcaption>
+    <figcaption><span class="fig-num">Fig. 3</span>The fork is in the output. An energy model emits a scalar you differentiate. A Tier-3 model emits an electronic object you diagonalize. These are different machines, not a better-trained and a worse-trained version of one machine.</figcaption>
   </figure>
 
   <p>
     The far side of the fork has names. A <strong>DeepH</strong>-style network predicts the DFT
-    Hamiltonian itself — the operator, not the energy. You take its predicted operator, diagonalise
+    Hamiltonian itself — the operator, not the energy. You take its predicted operator, diagonalize
     it, and read off the band structure and density of states directly. Further still,
     neural-network wavefunctions such as <strong>FermiNet</strong> and <strong>PauliNet</strong> learn
     the many-electron wavefunction directly and variationally. These last two are not trained against
-    DFT labels at all; they are <em>ab initio</em>, optimised against the Schrödinger equation itself.
-    They reach Tier 3 because their output is electronic from the start — they predict the object the
-    spectrum lives in, rather than a scalar the spectrum was never inside.
+    DFT labels at all; they are <em>ab initio</em>, optimized against the Schrödinger equation itself.
+    In their base form they solve for the ground state, but they stand on the right side of the fork:
+    the wavefunction is the object the spectrum lives in, and excited-state extensions of the same
+    machinery read it out — something no amount of energy fitting could do.
   </p>
 
   <h2><span class="num">§ 4</span>Why the energy side raced ahead</h2>
@@ -260,8 +266,8 @@ import { url } from '../../lib/url';
     Energies and forces are an almost-free by-product of any DFT run. You were going to converge the
     calculation anyway, and they fall out of it. That made it cheap to assemble datasets of millions
     of configurations, and energy models feasted on them. Spectral ground truth is the opposite. A
-    faithful band structure wants a GW calculation — a many-body method that corrects the
-    self-interaction errors left in plain DFT, at ten to a hundred times the cost. Optical absorption
+    faithful band structure wants a GW calculation — a many-body method that fixes the
+    electron-level energies plain DFT gets systematically wrong, at ten to a hundred times the cost. Optical absorption
     with excitons wants the Bethe-Salpeter equation (BSE) on top of GW, costlier still, and on solids
     these are punishing. There is no materials-scale dataset of band structures
     because no one can afford to compute one. The energy side raced ahead because its ground truth was
@@ -269,18 +275,30 @@ import { url } from '../../lib/url';
   </p>
 
   <p>
-    This sorts out one common compression. The large universal model in the FAIR-chem line,
-    <strong>UMA</strong>, is an energy, force, and stress model trained across roughly five datasets
-    spanning materials and molecules. It lives on the Tier-1 and Tier-2 side. It does not cross into
-    spectra. Pushing an energy model onto charge- and spin-difference properties (Tier 2) and building
-    a Hamiltonian predictor (Tier 3) are two separate moves. Stacking more energy data sharpens the
-    first move and never starts the second.
+    The wall does not move with scale. UMA, trained on half a billion arrangements, is still an
+    energy, force, and stress model; it lives on the Tier-1 and Tier-2 side and does not cross into
+    spectra. Pushing an energy model onto charge- and spin-difference properties (Tier 2) and
+    building a Hamiltonian predictor (Tier 3) are two separate moves. Stacking more energy data
+    sharpens the first and never starts the second.
   </p>
 
   <p>
     That settles what a potential represents. The next chapter turns to using it — what happens when
     you hand a trained model a structure it has never seen and ask it for an answer.
   </p>
+
+  <section class="sources" aria-label="Sources and further reading">
+    <span class="sources-label">sources &amp; further reading</span>
+    <ul>
+      <li>D. S. Levine et al., <a class="ink-link" href="https://arxiv.org/abs/2505.08762">"The Open Molecules 2025 (OMol25) Dataset, Evaluations, and Models,"</a> arXiv:2505.08762 (2025). <span class="src-note">— the charge- and spin-labeled dataset behind § 2.</span></li>
+      <li>Rowan Scientific, <a class="ink-link" href="https://rowansci.com/publications/omol25-redox">"Benchmarking OMol25-Trained Models on Experimental Reduction-Potential and Electron-Affinity Data"</a> (2025). <span class="src-note">— the experimental benchmark § 2's numbers come from.</span></li>
+      <li>N. Mardirossian and M. Head-Gordon, <a class="ink-link" href="https://doi.org/10.1063/1.4952647">"ωB97M-V: A combinatorially optimized, range-separated hybrid, meta-GGA density functional with VV10 nonlocal correlation,"</a> <em>J. Chem. Phys.</em> 144, 214110 (2016). <span class="src-note">— the functional that labeled OMol25.</span></li>
+      <li>T. W. Ko, J. A. Finkler, S. Goedecker, and J. Behler, <a class="ink-link" href="https://doi.org/10.1038/s41467-020-20427-2">"A fourth-generation high-dimensional neural network potential with accurate electrostatics including non-local charge transfer,"</a> <em>Nat. Commun.</em> 12, 398 (2021). <span class="src-note">— a potential that does model charge flow, unlike the sidenote's plain networks.</span></li>
+      <li>H. Li et al., <a class="ink-link" href="https://doi.org/10.1038/s43588-022-00265-6">"Deep-learning density functional theory Hamiltonian for efficient ab initio electronic-structure calculation,"</a> <em>Nat. Comput. Sci.</em> 2, 367 (2022). <span class="src-note">— DeepH: predict the operator, diagonalize, read off bands.</span></li>
+      <li>D. Pfau et al., <a class="ink-link" href="https://doi.org/10.1103/PhysRevResearch.2.033429">"Ab initio solution of the many-electron Schrödinger equation with deep neural networks,"</a> <em>Phys. Rev. Research</em> 2, 033429 (2020); J. Hermann, Z. Schätzle, and F. Noé, <a class="ink-link" href="https://doi.org/10.1038/s41557-020-0544-y">"Deep-neural-network solution of the electronic Schrödinger equation,"</a> <em>Nat. Chem.</em> 12, 891 (2020). <span class="src-note">— FermiNet and PauliNet.</span></li>
+      <li>G. Onida, L. Reining, and A. Rubio, <a class="ink-link" href="https://doi.org/10.1103/RevModPhys.74.601">"Electronic excitations: density-functional versus many-body Green's-function approaches,"</a> <em>Rev. Mod. Phys.</em> 74, 601 (2002). <span class="src-note">— GW and the Bethe–Salpeter equation, and why spectral ground truth costs what it costs.</span></li>
+    </ul>
+  </section>
 </Primer>
 
 <style>

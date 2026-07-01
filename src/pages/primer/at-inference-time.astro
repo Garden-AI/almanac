@@ -12,7 +12,7 @@ import { url } from '../../lib/url';
   <p class="lead">
     The potential takes an arrangement of atoms and returns one energy and the force on every atom —
     the same two quantities a DFT calculation hands back, but in milliseconds instead of hours. That
-    speed is the whole point, and it changes what you can do with the energy landscape from Chapter 1.
+    speed changes what you can do with the energy landscape of Chapter 1.
   </p>
 
   <h2><span class="num">§ 1</span>Relaxation: roll downhill until the forces vanish</h2>
@@ -85,13 +85,13 @@ import { url } from '../../lib/url';
 
   <p>
     The loop is short. Take the current positions and read the force on every atom. A force is a push,
-    and a push makes a mass accelerate — heavier atoms respond less, lighter ones more. So the forces
-    tell you how every atom's velocity changes over a very short slice of time — a femtosecond, a
-    millionth of a billionth of a second — call it one <strong>time-step</strong>;
-    the velocities tell you how the positions change over that same slice. Apply both and you have a new
-    arrangement, a sliver of time later. Read the forces there and repeat. Step and repeat, step and
-    repeat — this is <strong>molecular dynamics</strong>, and the arrangement traced out step by step is
-    a <strong>trajectory</strong>.
+    and a push makes a mass accelerate — heavier atoms respond less, lighter ones more. Over one very
+    short slice of time — a femtosecond, a millionth of a billionth of a second — the forces set how
+    each velocity changes, and the velocities set how each position changes. Call that slice one
+    <strong>time-step</strong>. Step it forward and you have a new arrangement, a sliver of time
+    later. Read the forces there and repeat. Step and repeat, step and repeat — this is
+    <strong>molecular dynamics</strong>, and the path traced out step by step is a
+    <strong>trajectory</strong>.
   </p>
 
   <figure class="fig">
@@ -156,33 +156,33 @@ import { url } from '../../lib/url';
   <h2><span class="num">§ 3</span>Derived quantities: reading more off the surface</h2>
 
   <p>
-    Chapter 5 named these as derivatives of the energy; here is how you read them off the landscape
-    cheaply. Sit at a valley floor and ask how steeply the walls rise. That curvature — how fast the
-    force grows as you push an atom off the bottom — sets how the atoms vibrate, the phonons, and from
-    the vibrations follow heat capacity and — for sufficiently anharmonic materials — thermal
-    expansion. Squeeze the whole box a little and watch the energy climb: how stiffly it resists gives
-    the elastic constants, the material's springiness. These are just the landscape's local shape,
-    sampled with cheap evaluations instead of expensive ones.
+    The derivatives Chapter 5 filed under Tier 1 are read the same cheap way. Sit at a valley floor
+    and ask how steeply the walls rise. That curvature — how fast the force grows as you push an
+    atom off the bottom — sets how the atoms vibrate, the phonons; from the vibrations follow heat
+    capacity and, for sufficiently anharmonic materials, thermal expansion. Squeeze the whole box a
+    little and watch the energy climb: how stiffly it resists gives the elastic constants, the
+    material's springiness. All of it is the landscape's local shape, sampled with cheap evaluations
+    instead of expensive ones.
   </p>
 
   <p>
-    Two ask a little more. A chemical reaction is a trip from one valley to another over the ridge
-    between them; the height of the lowest pass through that ridge is the <strong>reaction barrier</strong>,
-    which sets how fast the reaction goes. Finding the lowest pass is its own small search, called the
-    <strong>nudged elastic band</strong>: lay a chain of intermediate arrangements from one valley to
-    the other, pull each arrangement downhill while an artificial spring between neighbors — a bookkeeping
-    force, not a real one — keeps the chain from collapsing to one end, and the settled chain traces the
-    lowest path over the ridge. Finally, a <strong>free energy</strong> — the quantity that determines
-    which phase or arrangement is thermodynamically stable at a given temperature — is not read at one
-    point but averaged over a stretch of dynamics at that temperature. All four lean on the same cheap
-    evaluation; that is what makes them practical.
+    Two quantities ask a little more. A chemical reaction is a trip from one valley to another over the ridge
+    between them, and the height of the lowest pass sets how fast the reaction goes — the
+    <strong>reaction barrier</strong>. Finding that pass is its own small search, the
+    <strong>nudged elastic band</strong>. String a chain of intermediate arrangements between the
+    two valleys, like beads, and pull every bead downhill. Springs between neighboring beads —
+    bookkeeping forces, not physical ones — keep the chain from sliding into either valley, so it
+    settles draped over the ridge, through the lowest pass. And a <strong>free energy</strong> — the
+    quantity that decides which phase or arrangement is stable at a given temperature — is not read
+    at one point but averaged over a stretch of dynamics at that temperature. Every one of these
+    leans on the same cheap evaluation; that is what makes them practical.
   </p>
 
   <h2><span class="num">§ 4</span>Serving it: the drop-in calculator</h2>
 
   <p>
     Mature simulation tools already know how to relax a structure, run dynamics, compute phonons — the
-    whole catalogue above. What they do not contain is the
+    whole catalog above. What they do not contain is the
     physics. They expect to be handed something that, given the current positions, returns the energy and
     the forces. They call that something a <strong>calculator</strong>, and they ask it the same question
     every step.
@@ -250,19 +250,16 @@ run_dynamics(atoms, temperature=300)  # so does this — same slot</div>
   <h2><span class="num">§ 5</span>Where it goes wrong at run time</h2>
 
   <p>
-    The failure that matters here is not the one you would expect. A potential that is a little off on a
-    single static structure is rarely the problem. The problem is the trajectory.
+    The failure that bites is not a bad number on a single static structure. It is the trajectory.
   </p>
 
   <p>
-    Run the dynamics loop long enough and the atoms wander. Sooner or later they may reach an arrangement
-    unlike anything in the training set — a bond squeezed shorter than any the model was shown, a strange
-    transient cluster. There, the model is extrapolating, and Chapter 1's warning comes due: far from its
-    training data a potential can be confidently wrong, with no dial that tells you so. A small wrong force
-    nudges the atoms somewhere stranger still, which yields a stranger force, and the trajectory can drift
-    off course or "blow up" — atoms flying apart, energies running to nonsense — over a long run that looked
-    fine for its first million steps. A model can pass every static test and still fail this way, because
-    static tests never visit the arrangements a long trajectory eventually finds.
+    Run the dynamics loop long enough and the atoms wander somewhere the training set never went —
+    a bond squeezed shorter than any the model was shown, a strange transient cluster. There the
+    model extrapolates, silently, and the compounding Chapter 4 described takes over: a small wrong
+    force makes a stranger arrangement, the stranger arrangement draws a stranger force, and a run
+    that held for a million steps drifts off course or blows up. Every static test was passed; the
+    arrangements that break the model were never in them.
   </p>
 
   <p>
@@ -273,9 +270,18 @@ run_dynamics(atoms, temperature=300)  # so does this — same slot</div>
   </p>
 
   <p>
-    Fast, as long as you stay where the model has been. That caveat kept in view, this is what the
-    whole primer was built toward: the energy of a set of atoms — once a slow secret of the electrons —
-    is now cheap enough to run forward across millions of atoms and millions of steps that DFT could
-    never have afforded. That is what a machine-learned potential is for.
+    Fast, as long as you stay where the model has been. Keep that caveat and the trade is
+    extraordinary: the energy of a set of atoms, once affordable only through hours of
+    electron-solving, now runs forward across millions of atoms and millions of steps that DFT
+    could never have reached. That is what a machine-learned potential is for.
   </p>
+
+  <section class="sources" aria-label="Sources and further reading">
+    <span class="sources-label">sources &amp; further reading</span>
+    <ul>
+      <li>G. Henkelman, B. P. Uberuaga, and H. Jónsson, <a class="ink-link" href="https://doi.org/10.1063/1.1329672">"A climbing image nudged elastic band method for finding saddle points and minimum energy paths,"</a> <em>J. Chem. Phys.</em> 113, 9901 (2000). <span class="src-note">— the chain-of-beads search of § 3.</span></li>
+      <li>A. H. Larsen et al., <a class="ink-link" href="https://doi.org/10.1088/1361-648X/aa680e">"The atomic simulation environment — a Python library for working with atoms,"</a> <em>J. Phys.: Condens. Matter</em> 29, 273002 (2017). <span class="src-note">— ASE, home of the calculator slot.</span></li>
+      <li>X. Fu et al., <a class="ink-link" href="https://arxiv.org/abs/2210.07237">"Forces are not Enough: Benchmark and Critical Evaluation for Machine Learning Force Fields with Molecular Simulations,"</a> <em>TMLR</em> (2023). <span class="src-note">— § 5's failure mode, measured across many models.</span></li>
+    </ul>
+  </section>
 </Primer>
