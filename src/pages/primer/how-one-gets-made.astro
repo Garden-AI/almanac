@@ -8,15 +8,14 @@ import { url } from '../../lib/url';
   deck="A trained potential is a curve fit to a few thousand DFT readings. Where the readings come from, and how the curve is fit to them, is the whole of this chapter."
   running="Ch. 4 — How One Gets Made"
   prev={{ href: url('/primer/inside-the-network'), label: 'Inside the Network' }}
-  next={{ href: url('/primer/what-mlips-keep'), label: 'What an MLIP Keeps — and Can\'t' }}
+  next={{ href: url('/primer/at-inference-time'), label: 'At Inference Time' }}
 >
   <p class="lead">
-    By now the machine has a shape. It eats a local neighborhood and returns that atom's energy; the
-    pieces add to a total; differentiate the total and the forces fall out. But a shape is not a
-    model. The network is full of dials — thousands or millions of numbers, the weights — and until
-    those dials are set the machine returns nonsense. Setting them is what "training" means, and it
-    needs two things this chapter is about: a pile of correct answers to fit to, and a procedure for
-    fitting.
+    The machine has a shape. It eats a local neighborhood and returns that atom's energy; the
+    pieces add to a total; differentiate the total and the forces fall out. What it still lacks are
+    the values of its weights, and until those are set it returns nonsense. Setting them is what
+    "training" means, and it needs two things this chapter is about: a pile of correct answers to
+    fit to, and a procedure for fitting.
   </p>
 
   <h2><span class="num">§ 1</span>The data: a set of correct answers</h2>
@@ -24,11 +23,11 @@ import { url } from '../../lib/url';
   <p>
     The correct answers come from DFT — the slow, expensive method of Chapter 1 that solves for the
     electrons and reads off one energy. Each answer is a snapshot: a particular arrangement of atoms,
-    frozen in place, labelled with the energy DFT computes for it and with the <strong>force</strong>
+    frozen in place, labeled with the energy DFT computes for it and with the <strong>force</strong>
     on every atom — the slope of the energy along each direction, which DFT can also report. For a
     crystal, where the atoms sit in a repeating box, the snapshot carries one thing more: the
     <strong>stress</strong> — the way the energy changes when the repeating box is squeezed or
-    stretched. Energy, forces, stress — that is one labelled example.
+    stretched. Energy, forces, stress — that is one labeled example.
   </p>
 
   <p>
@@ -41,20 +40,18 @@ import { url } from '../../lib/url';
     Which snapshots, though? This is the question that decides whether the model is any good. The
     obvious snapshots are the comfortable ones — atoms at rest, every bond at its settled length,
     every structure relaxed to a valley floor of the energy landscape from Chapter 1. They are easy
-    to generate and easy for DFT to converge on. A training set made only of them looks tidy.
+    to generate and easy for DFT to converge on.
   </p>
 
   <p>
-    A model fit to that set fails the moment a simulation does anything interesting. Run a real
+    A model fit only to them fails the moment a simulation does anything interesting. Run a real
     simulation and the atoms do not sit on the valley floor; they are kicked by heat, shoved through
     the middle of a reaction, driven up the steep walls of the landscape toward the passes that
-    separate one valley from the next. The model has never seen those walls. It was fit to gentle
-    ground, so it draws gentle ground everywhere — it under-predicts how steeply the energy rises as
-    atoms are pushed together, and a slope that should climb sharply comes out lazy. The force that
-    should shove two atoms apart is too weak. Atoms that ought to be repelled drift closer than any
-    real material would allow. This failure mode has a name: the model has gone <strong>soft</strong>,
-    and the softening is systematic — always in the direction of too-weak resistance, because the
-    fit was anchored only where resistance was low.
+    separate one valley from the next. The model has never seen those walls, so the walls it draws
+    come out too gentle: the force that should shove two crowded atoms apart is too weak, and they
+    drift closer than any real material would allow. This failure mode has a name — the model has
+    gone <strong>soft</strong> — and it is systematic, always toward too-little resistance, because
+    the fit was anchored only where resistance was low.
   </p>
 
   <p>
@@ -104,7 +101,7 @@ import { url } from '../../lib/url';
   <h2><span class="num">§ 2</span>The loss: what "match" measures</h2>
 
   <p>
-    "Tune the dials until the outputs match the labels" needs a precise meaning of <em>match</em>. The
+    "Tune the weights until the outputs match the labels" needs a precise meaning of <em>match</em>. The
     procedure needs a single number it can drive toward zero — a score for how wrong the model
     currently is, summed over every snapshot in the training set. That number is the
     <strong>loss</strong>. Training is the act of nudging the weights, over and over, in whatever
@@ -113,8 +110,8 @@ import { url } from '../../lib/url';
 
   <p>
     The obvious loss compares only energies: for each snapshot, take the gap between the model's
-    energy and DFT's energy, and add up those gaps across the set. But energies alone are a trap, and
-    Chapter 1 already gave us the picture to see why. A model that nails every energy but draws the
+    energy and DFT's energy, and add up those gaps across the set. But energies alone are a trap.
+    A model that nails every energy but draws the
     slopes wrong is a map with the right elevation marked at every town and the gradients between
     towns drawn backwards. Every height is correct; the map still tells you water flows uphill. It is
     useless for predicting which way anything rolls — and rolling is the entire point. A simulation
@@ -149,15 +146,14 @@ import { url } from '../../lib/url';
     The way out is to bootstrap, in a loop. Start with a rough model trained on whatever data you have
     — a small, easy set, valley floors and a little more. It is not good, but it runs. Set it running
     a simulation and watch where it goes. The instant it wanders into territory unlike anything it was
-    trained on, it is <strong>extrapolating</strong> — guessing past the edge of what it knows — and,
-    as Chapter 1 warned, an MLIP far from its training data can be confidently wrong with no built-in
-    way to tell you so. The trick is to make it tell you anyway.
+    trained on, it is <strong>extrapolating</strong> — guessing past the edge of what it knows — and
+    Chapter 1 said what that means: wrong, with no warning. The trick is to make it warn you anyway.
   </p>
 
   <p>
     One common trick — not the only one, but the clearest to explain — is a <strong>committee</strong>.
     Train not one rough model but several, each on the same data but started from different random
-    dials, so they end up slightly different. Where
+    starting weights, so they end up slightly different. Where
     the data is dense, all of them learned the same answer and they agree. Where the data is thin —
     exactly the arrangements you are missing — they have nothing to pin them down, so they drift apart
     and start to disagree. Their disagreement is a usable signal: it flags, atom by atom and step by
@@ -166,7 +162,7 @@ import { url } from '../../lib/url';
 
   <p>
     Now the loop closes. Wherever the committee disagrees, stop and call DFT — the slow, correct
-    method — on that exact arrangement, and only there. Add the new labelled snapshots to the
+    method — on that exact arrangement, and only there. Add the new labeled snapshots to the
     training set. Retrain. The committee now agrees in the place it used to disagree, runs further
     before it next gets lost, and flags the next gap. Repeat until it stops getting lost.
   </p>
@@ -216,13 +212,13 @@ import { url } from '../../lib/url';
   <p>
     Everything so far describes building one potential for one system — a particular alloy, a
     particular molecule. Run the loop, get a model that knows that system, and stop. The newer
-    approach, the one this Almanac catalogs and the reason the 2024–2026 stretch is worth a 2026
-    edition, drops the "one system" part. Train one large model on an enormous, deliberately diverse
+    approach drops the "one system" part, and it is the approach this Almanac exists to catalog.
+    Train one large model on an enormous, deliberately diverse
     pile of data — millions of arrangements spanning much of the periodic table — and you get a
     <strong>foundation model</strong> (also called a universal potential): a single fit you can pull
     off the shelf and apply to a system it was never specifically built for. For many uses it is good
     enough straight away. Where you need more accuracy on one system, you
-    <strong>fine-tune</strong> — take the big pre-trained model and nudge its dials with a small
+    <strong>fine-tune</strong> — take the big pre-trained model and nudge its weights with a small
     helping of system-specific data, far less than training from scratch would take.
   </p>
 
@@ -237,31 +233,34 @@ import { url } from '../../lib/url';
         <tr><th>Dataset</th><th>Domain</th><th>DFT level</th><th>Rough size</th></tr>
       </thead>
       <tbody>
-        <tr><td>OMat24</td><td>Inorganic crystals</td><td>PBE+U (VASP)</td><td>~100M+ structures</td></tr>
+        <tr><td>OMat24</td><td>Inorganic crystals</td><td>PBE+U (VASP)</td><td>~110M calculations</td></tr>
         <tr><td>MPtrj</td><td>Materials Project relaxations</td><td>PBE / PBE+U</td><td>~1.58M structures</td></tr>
-        <tr><td>Alexandria</td><td>Inorganic crystals</td><td>PBE / PBEsol</td><td>millions</td></tr>
-        <tr><td>OMol25</td><td>Molecules</td><td>ωB97M-V hybrid (ORCA)</td><td>millions</td></tr>
-        <tr><td>OC20</td><td>Catalysis, adsorbates on surfaces</td><td>RPBE</td><td>~1.2M relaxations</td></tr>
+        <tr><td>Alexandria</td><td>Inorganic crystals</td><td>PBE / PBEsol</td><td>~5M calculations</td></tr>
+        <tr><td>OMol25</td><td>Molecules</td><td>ωB97M-V hybrid (ORCA)</td><td>&gt;100M calculations</td></tr>
+        <tr><td>OC20</td><td>Catalysis, adsorbates on surfaces</td><td>RPBE</td><td>~265M single points</td></tr>
       </tbody>
     </table>
-    <figcaption><span class="fig-num">Fig. 3</span>A sample of the large public training sets behind today's foundation models. The "DFT level" column names the <em>functional</em> — the specific approximation DFT uses — that each set was computed with. PBE, PBE+U, RPBE, and the hybrid used for OMol25 are different approximations to the same quantum-mechanical problem, and they do not agree on energies. The +U suffix adds a correction for transition-metal <em>d</em> electrons; VASP and ORCA name the programs that ran the calculations, not functionals. OMat24 dwarfs the rest: it alone holds more structures than all the others combined.</figcaption>
+    <figcaption><span class="fig-num">Fig. 3</span>A sample of the large public training sets behind today's foundation models. The "DFT level" column names the <em>functional</em> — the particular approximation DFT uses — that each set was computed with; the +U suffix adds a correction for transition-metal <em>d</em> electrons, and VASP and ORCA name the programs that ran the calculations. Among the crystal datasets, OMat24 holds roughly twenty times more calculations than the others combined.</figcaption>
   </figure>
 
   <p>
     Some models go further and train across several of these at once. UMA — Universal Models for
-    Atoms — is fit jointly over about five such datasets, on the order of half a billion arrangements
-    in total, using an architecture that lets different parts of the network specialize — catalysis
-    in one region, bulk crystals in another — without one domain drowning out the others.
+    Atoms — is fit jointly over five such datasets, on the order of half a billion arrangements in
+    total, using an architecture that lets different parts of the network specialize — catalysis in
+    one region, bulk crystals in another — without one domain drowning out the others.
   </p>
 
   <p>
     There is a seam under the word "universal," and it is the DFT level. A foundation model stitches
     together datasets computed with different, inconsistent recipes — PBE here, RPBE there, a hybrid
     functional somewhere else. These do not agree with each other; the same arrangement carries a
-    slightly different "correct" energy depending on which recipe labelled it. Train one model to
-    reproduce all of them and it is being asked to fit answers that quietly contradict. The model
-    inherits not one DFT's mistakes, as Chapter 1 put it, but a blend of several DFTs' mistakes, and
-    the join between them is real even when it is small.
+    slightly different "correct" energy depending on which recipe labeled it. Models like UMA cope
+    by being told, as one more input, which recipe labeled each snapshot — so they learn several
+    closely related surfaces rather than an average of contradicting ones. But the seam does not
+    vanish. Ask a question that crosses recipes — a molecule meeting a crystal, each labeled at a
+    different level — and the join between surfaces is real even when it is small. The model
+    inherits not one DFT's mistakes, as Chapter 1 put it, but several DFTs' mistakes, each on its
+    own patch.
   </p>
 
   <h2><span class="num">§ 5</span>Validation: does it run, not just fit?</h2>
@@ -291,8 +290,17 @@ import { url } from '../../lib/url';
     those properties is trustworthy in a way a static error number cannot confirm.
   </p>
 
-  <p>
-    A model that runs stable and lands the right melting point has earned its place. What that place
-    cannot include — what no model built this way can ever know — is the next chapter.
-  </p>
+  <section class="sources" aria-label="Sources and further reading">
+    <span class="sources-label">sources &amp; further reading</span>
+    <ul>
+      <li>J. S. Smith et al., <a class="ink-link" href="https://doi.org/10.1063/1.5023802">"Less is more: Sampling chemical space with active learning,"</a> <em>J. Chem. Phys.</em> 148, 241733 (2018). <span class="src-note">— the committee loop of § 3 in action.</span></li>
+      <li>L. Chanussot et al., <a class="ink-link" href="https://doi.org/10.1021/acscatal.0c04525">"Open Catalyst 2020 (OC20) Dataset and Community Challenges,"</a> <em>ACS Catal.</em> 11, 6059 (2021). <span class="src-note">— OC20.</span></li>
+      <li>B. Deng et al., <a class="ink-link" href="https://doi.org/10.1038/s42256-023-00716-3">"CHGNet as a pretrained universal neural network potential for charge-informed atomistic modelling,"</a> <em>Nat. Mach. Intell.</em> 5, 1031 (2023). <span class="src-note">— the paper that assembled MPtrj.</span></li>
+      <li>J. Schmidt et al., <a class="ink-link" href="https://doi.org/10.1016/j.mtphys.2024.101560">"Improving machine-learning models in materials science through large datasets,"</a> <em>Mater. Today Phys.</em> 48, 101560 (2024). <span class="src-note">— Alexandria.</span></li>
+      <li>L. Barroso-Luque et al., <a class="ink-link" href="https://arxiv.org/abs/2410.12771">"Open Materials 2024 (OMat24) Inorganic Materials Dataset and Models,"</a> arXiv:2410.12771 (2024). <span class="src-note">— OMat24.</span></li>
+      <li>D. S. Levine et al., <a class="ink-link" href="https://arxiv.org/abs/2505.08762">"The Open Molecules 2025 (OMol25) Dataset, Evaluations, and Models,"</a> arXiv:2505.08762 (2025). <span class="src-note">— OMol25.</span></li>
+      <li>B. M. Wood et al., <a class="ink-link" href="https://arxiv.org/abs/2506.23971">"UMA: A Family of Universal Models for Atoms,"</a> arXiv:2506.23971 (2025). <span class="src-note">— the five-dataset joint fit of § 4.</span></li>
+      <li>X. Fu et al., <a class="ink-link" href="https://arxiv.org/abs/2210.07237">"Forces are not Enough: Benchmark and Critical Evaluation for Machine Learning Force Fields with Molecular Simulations,"</a> <em>TMLR</em> (2023). <span class="src-note">— why § 5 insists the real test is dynamic.</span></li>
+    </ul>
+  </section>
 </Primer>

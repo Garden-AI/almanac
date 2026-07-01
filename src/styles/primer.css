@@ -299,6 +299,38 @@ figure.fig figcaption .fig-num {
 .svg-serif { font-family: var(--serif); font-size: 12px; fill: var(--ink); }
 .svg-serif-it { font-family: var(--serif); font-style: italic; font-size: 12px; fill: var(--ink-2); }
 
+/* ── Sources & further reading ────────────────────────────────── */
+.primer-body .sources {
+  margin-top: 3.2em;
+  border-top: 1.5px solid var(--ink);
+  padding-top: 12px;
+}
+.primer-body .sources .sources-label {
+  display: block;
+  font-family: var(--smallcaps);
+  font-size: 12px;
+  letter-spacing: var(--track-label, 0.08em);
+  color: var(--ink);
+  margin-bottom: 10px;
+}
+.primer-body .sources ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.primer-body .sources li {
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ink-2);
+  padding-left: 1.4em;
+  text-indent: -1.4em;   /* hanging indent */
+  margin-bottom: 0.55em;
+}
+.primer-body .sources li::marker { content: none; }
+.primer-body .sources .src-note {
+  color: var(--ink-3);
+}
+
 /* ── Chapter foot nav ─────────────────────────────────────────── */
 .primer-nav {
   display: flex;

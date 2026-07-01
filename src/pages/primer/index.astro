@@ -29,38 +29,39 @@ const chapters = [
   },
   {
     n: 'Five',
-    title: "What an MLIP Keeps — and Can't",
-    blurb: 'A DFT calculation produces a whole electronic world; a potential keeps a thin slice. The three-tier carve between what you get for free, what you can reach if you ask, and what no energy model can ever give you.',
-    href: url('/primer/what-mlips-keep'),
-  },
-  {
-    n: 'Six',
     title: 'At Inference Time',
     blurb: 'Relaxations, molecular dynamics, and what it means to serve one of these as a drop-in calculator in production.',
     href: url('/primer/at-inference-time'),
+  },
+  {
+    n: 'Six',
+    title: "What an MLIP Keeps — and Can't",
+    blurb: 'A DFT calculation produces a whole electronic world; a potential keeps a thin slice. The three-tier carve between what you get for free, what you can reach if you ask, and what no energy model can ever give you.',
+    href: url('/primer/what-mlips-keep'),
   },
 ];
 ---
 <Primer
   title="How Matter Models Work"
   eyebrow="A Primer on Matter Models"
-  deck="An illustrated walk from the quantum-mechanical bedrock up to the machine-learned interatomic potentials catalogued in this almanac — and an honest accounting of what they can and cannot do."
+  deck="An illustrated walk from the quantum-mechanical bedrock up to the machine-learned interatomic potentials cataloged in this almanac — and an honest accounting of what they can and cannot do."
   byline="A working draft, written for one reader · 2026 Edition"
   gutter={false}
 >
   <p class="lead">
-    This is a side wing of the Almanac, not part of its catalogue. The main book tells you
+    This is a side wing of the Almanac, not part of its catalog. The main book tells you
     <em>which</em> potentials exist and <em>where</em> they run. These pages try to explain
     <em>what they are</em> — building the idea up from the physics, the way one might explain
-    a transformer by drawing every arrow rather than citing the paper.
+    a transformer by drawing every arrow rather than citing the paper. They are written for a
+    reader who knows software and some machine learning but little chemistry — someone who has
+    met names like MACE and UMA in the catalog and wants to know what they actually are.
   </p>
 
   <p>
-    It is being written iteratively, chapter by chapter, and revised against your feedback. The
-    aim throughout is to build the idea up one plank at a time: lay something down, stand on it,
-    lay the next — preferring a precise distinction to a tidy slogan, and saying plainly where the
-    method runs out. All six chapters are now drafted; the later ones are the freshest ink, so read
-    them with a pencil.
+    The method throughout is one plank at a time: lay something down, stand on it, lay the next —
+    preferring a precise distinction to a tidy slogan, and saying plainly where the method runs
+    out. All six chapters are drafted; the later ones are the freshest ink, so read them with a
+    pencil.
   </p>
 
   <nav class="toc" aria-label="Chapters">
@@ -81,6 +82,21 @@ const chapters = [
       )
     ))}
   </nav>
+
+  <section class="sources" aria-label="Where to go from here">
+    <span class="sources-label">where to go from here</span>
+    <p style="font-size:14.5px; color:var(--ink-2); margin-bottom:0.8em;">
+      The primer stops at a conceptual baseline. Depending on which thread you want to pull next:
+    </p>
+    <ul>
+      <li><strong>Run a potential this afternoon</strong> — the <a class="ink-link" href="https://fair-chem.github.io">FAIR-chem docs</a> (home of UMA) and the <a class="ink-link" href="https://mace-docs.readthedocs.io">MACE docs</a> both have quickstarts; either drops into the <a class="ink-link" href="https://ase-lib.org">ASE</a> calculator slot of Chapter 5.</li>
+      <li><strong>Compare the models</strong> — <a class="ink-link" href="https://matbench-discovery.materialsproject.org">Matbench Discovery</a> ranks the current crop against DFT references; the Almanac's own catalog tells you where each one runs.</li>
+      <li><strong>Molecular dynamics, deeper</strong> — Abhishaike Mahajan's <a class="ink-link" href="https://www.owlposting.com/p/a-primer-on-molecular-dynamics">"A Primer on Molecular Dynamics"</a> is the accessible next read; Frenkel &amp; Smit's <em>Understanding Molecular Simulation</em> (3rd ed., 2023) is the standard text, written algorithm-first.</li>
+      <li><strong>DFT, deeper</strong> — Sholl &amp; Steckel's <em>Density Functional Theory: A Practical Introduction</em> (2nd ed., 2022) is the gentlest real book on the subject; École Polytechnique's free <a class="ink-link" href="https://www.coursera.org/learn/density-functional-theory">Coursera course</a> if you prefer lectures.</li>
+      <li><strong>The architectures</strong> — Duval et al.'s <a class="ink-link" href="https://arxiv.org/abs/2312.07511">"A Hitchhiker's Guide to Geometric GNNs"</a> maps every family Chapter 3 names, and the ones it doesn't.</li>
+      <li><strong>Materials science from zero</strong> — Cambridge's <a class="ink-link" href="https://www.doitpoms.ac.uk">DoITPoMS</a> teaching packages cover crystals, bonding, and diffusion in short illustrated modules; for catalysis, start at the <a class="ink-link" href="https://opencatalystproject.org">Open Catalyst Project</a>.</li>
+    </ul>
+  </section>
 
   <p style="margin-top:2em; font-size:14px; color:var(--ink-3); font-family:var(--smallcaps); letter-spacing:0.08em; text-align:center;">
     <a class="ink-link" href={url('/')}>Return to the Almanac proper →</a>

@@ -29,9 +29,10 @@ import { url } from '../../lib/url';
   <p>
     Three changes, then, must leave the energy untouched: sliding the whole system (a
     <strong>translation</strong>), turning it (a <strong>rotation</strong>), and relabeling identical
-    atoms (a <strong>permutation</strong>). A description that already obeys all three is worth far
-    more than one the network must learn to ignore. The rest of this chapter builds that description
-    out of two ideas: <strong>locality</strong> and <strong>symmetry</strong>.
+    atoms (a <strong>permutation</strong>). A change that leaves the energy untouched is called a
+    <strong>symmetry</strong> of it — these are the energy's three. A description that already obeys
+    all three is worth far more than one the network must learn to ignore. The rest of this chapter
+    builds that description out of two ideas: <strong>locality</strong> and <strong>symmetry</strong>.
   </p>
 
   <h2><span class="num">§ 1</span>Locality: chop the energy into pieces</h2>
@@ -102,20 +103,19 @@ import { url } from '../../lib/url';
     The payoff is <strong>reach</strong>. Because the rule for ε<sub>i</sub> is the same for every
     atom of a given element and looks only at a local patch — the atoms inside its cutoff — you can
     learn it on small arrangements and apply it to enormous ones: train on a hundred atoms, run on a
-    million, no retraining. It also settles the puzzle Chapter 1 left open — how a few thousand
-    sampled arrangements could ever cover a space of thousands of dimensions. They do not have to.
-    The model never learns whole arrangements; it learns local patches, and a few thousand small
-    structures hold the same handful of patches over and over.
+    million, no retraining. It also settles the puzzle Chapter 1 left open: the model learns
+    patches, never whole arrangements, and a few thousand small structures hold the same handful of
+    patches over and over.
   </p>
 
   <p>
-    Locality is an approximation. Cutting an atom's world off at a radius is, in principle, a drastic
-    one that simply happens to work well: the energy left out beyond a few ångströms (Å) — about an
-    atom's width — is, in well-behaved systems, often only a few thousandths of an electron-volt (eV)
-    per atom, negligible against the eV-scale energies that make and break bonds. Where it does not
-    work — pull an electron off one end of a long molecule and the energy shifts at the far end,
-    beyond any cutoff — the local picture goes blind. That failure, and the machinery built to repair
-    it, is a thread we pick up later.
+    Locality is an approximation, and on its face a drastic one — an atom's world, cut off at a
+    radius. In practice the energy it discards beyond a few ångströms (Å) — an ångström is about an
+    atom's width — usually amounts to a few thousandths of an electron-volt (eV) per atom in
+    well-behaved systems, negligible against the eV-scale energies that make and break bonds. But
+    not every system is well-behaved. Pull an electron off one end of a long molecule and the energy
+    shifts at the far end, past any cutoff; there the local picture goes blind. Chapter 6 returns to
+    what falls outside it.
   </p>
 
   <h2><span class="num">§ 2</span>The cutoff, made smooth</h2>
@@ -191,7 +191,8 @@ import { url } from '../../lib/url';
     <strong>graph</strong> — and it is exactly the data structure the machinery of the next chapter
     runs on. The same neighborhood can be drawn as the ball-and-stick picture a chemist sketches, or
     as this graph of nodes and edges, or as a plain table of the distances between every pair. They
-    carry the same information; the graph is the form the model works in.
+    carry the same information; the graph is the form the model works in — a map of who-is-near-whom,
+    not who-is-bonded-to-whom.
   </p>
 
   <figure class="fig">
@@ -235,10 +236,6 @@ import { url } from '../../lib/url';
     <figcaption><span class="fig-num">Fig. 3</span>The same group of atoms as a molecule and as a graph (and, just as well, as a table of pairwise distances). One caution: an edge means "within the cutoff," not "chemically bonded." The cutoff runs several bond lengths, so an atom is joined to many neighbors it shares no bond with — the oxblood edge here is one of them.</figcaption>
   </figure>
 
-  <p>
-    So the graph is a map of who-is-near-whom, not who-is-bonded-to-whom.
-  </p>
-
   <h2><span class="num">§ 4</span>Describing a patch without coordinates</h2>
 
   <p>
@@ -248,8 +245,7 @@ import { url } from '../../lib/url';
     makes with the other neighbors, and its <strong>element</strong>. Distances and angles do not
     change when the molecule is slid or turned; an element stays itself however the molecule is
     placed or labeled. And because each neighbor's term carries its element, adding the neighbors up
-    in any order leaves the patch unchanged — there is the permutation symmetry. (A change that
-    leaves the energy untouched is a symmetry of it; we have found three.)
+    in any order leaves the patch unchanged — there is the permutation symmetry.
   </p>
 
   <p>
@@ -338,4 +334,13 @@ import { url } from '../../lib/url';
     neighborhood becomes a number. Opening that box is the next chapter, and it is where the learning
     actually happens.
   </p>
+
+  <section class="sources" aria-label="Sources and further reading">
+    <span class="sources-label">sources &amp; further reading</span>
+    <ul>
+      <li>E. Prodan and W. Kohn, <a class="ink-link" href="https://doi.org/10.1073/pnas.0505436102">"Nearsightedness of electronic matter,"</a> <em>PNAS</em> 102, 11635 (2005). <span class="src-note">— the physics beneath § 1: why an atom's energy is a local affair.</span></li>
+      <li>J. Behler and M. Parrinello, <a class="ink-link" href="https://doi.org/10.1103/PhysRevLett.98.146401">"Generalized Neural-Network Representation of High-Dimensional Potential-Energy Surfaces,"</a> <em>Phys. Rev. Lett.</em> 98, 146401 (2007). <span class="src-note">— where the per-atom sum and the smooth cutoff enter the field.</span></li>
+      <li>D. Kim and B. Cheng, <a class="ink-link" href="https://arxiv.org/abs/2512.18029">"Long-range electrostatics for machine learning interatomic potentials is easier than we thought,"</a> <em>J. Chem. Phys.</em> 164, 060901 (2026). <span class="src-note">— the state of play on what falls outside the cutoff.</span></li>
+    </ul>
+  </section>
 </Primer>
