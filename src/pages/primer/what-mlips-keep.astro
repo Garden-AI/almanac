@@ -4,11 +4,10 @@ import { url } from '../../lib/url';
 ---
 <Primer
   title="What an MLIP Keeps — and Can't"
-  eyebrow="A Primer on Matter Models · Chapter Five"
+  eyebrow="A Primer on Matter Models · Chapter Six"
   deck="A DFT calculation knows a whole electronic world. The potential carries forward one slice of it. This chapter traces the edge of that slice."
-  running="Ch. 5 — What an MLIP Keeps"
-  prev={{ href: url('/primer/how-one-gets-made'), label: 'How One Gets Made' }}
-  next={{ href: url('/primer/at-inference-time'), label: 'At Inference Time' }}
+  running="Ch. 6 — What an MLIP Keeps"
+  prev={{ href: url('/primer/at-inference-time'), label: 'At Inference Time' }}
 >
   <p class="lead">
     A DFT calculation does not merely emit an energy. To get the energy it has to solve for the
@@ -283,8 +282,10 @@ import { url } from '../../lib/url';
   </p>
 
   <p>
-    That settles what a potential represents. The next chapter turns to using it — what happens when
-    you hand a trained model a structure it has never seen and ask it for an answer.
+    That is the whole trade. A potential keeps the energy and everything the energy can shadow, and
+    gives up the rest of the electronic world in exchange for a million-fold speedup. Everything
+    cataloged in this almanac lives inside that slice — and now you know exactly where its edges
+    are.
   </p>
 
   <section class="sources" aria-label="Sources and further reading">

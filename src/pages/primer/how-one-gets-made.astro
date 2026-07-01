@@ -8,7 +8,7 @@ import { url } from '../../lib/url';
   deck="A trained potential is a curve fit to a few thousand DFT readings. Where the readings come from, and how the curve is fit to them, is the whole of this chapter."
   running="Ch. 4 — How One Gets Made"
   prev={{ href: url('/primer/inside-the-network'), label: 'Inside the Network' }}
-  next={{ href: url('/primer/what-mlips-keep'), label: 'What an MLIP Keeps — and Can\'t' }}
+  next={{ href: url('/primer/at-inference-time'), label: 'At Inference Time' }}
 >
   <p class="lead">
     The machine has a shape. It eats a local neighborhood and returns that atom's energy; the
@@ -288,12 +288,6 @@ import { url } from '../../lib/url';
     properties already known from experiment or from full DFT: the right melting point, the right
     stiffness, the right spacing between atoms in the crystal. A model that runs stable and matches
     those properties is trustworthy in a way a static error number cannot confirm.
-  </p>
-
-  <p>
-    A model that passes both tests has earned its place. Still, everything it reports is built from
-    one number and its slopes. The electrons behind the training data knew far more; how much of
-    that knowledge survives into a potential is the next question.
   </p>
 
   <section class="sources" aria-label="Sources and further reading">
