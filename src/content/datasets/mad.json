@@ -1,11 +1,26 @@
 {
   "name": "MAD",
-  "fullName": "Massive Atomistic Diversity",
+  "fullName": "Massive Atomic Diversity",
   "domain": "mixed",
+  "systemType": "mixed",
+  "application": "universal",
   "curator": "Garden Collaboration",
   "year": 2025,
-  "size": "~95M frames spanning crystals, surfaces, molecules, and disordered configurations",
-  "dftLevel": "PBE / r²SCAN (mixed-fidelity)",
+  "size": "95,595 structures",
+  "elements": "85 (Z 1–86 except At)",
+  "labels": "E, F, S",
+  "dftLevel": "PBEsol; Quantum ESPRESSO (non-spin-polarized)",
   "license": "CC-BY 4.0",
+  "doi": "https://archive.materialscloud.org/records/xdsbt-a3r17",
+  "paperTitle": "Massive Atomic Diversity: a compact universal dataset for atomistic machine learning",
+  "authors": [
+    "Mazitov",
+    "Chorna",
+    "Fraux",
+    "Bercx",
+    "Pizzi",
+    "De",
+    "Ceriotti"
+  ],
   "primaryPaper": "Pending. Internal release notes at thegardens.ai/datasets/mad."
 }

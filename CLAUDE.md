@@ -81,10 +81,10 @@ Small-caps tracking comes from two tokens, **never ad-hoc em values**: `--track-
 ### Routes
 - `/` — index (links to all entities)
 - `/model/[slug]` — model detail
-- `/dataset/[slug]` — dataset detail with reverse-index of models trained on it
+- `/datasets` — one section per dataset (the "Architecture Families" pattern, not a list+detail). Only renders datasets at least one catalog model trained on; sections carry `id={slug}` anchors. There is **no** `/dataset/[slug]` detail route — the model page's "Trained on" links point at `/datasets#<slug>`.
 - `/cluster/[slug]` — cluster page; reads live env status from Rootstock, plus a `<details>` listing all envs (including ones no catalog model claims yet)
 
-Architecture families have **no detail route** — they render only as the "Architecture Families" section on `/models`, sourced from the `architectures` collection (`name` + `brief` + example paper). Each model's "Family" field is plain text, not a link.
+Architecture families have **no detail route** — they render only as the "Architecture Families" section on `/models`, sourced from the `architectures` collection (`name` + `brief` + example paper). Each family card carries an `id={slug}` anchor, and each model's "Family" field links to `/models#<slug>`.
 
 Adding records is a matter of dropping JSON files into `src/content/{type}/`.
 

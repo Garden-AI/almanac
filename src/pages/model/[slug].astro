@@ -348,7 +348,7 @@ const notesHtml = model.data.notes ? marked.parse(model.data.notes) : null;
               {families.map((f, i) => f && (
                 <>
                   {i > 0 && <span style="color: var(--ink-3);">, </span>}
-                  <span class="it">{f.data.name}</span>
+                  <a class="ink-link" href={url(`/models#${f.id}`)}>{f.data.name}</a>
                 </>
               ))}
             </dd>
@@ -361,7 +361,7 @@ const notesHtml = model.data.notes ? marked.parse(model.data.notes) : null;
               {trainingDatasets.map((d, i) => d && (
                 <>
                   {i > 0 && <span style="color: var(--ink-3);">, </span>}
-                  <a class="ink-link" href={url(`/dataset/${d.id}`)}>{d.data.name}</a>
+                  <a class="ink-link" href={url(`/datasets#${d.id}`)}>{d.data.name}</a>
                 </>
               ))}
             </dd>

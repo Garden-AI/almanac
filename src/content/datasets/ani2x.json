@@ -1,0 +1,25 @@
+{
+  "name": "ANI-2x",
+  "fullName": "ANI data set extended to sulfur and halogens",
+  "domain": "molecules",
+  "systemType": "molecules",
+  "application": "general",
+  "curator": "Devereux, Smith, Huddleston, Barros, Zubatyuk, Isayev, Roitberg",
+  "year": 2020,
+  "size": "~8.9M conformations",
+  "elements": "C, H, N, O, F, S, Cl",
+  "labels": "E, F",
+  "dftLevel": "ωB97X/6-31G(d)",
+  "license": "CC-BY 4.0",
+  "doi": "https://doi.org/10.5281/zenodo.10108942",
+  "paperTitle": "Extending the applicability of the ANI deep learning molecular potential to sulfur and halogens",
+  "authors": [
+    "Devereux",
+    "Smith",
+    "Huddleston",
+    "Barros",
+    "Zubatyuk",
+    "Isayev",
+    "Roitberg"
+  ]
+}

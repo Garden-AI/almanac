@@ -1,12 +1,23 @@
 {
   "name": "QM9",
-  "fullName": "Quantum Machines 9",
+  "fullName": "Quantum Machine 9",
   "domain": "molecules",
+  "systemType": "molecules",
+  "application": "general",
   "curator": "Ramakrishnan, Dral, Rupp, von Lilienfeld",
   "year": 2014,
-  "size": "~134,000 small organic molecules; one equilibrium geometry each",
+  "size": "133,885",
+  "elements": "C, H, N, O, F",
+  "labels": "E, Q",
   "dftLevel": "B3LYP/6-31G(2df,p)",
   "license": "CC0 1.0",
-  "doi": "https://doi.org/10.1038/sdata.2014.22",
+  "doi": "https://doi.org/10.6084/m9.figshare.978904",
+  "paperTitle": "Quantum chemistry structures and properties of 134 kilo molecules",
+  "authors": [
+    "Ramakrishnan",
+    "Dral",
+    "Rupp",
+    "von Lilienfeld"
+  ],
   "primaryPaper": "Ramakrishnan et al., Quantum chemistry structures and properties of 134 kilo molecules, Sci. Data 1:140022 (2014)."
 }

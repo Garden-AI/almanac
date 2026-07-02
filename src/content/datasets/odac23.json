@@ -1,0 +1,29 @@
+{
+  "name": "ODAC23",
+  "fullName": "Open Direct Air Capture 2023",
+  "domain": "catalysis",
+  "systemType": "surfaces/interfaces (MOF frameworks + adsorbates)",
+  "application": "direct air capture",
+  "brief": "Metal–organic frameworks with adsorbed CO₂ and H₂O, singly and in mixtures — modelling the two together is the point, because water competes with CO₂ for binding sites in the humid air a real sorbent has to work in. Built to train models for direct-air-capture sorbent discovery, and one of the datasets behind UMA's DAC capability.",
+  "curator": "Meta FAIR-Chem (Sriram, Choi, Medford, Sholl et al.)",
+  "year": 2023,
+  "size": "~39M DFT single points; 176,032 relaxations across 8,412 MOFs",
+  "elements": "MOF nodes span 57 metals + C, H, O, N (frameworks; CO₂/H₂O adsorbates)",
+  "labels": "E, F",
+  "dftLevel": "PBE-D3; VASP",
+  "license": "CC-BY 4.0",
+  "doi": "https://doi.org/10.1021/acscentsci.3c01629",
+  "paperTitle": "The Open DAC 2023 Dataset and Challenges for Sorbent Discovery in Direct Air Capture",
+  "authors": [
+    "Sriram",
+    "Choi",
+    "Yu",
+    "Brabson",
+    "Das",
+    "Ulissi",
+    "Uyttendaele",
+    "Medford",
+    "Sholl"
+  ],
+  "primaryPaper": "Sriram et al., The Open DAC 2023 Dataset and Challenges for Sorbent Discovery in Direct Air Capture, ACS Cent. Sci. 10:923 (2024)."
+}

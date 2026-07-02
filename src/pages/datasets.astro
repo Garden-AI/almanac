@@ -1,55 +1,161 @@
 ---
 import { getCollection } from 'astro:content';
 import Page from '../layouts/Page.astro';
-import OrnamentRule from '../components/OrnamentRule.astro';
 import { url } from '../lib/url';
 
-const datasets = (await getCollection('datasets')).sort((a, b) => a.data.year - b.data.year);
+// Candidate replacement for /datasets + /dataset/[slug] — the Architecture
+// Families pattern (one page, one section per entry) instead of list + detail.
+// Metadata comes from the verified fields on the datasets collection; the
+// hand-written notes/howToGet prose from the first draft is deliberately
+// not rendered here.
+
+const allModels = await getCollection('models');
+
+// Reverse index: which catalog models were trained on each dataset. A model
+// appears under every dataset it cites. Like architecture families, datasets
+// no catalog model trains on are dropped, and reappear automatically the
+// moment a model cites them.
+const modelsByDataset: Record<string, Array<{ id: string; name: string }>> = {};
+for (const m of allModels) {
+  for (const ref of m.data.trainingData) {
+    (modelsByDataset[ref.id] ??= []).push({ id: m.id, name: m.data.name });
+  }
+}
+for (const list of Object.values(modelsByDataset)) {
+  list.sort((a, b) => a.name.localeCompare(b.name));
+}
+
+const datasets = (await getCollection('datasets'))
+  .filter((d) => (modelsByDataset[d.id] ?? []).length > 0)
+  .sort((a, b) => a.data.year - b.data.year || a.data.name.localeCompare(b.data.name));
+
+// The sheet records DFT level as "functional; code (settings)". The
+// functional is what a visitor compares across datasets; which code ran it
+// and how tightly it converged is provenance, kept in the JSON but not shown.
+const dftDisplay = (level: string): string => level.split(';')[0].trim();
+
+// "Ramakrishnan et al." / "Christensen & von Lilienfeld" / "Mazitov" — the
+// compact form used by the families cards, not the full author roll.
+const authorsLabel = (authors: string[]): string => {
+  if (authors.length === 0) return '';
+  if (authors.length === 1) return authors[0];
+  if (authors.length === 2) return `${authors[0]} & ${authors[1]}`;
+  return `${authors[0]} et al.`;
+};
+
+const citationFor = (d: (typeof datasets)[number]['data']): string | null => {
+  if (!d.paperTitle) return null;
+  const who = authorsLabel(d.authors);
+  return `${who ? who + ', ' : ''}${d.paperTitle} (${d.year})`;
+};
 ---
+
 <Page title="Datasets — Garden's Almanac">
-  <h1 style="margin-top: 3px;">Datasets</h1>
-  <p class="it" style="margin-top: 4px; font-size: var(--fs-base); color: var(--ink-2); max-width: 60ch;">
-    The structure libraries from which these models descend.
-  </p>
-  <div style="margin-top: 8px;"><OrnamentRule width={220} /></div>
+  <h1 class="ds-h1">Datasets</h1>
+  <p class="it ds-dek">The structure libraries that models in the almanac trained on.</p>
 
-  <div style="margin-top: 14px;">
-    <p style="font-size: var(--fs-md); line-height: 1.5; margin: 0 0 10px; max-width: 720px;">
-      The lineage of an MLIP is shaped at least as much by what it was trained on as by its architecture.
-      Two equivariant transformers with nearly identical layer counts can produce wildly different relaxation
-      paths if one was raised on QM9 and the other on OMat24. The clusters on the
-      <a class="ink-link" href={url('/models')}>similarity map</a> track training dataset more reliably than
-      they track model family — and on most days, more reliably than the architecture diagrams in the original papers.
-    </p>
-    <p style="font-size: var(--fs-md); line-height: 1.5; margin: 0 0 14px; max-width: 720px;">
-      This section is a working reference, not a comprehensive review of materials and molecular chemistry
-      datasets. The entries cover the libraries actually referenced by the catalog.
-    </p>
+  <hr class="ds-rule" />
 
-    <table class="almanac" style="font-size: var(--fs-md);">
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th style="width: 110px;">Domain</th>
-          <th style="width: 140px; text-align: right;">Size</th>
-          <th style="width: 130px;">DFT level</th>
-          <th style="width: 54px; text-align: right;">Year</th>
-        </tr>
-      </thead>
-      <tbody>
-        {datasets.map((d) => (
-          <tr>
-            <td><a class="ink-link it" href={url(`/dataset/${d.id}`)}>{d.data.name}</a></td>
-            <td style="text-transform: capitalize;">{d.data.domain}</td>
-            <td style="text-align: right;">{d.data.size.split(';')[0]}</td>
-            <td class="mono" style="font-size: var(--fs-xs);">{d.data.dftLevel}</td>
-            <td style="text-align: right;">{d.data.year}</td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
-    <p class="it" style="font-size: var(--fs-sm); color: var(--ink-2); margin-top: 6px;">
-      Sorted oldest first to read as a timeline of what models had to learn from.
-    </p>
-  </div>
+  <section class="ds-grid">
+    {datasets.map((d) => {
+      const models = modelsByDataset[d.id];
+      const cite = citationFor(d.data);
+      return (
+        <article class="ds-item" id={d.id}>
+          <div class="ds-titlerow">
+            <h3 class="ds-name">{d.data.name}</h3>
+            <span class="mono ds-year">{d.data.year}</span>
+          </div>
+          <p class="it ds-fullname">{d.data.fullName}</p>
+
+          {d.data.brief && <p class="ds-brief">{d.data.brief}</p>}
+
+          <dl class="ds-specs">
+            <dt class="sc">size</dt>
+            <dd>{d.data.size}</dd>
+            <dt class="sc">dft level</dt>
+            <dd class="mono ds-mono">{dftDisplay(d.data.dftLevel)}</dd>
+          </dl>
+
+          <div class="ds-models">
+            <span class="sc ds-k">models trained on this dataset</span>
+            {models.map((m) => (
+              <>
+                <span class="ds-sep" aria-hidden="true">·</span>
+                <a class="ink-link it" href={url(`/model/${m.id}`)}>{m.name}</a>
+              </>
+            ))}
+          </div>
+
+          {cite && (
+            <p class="ds-cite">
+              <span class="sc ds-k">citation</span>
+              {d.data.doi ? (
+                <a class="ink-link" href={d.data.doi} target="_blank" rel="noopener">{cite}</a>
+              ) : (
+                cite
+              )}
+            </p>
+          )}
+        </article>
+      );
+    })}
+  </section>
+
 </Page>
+
+<style>
+  .ds-h1 { margin-top: 3px; }
+  .ds-dek {
+    margin: 4px 0 0; max-width: 60ch;
+    font-size: var(--fs-base); color: var(--ink-2);
+  }
+
+  .ds-rule {
+    border: 0; border-top: 1.5px solid var(--ink); border-bottom: 0.5px solid var(--ink);
+    height: 3px; margin: 14px 0 0;
+  }
+
+  .ds-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(440px, 1fr));
+    gap: 0 44px;
+    margin-top: 18px;
+  }
+  .ds-item { padding: 16px 0 20px; border-top: 0.5px solid var(--rule); scroll-margin-top: 24px; }
+
+  .ds-titlerow { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+  .ds-name {
+    font-family: var(--serif); font-size: var(--fs-h3); font-weight: 600;
+    line-height: 1.15; letter-spacing: -0.003em; margin: 0;
+  }
+  .ds-year { font-size: var(--fs-sm); color: var(--ink-3); font-variant-numeric: tabular-nums; }
+  .ds-fullname { font-size: var(--fs-base); color: var(--ink-2); margin: 2px 0 0; }
+  .ds-brief { font-size: var(--fs-md); line-height: 1.5; color: var(--ink); margin: 8px 0 0; }
+
+  .ds-specs {
+    display: grid; grid-template-columns: auto 1fr;
+    row-gap: 4px; column-gap: 14px;
+    margin: 12px 0 0; font-size: var(--fs-md); line-height: 1.45;
+  }
+  .ds-specs dt {
+    font-family: var(--smallcaps); font-size: var(--fs-base);
+    letter-spacing: var(--track-label); color: var(--ink-3);
+    margin: 0; line-height: inherit;
+  }
+  .ds-specs dd { margin: 0; }
+  .ds-mono { font-size: var(--fs-sm); }
+
+  .ds-models { margin-top: 12px; font-size: var(--fs-md); line-height: 1.7; }
+  .ds-cite { margin: 6px 0 0; font-size: var(--fs-md); line-height: 1.6; }
+  .ds-k {
+    font-size: var(--fs-base); letter-spacing: var(--track-label);
+    color: var(--ink-3); margin-right: 4px;
+  }
+  .ds-sep { color: var(--ink-3); margin: 0 6px 0 7px; }
+
+
+  @media (max-width: 960px) {
+    .ds-grid { grid-template-columns: 1fr; }
+  }
+</style>

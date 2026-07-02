@@ -1,0 +1,20 @@
+{
+  "name": "rMD17",
+  "fullName": "Revised MD17",
+  "domain": "molecules",
+  "systemType": "molecules",
+  "application": "general",
+  "curator": "Christensen, von Lilienfeld",
+  "year": 2020,
+  "size": "~1,000,000 structures (100,000 × 10 molecules)",
+  "elements": "C, H, N, O",
+  "labels": "E, F",
+  "dftLevel": "PBE/def2-SVP",
+  "license": "CC0 1.0",
+  "doi": "https://doi.org/10.24435/materialscloud:wy-kn",
+  "paperTitle": "On the role of gradients for machine learning of molecular energies and forces",
+  "authors": [
+    "Christensen",
+    "von Lilienfeld"
+  ]
+}

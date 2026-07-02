@@ -20,12 +20,31 @@ const datasets = defineCollection({
     name: z.string(),
     fullName: z.string(),
     domain: z.enum(['molecules', 'materials', 'catalysis', 'mixed']),
+    /** What the structures are (e.g. "molecules", "inorganic crystals",
+     *  "surfaces/interfaces"). Free text from the verification sheet —
+     *  finer-grained than `domain`, which it will eventually replace. */
+    systemType: z.string().optional(),
+    /** Intended use ("general", "catalysis", "biomolecular", …). */
+    application: z.string().optional(),
+    /** One or two sentences on why people care about this dataset,
+     *  shown on the Datasets page card (mirrors architectures.brief). */
+    brief: z.string().optional(),
+    /** Which labels each structure carries, as sheet shorthand:
+     *  E energy, F forces, S stress, Q charges, M magnetic moments. */
+    labels: z.string().optional(),
+    /** Element coverage, free text ("C, H, N, O" or "most of the periodic table"). */
+    elements: z.string().optional(),
     curator: z.string(),
     year: z.number().int(),
     size: z.string(),
     dftLevel: z.string(),
     license: z.string(),
+    /** Canonical link — a DOI when one exists, else the dataset's host page. */
     doi: z.string().url().optional(),
+    /** Title of the canonical paper, used to compose the citation line. */
+    paperTitle: z.string().optional(),
+    /** Author surnames of the canonical paper, in paper order. */
+    authors: z.array(z.string()).default([]),
     primaryPaper: z.string().optional(),
     notes: z.string().optional(),
     howToGet: z.string().optional(),
