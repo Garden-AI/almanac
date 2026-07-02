@@ -274,7 +274,7 @@ const notesHtml = model.data.notes ? marked.parse(model.data.notes) : null;
     <hr class="hairline" style="margin: 24px 0 0;" />
     <div class="sc" style="font-size: var(--fs-sm); letter-spacing: var(--track-label); margin-top: 12px;">Environments</div>
     <p class="env-intro">
-      The exact environment Rootstock installs for this model, per cluster. Select the cluster you intend to run on.
+      Rootstock runs each model family inside an isolated Python environment defined by a single file. This <a class="ink-link" href="https://garden-ai.github.io/rootstock/environments/">environment file</a> includes the specific dependencies needed, plus a <code>setup()</code> function that loads the model and returns an ASE calculator. These files are usually almost identical for a given model family, but because of cluster-specific quirks (eg, an old CUDA driver) the dependencies and setup code can vary a bit.
     </p>
 
     <div class="am-env-tabs" data-env-tabs>

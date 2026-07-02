@@ -65,15 +65,16 @@ const familyCards = await Promise.all(
       <h1 class="models-h1">Models</h1>
       <div class="models-viewswitch" role="tablist" aria-label="View">
         <button type="button" class="models-viewbtn" data-view-btn="year" aria-pressed="true">By year</button>
-        <button type="button" class="models-viewbtn" data-view-btn="embed" aria-pressed="false">By embedding similarity</button>
+        <button type="button" class="models-viewbtn" data-view-btn="embed" aria-pressed="false">By similarity</button>
       </div>
     </div>
 
     <section class="models-standfirst">
       <p class="models-lede">
-        <b>Each dot in the map is a model.</b> They were all shown the same structures, and the tree
-        compares the internal representations they built — not their predictions. Models that picture
-        matter alike sit on nearby branches; color marks the data each one learned from.
+        <b>Models sit close when they picture matter the same way.</b> Every model was shown the
+        same structures and, in effect, asked to sort them: which of these are alike? Models that
+        sort them the same way sit on nearby branches. The tree compares how models see, not how
+        well they predict — and color marks the data each one learned from.
       </p>
       <div class="models-key">
         <div class="models-key-row">
@@ -81,14 +82,14 @@ const familyCards = await Promise.all(
             <line x1="6" y1="8" x2="30" y2="8" stroke="var(--ink)" stroke-width="1.5" stroke-linecap="round" />
             <circle cx="6" cy="8" r="3.4" fill="var(--ink-2)" /><circle cx="30" cy="8" r="3.4" fill="var(--ink-2)" />
           </svg>
-          <span><b>Short branch</b> — the two models build almost the same representation.</span>
+          <span><b>Short branch</b> — the two models picture matter almost identically.</span>
         </div>
         <div class="models-key-row">
           <svg width="58" height="16" viewBox="0 0 58 16" aria-hidden="true">
             <line x1="6" y1="8" x2="46" y2="8" stroke="var(--ink)" stroke-width="1.5" stroke-linecap="round" />
             <circle cx="6" cy="8" r="3.4" fill="var(--ink-2)" /><circle cx="46" cy="8" r="3.8" fill="var(--oxblood)" />
           </svg>
-          <span><b>Long branch</b> — this model represents matter unlike the rest.</span>
+          <span><b>Long branch</b> — this model pictures matter unlike the rest.</span>
         </div>
       </div>
     </section>

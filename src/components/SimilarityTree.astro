@@ -5,11 +5,17 @@
 // uniform ink (length is the only signal); color lives on the dots (= training corpus).
 // Self-contained: caption + figure + controls + client script. See design_handoff_*.
 import treeData from '../data/tree-data.json';
+
+// Toggle order tells the story: familiar ground first, then step off it.
+const DS_ORDER = ['omat24', 'salex', 'omol25', 'qm9'];
+const orderedDatasets = [...treeData.datasets].sort(
+  (a, b) => DS_ORDER.indexOf(a.id) - DS_ORDER.indexOf(b.id),
+);
 ---
 
 <div class="simtree">
   <div class="simtree-caphead">
-    <span class="it simtree-cap">By embedding similarity</span>
+    <span class="it simtree-cap">By similarity of representation</span>
     <div class="simtree-info-wrap">
       <button type="button" id="st-info-btn" class="sc simtree-info-btn" aria-expanded="false">
         <span aria-hidden="true">ⓘ</span><span>how to read this</span>
@@ -20,20 +26,32 @@ import treeData from '../data/tree-data.json';
           <button type="button" id="st-info-close" class="simtree-info-close" aria-label="Close">×</button>
         </div>
         <div class="simtree-info-body">
-          <p><span class="sc simtree-info-k">what this is ·</span> A similarity map of interatomic
-            potentials. We ran the same structures through every model and recorded the internal
-            representation each forms. Models that represent those structures alike end up on nearby
-            branches.</p>
-          <p><span class="sc simtree-info-k">how to read it ·</span> Follow the branches — their length
-            is the only thing that means anything. Two models on a short branch build nearly identical
-            representations; a model out on a long branch represents matter unlike the others. Where a
-            model sits around the circle is just layout.</p>
-          <p><span class="sc simtree-info-k">worth noticing ·</span> Models group by the data they were
-            trained on at least as much as by architecture — which is why the colors (training corpus)
-            tend to bundle.</p>
-          <p class="it simtree-info-foot">Not an evolutionary tree — nothing here descends from
-            anything. Neighbor-joining on representational-alignment (CKNNA) distances.
-            <span class="simtree-info-cite">Edamadaka et al. (2025).</span></p>
+          <p><span class="sc simtree-info-k">what this is ·</span> Hand two chemists the same box of
+            compounds and ask each to shelve them: if their shelvings agree, they think alike,
+            whatever school trained them. This is that test, run on models. Every model is shown one
+            batch of structures; we record which structures it treats as alike, and models that sort
+            the batch the same way land on nearby branches.</p>
+          <p><span class="sc simtree-info-k">reading the branches ·</span> Length is the only quantity;
+            the scale bar sets it. A short branch between two models means they sort structures
+            near-identically; a model alone on a long branch pictures matter unlike the rest. Angle and
+            position around the tree are just layout.</p>
+          <p><span class="sc simtree-info-k">why the colors bundle ·</span> Models group by the data
+            they trained on as much as by how they're built — so the training-data colors tend to
+            clump. What a model saw shapes how it sees, more than its wiring does.</p>
+          <p><span class="sc simtree-info-k">change what you show them ·</span> The tree is drawn from
+            one batch of structures at a time — the reference set below. Show the models structures like
+            the ones they trained on and they spread apart, each carving its own niche; show them
+            unfamiliar structures and they collapse together, falling back on a thinner shared picture.
+            Switching the set redraws the tree — that it changes is the finding.</p>
+          <p><span class="sc simtree-info-k">using it ·</span> Two models on the same twig see matter
+            nearly the same way — running both is closer to asking one model twice than to getting a
+            second opinion. For genuinely independent judgments, pick models from distant branches.</p>
+          <p class="simtree-info-foot">Distance is √JSD over CKNNA — in effect, how often two models
+            agree about which structures are neighbors — and the tree is drawn by neighbor-joining
+            (equal-angle layout). Data and method:
+            <a class="ink-link simtree-info-cite" href="https://arxiv.org/abs/2512.03750" target="_blank" rel="noopener">Edamadaka
+            et al., "Universally Converging Representations of Matter Across Scientific Foundation
+            Models" (2025)</a>.</p>
         </div>
       </div>
     </div>
@@ -48,7 +66,7 @@ import treeData from '../data/tree-data.json';
 
   <div class="simtree-controls">
     <div class="simtree-legend">
-      <span class="sc simtree-legend-title">Color — training corpus</span>
+      <span class="sc simtree-legend-title">Color — training data</span>
       <ul class="simtree-legend-list" id="st-legend"></ul>
     </div>
     <div class="simtree-controls-right">
@@ -59,7 +77,7 @@ import treeData from '../data/tree-data.json';
       <fieldset class="simtree-toggle">
         <legend class="sc simtree-toggle-legend">Reference dataset</legend>
         <div class="simtree-toggle-tabs">
-          {treeData.datasets.map((d, i) => (
+          {orderedDatasets.map((d, i) => (
             <>
               <input
                 class="simtree-toggle-input"
@@ -76,6 +94,11 @@ import treeData from '../data/tree-data.json';
       </fieldset>
     </div>
   </div>
+
+  <p class="simtree-dsnote" id="st-dsnote">
+    <span class="sc simtree-dsnote-k">showing ·</span>
+    <span id="st-dsnote-body"></span>
+  </p>
 
   <script type="application/json" id="st-data" set:html={JSON.stringify(treeData)}></script>
 </div>
@@ -179,6 +202,13 @@ import treeData from '../data/tree-data.json';
   .simtree-toggle-tab:hover { color: var(--ink); }
   .simtree-toggle-input:checked + .simtree-toggle-tab { color: var(--paper); background: var(--ink); }
   .simtree-toggle-input:focus-visible + .simtree-toggle-tab { outline: 1px dotted var(--ink); outline-offset: 2px; }
+
+  .simtree-dsnote {
+    margin: 11px 0 0; padding-top: 10px; border-top: 0.5px solid var(--rule-soft);
+    font-size: var(--fs-sm); line-height: 1.5; color: var(--ink-2); max-width: 72ch;
+  }
+  .simtree-dsnote-k { font-size: var(--fs-xs); letter-spacing: var(--track-label); color: var(--ink-3); margin-right: 4px; }
+  .simtree-dsnote b { color: var(--ink); font-weight: 600; }
 </style>
 
 <script>
@@ -196,6 +226,15 @@ import treeData from '../data/tree-data.json';
     eqV2: { label: 'Equivariant (EqV2)', code: 'EQV2' }, eSEN: { label: 'eSEN', code: 'ESEN' },
     UMA: { label: 'UMA', code: 'UMA' }, MACE: { label: 'MACE', code: 'MACE' },
     ORB: { label: 'Orb', code: 'ORB' }, 'PET-MAD': { label: 'PET-MAD', code: 'PET-MAD' },
+  };
+
+  // What each reference set is, and what its tree says. In-distribution sets (materials) pull models
+  // apart by training data; out-of-distribution sets (molecules) collapse them together by architecture.
+  const DS_NOTE: Record<string, string> = {
+    omat24: 'bulk inorganic materials — the ground most of these models trained on. On <b>familiar</b> structures the tree spreads out: models divide by the data they learned from.',
+    salex: 'inorganic crystals from the Alexandria set — close to what most of these models trained on. Models still split largely by training data.',
+    omol25: 'organic molecules, larger and further from equilibrium — <b>unfamiliar</b> to most of these models. The tree tightens: models fall back on a thinner shared picture and cluster by architecture.',
+    qm9: 'small organic molecules near equilibrium — far from anything the materials models trained on. Representations collapse toward a thin, shared picture.',
   };
 
   const esc = (s: any) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -352,6 +391,11 @@ import treeData from '../data/tree-data.json';
   const elScale = document.getElementById('st-scale')!;
   const elReadout = document.getElementById('st-readout')!;
   const elLegend = document.getElementById('st-legend')!;
+  const elDsNote = document.getElementById('st-dsnote-body')!;
+
+  function renderDsNote() {
+    elDsNote.innerHTML = DS_NOTE[state.dsId] ?? '';
+  }
 
   function renderLegend(tree: any) {
     const order = ['omat', 'mp', 'spice', 'mad', 'other'];
@@ -385,6 +429,7 @@ import treeData from '../data/tree-data.json';
     elScale.innerHTML = renderScaleSVG(tree.scalePx);
     renderLegend(tree);
     renderReadout(tree);
+    renderDsNote();
   }
 
   elTree.addEventListener('mouseover', (e) => {
