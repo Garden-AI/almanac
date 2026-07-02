@@ -95,6 +95,15 @@ html, body {
   color: var(--ink);
 }
 h1, h2, h3, h4 { font-weight: 600; margin: 0; }
+/* Standard page dek — the one-sentence framing line directly under every
+   page H1. One style sitewide; pages don't restyle it locally. */
+.page-dek {
+  font-size: var(--fs-lg);
+  line-height: 1.5;
+  color: var(--ink-2);
+  max-width: 62ch;
+  margin: 12px 0 0;
+}
 h1 { font-size: var(--fs-h1); line-height: 1.05; letter-spacing: -0.012em; }
 h2 { font-size: var(--fs-h2); line-height: 1.15; }
 h3 { font-size: var(--fs-lg); line-height: 1.2; }

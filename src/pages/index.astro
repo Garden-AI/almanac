@@ -130,7 +130,7 @@ with RootstockCalculator(
 <Page title="Garden's Almanac of Matter Models — 2026 Edition">
   <section class="landing-title">
     <h1>Model availability by cluster</h1>
-    <p class="landing-subtitle">
+    <p class="page-dek">
       These machine-learned interatomic potentials are pre-installed on shared HPC clusters.
       {' '}<a class="ink-link" href="https://garden-ai.github.io/rootstock/">Rootstock</a> lets you
       run them all through the same drop-in ASE calculator.
@@ -203,7 +203,7 @@ with RootstockCalculator(
       <thead>
         <tr>
           <th class="am-th-slug">
-            <span class="am-th-slug-fam">Model family</span>
+            <span class="am-th-slug-fam">Model</span>
             <span class="am-th-slug-cp">checkpoint</span>
           </th>
           {clusters.map((c) => (
@@ -283,14 +283,6 @@ with RootstockCalculator(
      weight/size as the Models / Clusters titles. The publication name lives in
      the masthead now, so the index no longer carries its own display title. */
   .landing-title { margin-top: 8px; }
-  /* Intro paragraph, directly under the H1 — left-anchored. */
-  .landing-subtitle {
-    max-width: 720px;
-    font-size: var(--fs-xl);
-    line-height: 1.4;
-    color: var(--ink);
-    margin: 14px 0 0;
-  }
 
   /* Always-visible legend: glyph + small-caps label + a plain-language gloss,
      so a reader gets each state's meaning at a glance (no disclosure). */
@@ -598,7 +590,6 @@ with RootstockCalculator(
   @media (max-width: 720px) {
     .am-wrap { display: none; }
     .cluster-cards { display: block; }
-    .landing-subtitle { font-size: var(--fs-lg); }
     .howto-grid { grid-template-columns: 1fr; gap: 16px; }
     .howto-prose { font-size: var(--fs-lg); }
   }
