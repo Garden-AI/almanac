@@ -30,6 +30,8 @@ const isCurrent = (href: string) => norm(href) === norm(path);
     <meta charset="utf-8" />
     <title>{title}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/png" sizes="64x64" href={url('/favicon.png')} />
+    <link rel="apple-touch-icon" href={url('/apple-touch-icon.png')} />
     {rootstockUrl && <link rel="prefetch" href={rootstockUrl} as="fetch" crossorigin="anonymous" />}
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />

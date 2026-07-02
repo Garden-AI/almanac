@@ -50,6 +50,22 @@
 
 /* ── Title block ──────────────────────────────────────────────── */
 .primer-title { max-width: 720px; margin-bottom: 18px; }
+.title-rule {
+  border: 0; border-top: 1.5px solid var(--ink);
+  border-bottom: 0.5px solid var(--ink);
+  height: 4px; margin: 8px 0;
+}
+/* Inline command/readout block used by chapter figures. */
+.cmd {
+  font-family: var(--mono);
+  font-size: var(--fs-sm);
+  background: rgba(26, 22, 18, 0.04);
+  border-left: 1.5px solid var(--ink);
+  padding: 4px 10px;
+  white-space: pre;
+  overflow-x: auto;
+  color: var(--ink);
+}
 .primer-eyebrow {
   font-family: var(--smallcaps);
   font-size: 13px;

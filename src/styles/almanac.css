@@ -91,11 +91,6 @@ h1, h2, h3, h4 { font-weight: 600; margin: 0; }
 h1 { font-size: var(--fs-h1); line-height: 1.05; letter-spacing: -0.012em; }
 h2 { font-size: var(--fs-h2); line-height: 1.15; }
 h3 { font-size: var(--fs-lg); line-height: 1.2; }
-.title-rule {
-  border: 0; border-top: 1.5px solid var(--ink);
-  border-bottom: 0.5px solid var(--ink);
-  height: 4px; margin: 8px 0;
-}
 .hairline { border: 0; border-top: 0.5px solid var(--rule); margin: 0; }
 .double-rule {
   border: 0;
@@ -251,17 +246,6 @@ a.ink-link:hover { background: rgba(122, 31, 31, 0.06); }
 .clk-ink2 { color: var(--ink-2); }
 .clk-ink3 { color: var(--ink-3); }
 .clk:hover { color: var(--oxblood); border-bottom-color: var(--oxblood); }
-
-.cmd {
-  font-family: var(--mono);
-  font-size: var(--fs-sm);
-  background: rgba(26, 22, 18, 0.04);
-  border-left: 1.5px solid var(--ink);
-  padding: 4px 10px;
-  white-space: pre;
-  overflow-x: auto;
-  color: var(--ink);
-}
 
 @media (max-width: 720px) {
   .page { padding: 32px 22px 32px; }
