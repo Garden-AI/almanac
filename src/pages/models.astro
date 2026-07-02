@@ -60,62 +60,28 @@ const familyCards = await Promise.all(
 ---
 
 <Page title="Models — Garden's Almanac">
-  <div class="models-page" data-view="year">
+  <div class="models-page">
     <div class="models-titlerow">
       <h1 class="models-h1">Models</h1>
-      <div class="models-viewswitch" role="tablist" aria-label="View">
-        <button type="button" class="models-viewbtn" data-view-btn="year" aria-pressed="true">By year</button>
-        <button type="button" class="models-viewbtn" data-view-btn="embed" aria-pressed="false">By similarity</button>
-      </div>
+      <nav class="models-nav" aria-label="Sections">
+        <a class="sc" href="#similarity">by similarity</a>
+        <span aria-hidden="true">·</span>
+        <a class="sc" href="#families">by family</a>
+        <span aria-hidden="true">·</span>
+        <a class="sc" href="#years">by year</a>
+      </nav>
     </div>
 
-    <section class="models-standfirst">
-      <p class="models-lede">
-        <b>Models sit close when they picture matter the same way.</b> Every model was shown the
-        same structures and, in effect, asked to sort them: which of these are alike? Models that
-        sort them the same way sit on nearby branches. The tree compares how models see, not how
-        well they predict — and color marks the data each one learned from.
-      </p>
-      <div class="models-key">
-        <div class="models-key-row">
-          <svg width="58" height="16" viewBox="0 0 58 16" aria-hidden="true">
-            <line x1="6" y1="8" x2="30" y2="8" stroke="var(--ink)" stroke-width="1.5" stroke-linecap="round" />
-            <circle cx="6" cy="8" r="3.4" fill="var(--ink-2)" /><circle cx="30" cy="8" r="3.4" fill="var(--ink-2)" />
-          </svg>
-          <span><b>Short branch</b> — the two models picture matter almost identically.</span>
-        </div>
-        <div class="models-key-row">
-          <svg width="58" height="16" viewBox="0 0 58 16" aria-hidden="true">
-            <line x1="6" y1="8" x2="46" y2="8" stroke="var(--ink)" stroke-width="1.5" stroke-linecap="round" />
-            <circle cx="6" cy="8" r="3.4" fill="var(--ink-2)" /><circle cx="46" cy="8" r="3.8" fill="var(--oxblood)" />
-          </svg>
-          <span><b>Long branch</b> — this model pictures matter unlike the rest.</span>
-        </div>
-      </div>
-    </section>
-
-    <section class="models-split">
-      <div class="models-rail">
-        <p class="it models-rail-cap">By publication year</p>
-        {models.map(({ model: m, year }) => (
-          <div class="models-rail-row">
-            <a class="ink-link it models-rail-name" href={url(`/model/${m.id}`)}>{m.data.name}</a>
-            <span class="mono models-rail-year">{year ?? '—'}</span>
-          </div>
-        ))}
-      </div>
-
-      <div class="models-divider" aria-hidden="true"></div>
-
-      <div class="models-mapcol">
-        <SimilarityTree />
-      </div>
+    <section id="similarity" class="models-section">
+      <hr class="models-rule" />
+      <h2 class="models-h2">By Similarity of Representation</h2>
+      <SimilarityTree />
     </section>
 
     {familyCards.length > 0 && (
-      <section class="models-families">
-        <hr class="models-families-rule" />
-        <h2 class="models-families-h2">Architecture Families</h2>
+      <section id="families" class="models-section">
+        <hr class="models-rule" />
+        <h2 class="models-h2">By Architecture Family</h2>
         <div class="models-families-grid">
           {familyCards.map((f) => (
             <div class="models-family">
@@ -141,68 +107,66 @@ const familyCards = await Promise.all(
         </div>
       </section>
     )}
+
+    <section id="years" class="models-section">
+      <hr class="models-rule" />
+      <h2 class="models-h2">By Publication Year</h2>
+      <div class="models-years-cols">
+        {models.map(({ model: m, year }) => (
+          <div class="models-rail-row">
+            <a class="ink-link it models-rail-name" href={url(`/model/${m.id}`)}>{m.data.name}</a>
+            <span class="mono models-rail-year">{year ?? '—'}</span>
+          </div>
+        ))}
+      </div>
+    </section>
   </div>
 </Page>
 
 <style>
   .models-titlerow {
-    display: flex; align-items: flex-end; justify-content: space-between;
-    gap: 20px; flex-wrap: wrap;
+    display: flex; align-items: baseline; justify-content: space-between;
+    gap: 20px 28px; flex-wrap: wrap; margin-bottom: 28px;
   }
   .models-h1 {
     font-family: var(--serif); font-size: var(--fs-h1); font-weight: 600;
     line-height: 1; letter-spacing: -0.01em; margin: 0;
   }
-
-  /* View switch — only shown when the split collapses (narrow). */
-  .models-viewswitch { display: none; gap: 0 22px; align-items: baseline; }
-  .models-viewbtn {
-    font-family: var(--smallcaps); text-transform: lowercase; font-size: var(--fs-base);
-    letter-spacing: var(--track-label); background: transparent; border: 0;
-    border-bottom: 1.5px solid transparent; padding: 3px 0; cursor: pointer;
-    line-height: 1.1; color: var(--ink-3);
+  .models-nav {
+    display: flex; align-items: baseline; gap: 12px;
+    font-size: var(--fs-base); letter-spacing: var(--track-label);
+    color: var(--ink-3);
   }
-  .models-page[data-view="year"] .models-viewbtn[data-view-btn="year"],
-  .models-page[data-view="embed"] .models-viewbtn[data-view-btn="embed"] {
-    color: var(--oxblood); border-bottom-color: var(--oxblood);
+  .models-nav a { color: var(--ink); text-decoration: none; }
+  .models-nav a:hover { color: var(--oxblood); }
+  @media (prefers-reduced-motion: no-preference) {
+    :global(html) { scroll-behavior: smooth; }
   }
 
-  .models-standfirst {
-    display: grid; grid-template-columns: minmax(0, 1fr) auto;
-    gap: 24px 44px; align-items: center;
-    border-top: 1.5px solid var(--ink); border-bottom: 0.5px solid var(--ink);
-    padding: 14px 0 16px; margin: 16px 0 24px;
+  .models-section { margin-top: 38px; }
+  .models-section:first-of-type { margin-top: 0; }
+  .models-rule {
+    border: 0; border-top: 1.5px solid var(--ink); border-bottom: 0.5px solid var(--ink);
+    height: 3px; margin: 0 0 12px;
   }
-  .models-lede { margin: 0; font-size: var(--fs-lg); line-height: 1.5; max-width: 64ch; }
-  .models-lede b { font-weight: 600; }
-  .models-key { display: flex; flex-direction: column; gap: 8px; }
-  .models-key-row { display: flex; align-items: center; gap: 10px; font-size: var(--fs-sm); line-height: 1.3; color: var(--ink-2); }
-  .models-key-row b { color: var(--ink); font-weight: 600; }
+  .models-h2 {
+    font-family: var(--smallcaps); text-transform: lowercase; font-weight: 400;
+    font-size: var(--fs-h3); letter-spacing: var(--track-display);
+    line-height: 1.2; margin: 0 0 18px; color: var(--ink);
+  }
 
-  .models-split { display: flex; align-items: flex-start; }
-  .models-rail { flex: 0 0 196px; min-width: 168px; padding-right: 4px; }
-  .models-rail-cap { font-size: var(--fs-md); color: var(--ink-2); margin: 0 0 10px; line-height: 1.2; }
+  .models-years-cols { columns: 170px; column-gap: 48px; }
   .models-rail-row {
     display: flex; align-items: baseline; justify-content: space-between;
     gap: 10px; padding: 6px 1px; border-bottom: 0.5px solid var(--rule-soft);
+    break-inside: avoid;
   }
   .models-rail-name { font-size: var(--fs-base); min-width: 0; }
   .models-rail-year {
     font-size: var(--fs-sm); color: var(--ink-3); flex: 0 0 auto;
     font-variant-numeric: tabular-nums;
   }
-  .models-divider { flex: 0 0 auto; align-self: stretch; border-left: 0.5px solid var(--rule-soft); margin: 0 40px; }
-  .models-mapcol { flex: 1 1 auto; min-width: 0; }
 
-  .models-families { margin-top: 48px; }
-  .models-families-rule {
-    border: 0; border-top: 1.5px solid var(--ink); border-bottom: 0.5px solid var(--ink);
-    height: 3px; margin: 0 0 12px;
-  }
-  .models-families-h2 {
-    font-family: var(--serif); font-size: var(--fs-h2); font-weight: 600;
-    line-height: 1.04; letter-spacing: -0.008em; margin: 0 0 16px;
-  }
   .models-families-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(440px, 1fr)); gap: 0 44px; }
   .models-family { padding: 16px 0 18px; border-top: 0.5px solid var(--rule); }
   .models-family-h3 {
@@ -217,37 +181,7 @@ const familyCards = await Promise.all(
   }
   .models-family-sep { color: var(--ink-3); margin: 0 6px 0 7px; }
 
-  /* Collapse to a single column with a view toggle on narrow screens. */
   @media (max-width: 720px) {
-    .models-viewswitch { display: flex; }
-    .models-standfirst { grid-template-columns: 1fr; gap: 14px; }
-    .models-split { display: block; }
-    .models-divider { display: none; }
-    .models-page[data-view="year"] .models-mapcol { display: none; }
-    .models-page[data-view="embed"] .models-rail { display: none; }
-    .models-rail, .models-mapcol { width: 100%; }
     .models-families-grid { grid-template-columns: 1fr; }
   }
 </style>
-
-<script>
-  const page = document.querySelector<HTMLElement>('.models-page');
-  if (page) {
-    const setView = (v: 'year' | 'embed', push: boolean) => {
-      page.dataset.view = v;
-      page.querySelectorAll<HTMLButtonElement>('.models-viewbtn').forEach((b) =>
-        b.setAttribute('aria-pressed', String(b.dataset.viewBtn === v)),
-      );
-      if (push) {
-        const p = new URLSearchParams(location.search);
-        if (v === 'embed') p.set('view', 'embedding'); else p.delete('view');
-        const qs = p.toString();
-        history.replaceState(null, '', location.pathname + (qs ? '?' + qs : '') + location.hash);
-      }
-    };
-    if (new URLSearchParams(location.search).get('view') === 'embedding') setView('embed', false);
-    page.querySelectorAll<HTMLButtonElement>('.models-viewbtn').forEach((b) =>
-      b.addEventListener('click', () => setView(b.dataset.viewBtn as 'year' | 'embed', true)),
-    );
-  }
-</script>
