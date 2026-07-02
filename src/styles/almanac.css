@@ -208,6 +208,13 @@ table.almanac tbody tr:last-child td { border-bottom: 1.5px solid var(--ink); }
   padding-top: 16px;
   margin-top: 40px;
 }
+.site-foot p {
+  font-size: var(--fs-sm);
+  line-height: 1.5;
+  color: var(--ink-3);
+  margin: 0;
+  max-width: 76ch;
+}
 
 @media (max-width: 720px) {
   .site-head {
