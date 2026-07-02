@@ -10,9 +10,10 @@ import {
   type CellState,
 } from '../lib/rootstock';
 import { url } from '../lib/url';
+import { getSortedClusters } from '../lib/clusters';
 
-// Paper-and-ink syntax theme for the How-To snippet. Ported from
-// compatibility.astro. Keeping the colorway aligned with the page tokens.
+// Paper-and-ink syntax theme for the How-To snippet, colorway aligned with
+// the page tokens.
 const almanacCodeTheme = {
   name: 'almanac',
   type: 'light' as const,
@@ -39,12 +40,7 @@ const almanacCodeTheme = {
   ],
 };
 
-const clusters = (await getCollection('clusters')).sort((a, b) => {
-  const oa = a.data.order ?? 999;
-  const ob = b.data.order ?? 999;
-  if (oa !== ob) return oa - ob;
-  return a.data.name.localeCompare(b.data.name);
-});
+const clusters = await getSortedClusters();
 
 const models = await getCollection('models');
 
@@ -307,10 +303,7 @@ with RootstockCalculator(
     color: var(--ink-2);
   }
 
-  /* Availability matrix — one row per checkpoint, grouped by family section header.
-   * Ported from design_handoff_availability_table/availability-matrix.css; sizing
-   * for the slug column, status marks, and cluster headers stays at the existing
-   * app's values where this overlaps with prior matrix styling. */
+  /* Availability matrix — one row per checkpoint, grouped by family section header. */
   .am-wrap { margin-top: 24px; }
   /* The H1 names the table now; this band is just the cell-reading key + filter
      on one line: legend left, filter right-docked to the table's right edge,

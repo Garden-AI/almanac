@@ -7,13 +7,9 @@ import {
   renderClusterModelsHtml,
 } from '../lib/rootstock';
 import { url } from '../lib/url';
+import { getSortedClusters } from '../lib/clusters';
 
-const clusters = (await getCollection('clusters')).sort((a, b) => {
-  const oa = a.data.order ?? 999;
-  const ob = b.data.order ?? 999;
-  if (oa !== ob) return oa - ob;
-  return a.data.name.localeCompare(b.data.name);
-});
+const clusters = await getSortedClusters();
 const models = await getCollection('models');
 const dump = await getRootstockDump();
 

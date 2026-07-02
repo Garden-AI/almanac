@@ -9,8 +9,6 @@
 
 import fixture from '../fixtures/rootstock-dump.json' with { type: 'json' };
 
-export type RootstockStatus = 'ready' | string;
-
 export interface RootstockCheckpoint {
   fetched_at: string | null;
   verified_at: string | null;
@@ -19,7 +17,7 @@ export interface RootstockCheckpoint {
 }
 
 export interface RootstockEnvironment {
-  status: RootstockStatus;
+  status: string;
   built_at: string | null;
   source_hash: string;
   source: string;
@@ -44,16 +42,15 @@ export interface RootstockDump {
   manifests: RootstockManifest[];
 }
 
-export const ROOTSTOCK_URL = import.meta.env.PUBLIC_ROOTSTOCK_URL;
-
 export async function getRootstockDump(): Promise<RootstockDump> {
-  if (ROOTSTOCK_URL) {
+  const liveUrl = import.meta.env.PUBLIC_ROOTSTOCK_URL;
+  if (liveUrl) {
     // The live fetch is best-effort: if Rootstock is unreachable (offline
     // build, backend down), fall back to the captured fixture rather than
     // crashing the page render. The client-side refresh corrects statuses
     // once the network is back; until then the baked catalog still renders.
     try {
-      const res = await fetch(ROOTSTOCK_URL);
+      const res = await fetch(liveUrl);
       if (!res.ok) throw new Error(`Rootstock fetch failed: ${res.status}`);
       return (await res.json()) as RootstockDump;
     } catch (err) {
@@ -64,7 +61,7 @@ export async function getRootstockDump(): Promise<RootstockDump> {
   return fixture as RootstockDump;
 }
 
-export function findManifest(
+function findManifest(
   dump: RootstockDump,
   clusterSlug: string,
 ): RootstockManifest | null {
@@ -75,7 +72,6 @@ export interface CheckpointVerification {
   /** Env (manifest key) the checkpoint was verified through. */
   env: string;
   verifiedAt: string | null;
-  verifiedDevice: string | null;
   lastError: string | null;
 }
 
@@ -96,7 +92,6 @@ export function findVerification(
       return {
         env: envName,
         verifiedAt: cp.verified_at,
-        verifiedDevice: cp.verified_device,
         lastError: cp.last_error,
       };
     }
@@ -143,16 +138,17 @@ export function cellSvg(state: CellState, dim = false): string {
   return `<svg aria-label="not installed" style="position: absolute; inset: 0; width: 100%; height: 100%; display: block;"><defs><pattern id="${id}" patternUnits="userSpaceOnUse" width="7" height="7" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="7" stroke="var(--ink)" stroke-width="0.9" opacity="${op}" /></pattern></defs><rect x="0" y="0" width="100%" height="100%" fill="url(#${id})" /></svg>`;
 }
 
-export interface ClusterEnvGroup {
-  envName: string;
-  status: string;
-  builtAt: string | null;
-  checkpoints: Array<{
-    id: string;
-    verifiedAt: string | null;
-    verifiedDevice: string | null;
-    lastError: string | null;
-  }>;
+/** Status-mark HTML for the model-detail checkpoint table (text glyphs, not
+    the matrix SVGs). Shared by the build seed and the client live-refresh —
+    same parity rule as `cellSvg`. */
+export function statusGlyph(state: CellState): string {
+  if (state === 'verified') {
+    return '<span class="status-verified" title="Verified within the last 30 days" aria-label="verified">●</span>';
+  }
+  if (state === 'lapsed') {
+    return '<span class="status-stale" title="Installed but not recently verified" aria-label="installed, not recently verified">○</span>';
+  }
+  return '<span class="status-na" title="Not installed on this cluster" aria-label="not installed">—</span>';
 }
 
 /* ─────────────────────────────────────────────────────────────────────────
@@ -178,7 +174,7 @@ export interface ModelEnvFile {
 
 /** Stable per-family basename: terse and verbose variants of one family env
  *  collapse to the same name (`mace` & `mace_env` → `mace_env.py`). */
-export function envFileName(env: string): string {
+function envFileName(env: string): string {
   const base = env.endsWith('_env') ? env : `${env}_env`;
   return `${base}.py`;
 }
@@ -218,6 +214,12 @@ export function envFilesForModel(
     });
   }
   return files;
+}
+
+/** Provenance caption under the env listing — shared by the build seed and
+ *  the client tab-switch/live-refresh paint. */
+export function envCaption(f: { clusterName: string; builtAt: string | null }): string {
+  return `Shown verbatim — Rootstock installs this file unmodified. ${f.clusterName} · built ${(f.builtAt ?? '').slice(0, 10)}.`;
 }
 
 function escEnv(s: string): string {
@@ -337,7 +339,7 @@ export function renderEnvBody(source: string): string {
 
 /** Human "8 days ago" style label for a verification timestamp. `now` is
  *  passed (not read internally) so build and client agree on the clock. */
-export function relativeTime(verifiedAt: string | null, now: number): string {
+function relativeTime(verifiedAt: string | null, now: number): string {
   if (!verifiedAt) return '—';
   const t = Date.parse(verifiedAt);
   if (Number.isNaN(t)) return '—';
@@ -404,7 +406,7 @@ export function clusterModels(
         order.push(model.slug);
       }
       const state = cellStateFor(
-        { env: '', verifiedAt: cp.verifiedAt, verifiedDevice: null, lastError: cp.lastError },
+        { env: '', verifiedAt: cp.verifiedAt, lastError: cp.lastError },
         now,
       );
       const row: ClusterCheckpointRow = {
@@ -482,23 +484,24 @@ export function renderClusterModelsHtml(
   return html;
 }
 
-/** Env-grouped checkpoint listing for a single cluster (cluster page). */
-export function envGroupsForCluster(
+/** A cluster's installed checkpoints grouped by env, consumed by
+ *  `clusterModels`. */
+function envGroupsForCluster(
   dump: RootstockDump,
   clusterSlug: string,
-): ClusterEnvGroup[] {
+): Array<{
+  envName: string;
+  checkpoints: Array<{ id: string; verifiedAt: string | null; lastError: string | null }>;
+}> {
   const manifest = findManifest(dump, clusterSlug);
   if (!manifest) return [];
   return Object.entries(manifest.environments)
     .map(([envName, env]) => ({
       envName,
-      status: env.status,
-      builtAt: env.built_at,
       checkpoints: Object.entries(env.checkpoints ?? {})
         .map(([id, cp]) => ({
           id,
           verifiedAt: cp.verified_at,
-          verifiedDevice: cp.verified_device,
           lastError: cp.last_error,
         }))
         .sort((a, b) => a.id.localeCompare(b.id)),

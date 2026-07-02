@@ -8,7 +8,7 @@ The production site for **thegardens.ai**'s *Garden's Almanac of Matter Models, 
 
 Built as an **Astro 6** static site. Editorial content lives in the repo (no DB) — community PRs are the editing path. Live cluster availability comes from **Rootstock**, the existing backend at `https://garden-ai-prod--rootstock-admin-dashboard.modal.run/`.
 
-`design_handoff_garden_almanac/` is the original pixel-perfect design reference (HTML+JSX prototypes, never built). Don't ship from there — port from there. `design_handoff_garden_almanac/README.md` is still the canonical source for typography, layout dimensions, and the design rationale.
+`docs/design-guidelines.md` is the canonical design reference — the paper-and-ink hard rules, the three-typeface system, and the layout conventions the site is built to. (It supersedes the original `design_handoff_garden_almanac/` prototype directory, which has been removed from the repo.)
 
 ## Commands
 

@@ -73,7 +73,6 @@ const models = defineCollection({
         z.object({
           id: z.string(),
           params: z.string().optional(),
-          weightsBytes: z.number().int().optional(),
         }),
       )
       .min(1),
