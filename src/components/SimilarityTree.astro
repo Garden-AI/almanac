@@ -5,118 +5,87 @@
 // uniform ink (length is the only signal); color lives on the dots (= training corpus).
 // Self-contained: caption + figure + controls + client script. See design_handoff_*.
 import treeData from '../data/tree-data.json';
+
+// Toggle order tells the story: familiar ground first, then step off it.
+const DS_ORDER = ['omat24', 'salex', 'omol25', 'qm9'];
+const orderedDatasets = [...treeData.datasets].sort(
+  (a, b) => DS_ORDER.indexOf(a.id) - DS_ORDER.indexOf(b.id),
+);
 ---
 
 <div class="simtree">
-  <div class="simtree-caphead">
-    <span class="it simtree-cap">By embedding similarity</span>
-    <div class="simtree-info-wrap">
-      <button type="button" id="st-info-btn" class="sc simtree-info-btn" aria-expanded="false">
-        <span aria-hidden="true">ⓘ</span><span>how to read this</span>
-      </button>
-      <div id="st-info-pop" class="simtree-info-pop" hidden>
-        <div class="simtree-info-head">
-          <span class="sc">how to read this</span>
-          <button type="button" id="st-info-close" class="simtree-info-close" aria-label="Close">×</button>
-        </div>
-        <div class="simtree-info-body">
-          <p><span class="sc simtree-info-k">what this is ·</span> A similarity map of interatomic
-            potentials. We ran the same structures through every model and recorded the internal
-            representation each forms. Models that represent those structures alike end up on nearby
-            branches.</p>
-          <p><span class="sc simtree-info-k">how to read it ·</span> Follow the branches — their length
-            is the only thing that means anything. Two models on a short branch build nearly identical
-            representations; a model out on a long branch represents matter unlike the others. Where a
-            model sits around the circle is just layout.</p>
-          <p><span class="sc simtree-info-k">worth noticing ·</span> Models group by the data they were
-            trained on at least as much as by architecture — which is why the colors (training corpus)
-            tend to bundle.</p>
-          <p class="it simtree-info-foot">Not an evolutionary tree — nothing here descends from
-            anything. Neighbor-joining on representational-alignment (CKNNA) distances.
-            <span class="simtree-info-cite">Edamadaka et al. (2025).</span></p>
-        </div>
+  <div class="simtree-grid">
+    <div class="simtree-figwrap">
+      <figure class="simtree-figure">
+        <div id="st-tree" class="simtree-svg"></div>
+        <div id="st-readout" class="simtree-readout" hidden></div>
+      </figure>
+      <div class="simtree-key">
+        <span class="sc simtree-key-k">training data</span>
+        <ul class="simtree-legend-list" id="st-legend"></ul>
+        <span class="simtree-key-group">
+          <div id="st-scale"></div>
+        </span>
       </div>
     </div>
-  </div>
+    <aside class="simtree-side">
+      <p class="simtree-intro">
+        <a class="ink-link" href="https://arxiv.org/abs/2512.03750" target="_blank" rel="noopener">Edamadaka
+        et al. (2025)</a> looked inside a selection of popular MLIPs and recorded how each one internally represented different structures (molecules, crystals, etc) as vectors.  
+        In AI jargon, we call these internal representations
+        <a class="ink-link" href="https://en.wikipedia.org/wiki/Embedding_(machine_learning)" target="_blank" rel="noopener">embeddings</a>.
+        The more similar two models' embeddings are for a set of structures, the closer the models are on the tree.
+      </p>
 
-  <div class="simtree-figwrap">
-    <figure class="simtree-figure">
-      <div id="st-tree" class="simtree-svg"></div>
-      <div id="st-readout" class="simtree-readout" hidden></div>
-    </figure>
-  </div>
+      <p class="simtree-method">
+         "Similar" here means the two models agree about which structures are near-neighbors of which in embedding space (CKNNA scores). 
+         Branch lengths are distances (Jensen–Shannon Divergence) derived from the CKNNA scores.
+      </p>
 
-  <div class="simtree-controls">
-    <div class="simtree-legend">
-      <span class="sc simtree-legend-title">Color — training corpus</span>
-      <ul class="simtree-legend-list" id="st-legend"></ul>
-    </div>
-    <div class="simtree-controls-right">
-      <div class="simtree-scalewrap">
-        <span class="sc simtree-scale-title">scale</span>
-        <div id="st-scale"></div>
+      <div class="simtree-refbox">
+        <fieldset class="simtree-toggle">
+          <legend class="sc simtree-toggle-legend">Reference dataset</legend>
+          <p class="simtree-refwhat">Pick a dataset to see how similarly the models represent that
+            class of structures.</p>
+          <div class="simtree-toggle-tabs">
+            {orderedDatasets.map((d, i) => (
+              <>
+                <input
+                  class="simtree-toggle-input"
+                  type="radio"
+                  name="st-ds"
+                  id={`st-ds-${d.id}`}
+                  value={d.id}
+                  checked={i === 0}
+                />
+                <label for={`st-ds-${d.id}`} class="sc simtree-toggle-tab">{d.dataset}</label>
+              </>
+            ))}
+          </div>
+        </fieldset>
+        <p class="simtree-dsnote" id="st-dsnote"><span id="st-dsnote-body"></span></p>
       </div>
-      <fieldset class="simtree-toggle">
-        <legend class="sc simtree-toggle-legend">Reference dataset</legend>
-        <div class="simtree-toggle-tabs">
-          {treeData.datasets.map((d, i) => (
-            <>
-              <input
-                class="simtree-toggle-input"
-                type="radio"
-                name="st-ds"
-                id={`st-ds-${d.id}`}
-                value={d.id}
-                checked={i === 0}
-              />
-              <label for={`st-ds-${d.id}`} class="sc simtree-toggle-tab">{d.dataset}</label>
-            </>
-          ))}
-        </div>
-      </fieldset>
-    </div>
+    </aside>
   </div>
 
   <script type="application/json" id="st-data" set:html={JSON.stringify(treeData)}></script>
 </div>
 
 <style>
-  .simtree-caphead {
-    position: relative; display: flex; align-items: baseline;
-    justify-content: space-between; gap: 14px; flex-wrap: wrap; margin-bottom: 10px;
+  .simtree-grid {
+    display: grid; grid-template-columns: minmax(0, 1fr) 300px;
+    gap: 0 44px; align-items: start;
   }
-  .simtree-cap { font-size: var(--fs-md); color: var(--ink-2); line-height: 1.2; }
-  .simtree-info-wrap { position: relative; display: flex; align-items: center; }
-  .simtree-info-btn {
-    display: inline-flex; align-items: center; gap: 7px;
-    border: 0.5px solid var(--rule); background: transparent; color: var(--ink-2);
-    font-size: var(--fs-md); letter-spacing: var(--track-label); line-height: 1.2;
-    padding: 5px 12px; cursor: pointer; white-space: nowrap;
-    transition: color 0.12s, border-color 0.12s;
-  }
-  .simtree-info-btn:hover { color: var(--oxblood); border-color: var(--oxblood); }
-  .simtree-info-pop {
-    position: absolute; top: calc(100% + 8px); right: 0; width: 360px; z-index: 40;
-    background: var(--paper); border: 0.5px solid var(--ink); padding: 15px 17px;
-  }
-  .simtree-info-head {
-    display: flex; justify-content: space-between; align-items: baseline;
-    margin-bottom: 10px; border-bottom: 0.5px solid var(--rule-soft); padding-bottom: 7px;
-  }
-  .simtree-info-head .sc { font-size: var(--fs-sm); letter-spacing: var(--track-label); }
-  .simtree-info-close {
-    border: 0; background: transparent; color: var(--ink-3);
-    font-size: var(--fs-lg); line-height: 1; cursor: pointer; padding: 0;
-  }
-  .simtree-info-close:hover { color: var(--oxblood); }
-  .simtree-info-body { font-size: var(--fs-md); line-height: 1.5; display: grid; gap: 9px; }
-  .simtree-info-body p { margin: 0; }
-  .simtree-info-k { font-size: var(--fs-xs); letter-spacing: var(--track-label); color: var(--ink-2); }
-  .simtree-info-foot { color: var(--ink-2); }
-  .simtree-info-cite { font-style: normal; }
+  .simtree-side { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+  .simtree-side > * { margin: 0; }
 
-  .simtree-figwrap { display: flex; justify-content: center; }
-  .simtree-figure { position: relative; margin: 0; width: 100%; max-width: 840px; }
+  .simtree-intro {
+    font-size: var(--fs-base); line-height: 1.55; color: var(--ink);
+  }
+  .simtree-intro b { font-weight: 600; }
+
+  .simtree-figwrap { min-width: 0; }
+  .simtree-figure { position: relative; margin: 0; width: 100%; }
   .simtree-svg { width: 100%; }
   .simtree-svg :global(svg) { display: block; }
 
@@ -147,38 +116,52 @@ import treeData from '../data/tree-data.json';
   .simtree-readout :global(.ro-nnname) { font-style: italic; }
   .simtree-readout :global(.ro-nndist) { color: var(--ink-3); font-variant-numeric: tabular-nums; }
 
-  .simtree-controls {
-    display: flex; align-items: flex-start; justify-content: space-between;
-    gap: 16px 28px; flex-wrap: wrap; margin-top: 14px;
-    border-top: 0.5px solid var(--rule); padding-top: 13px;
+  .simtree-refbox {
+    border: 0.5px solid var(--ink);
+    padding: 12px 14px 13px;
   }
-  .simtree-legend { display: flex; flex-direction: column; gap: 7px; min-width: 0; }
-  .simtree-legend-title { font-size: var(--fs-micro); letter-spacing: var(--track-label); color: var(--ink-3); }
+  .simtree-key {
+    display: flex; align-items: center; flex-wrap: wrap; gap: 8px 14px;
+    margin-top: 4px; padding-top: 10px; border-top: 0.5px solid var(--rule-soft);
+  }
+  .simtree-key-k { font-size: var(--fs-base); letter-spacing: var(--track-label); color: var(--ink-2); }
+  .simtree-key-group { display: inline-flex; align-items: center; gap: 10px; }
   .simtree-legend-list { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px 16px; }
   .simtree-legend-list :global(li) { display: flex; align-items: center; gap: 7px; font-size: var(--fs-md); color: var(--ink); }
 
-  .simtree-controls-right { display: flex; align-items: flex-end; gap: 24px; flex-wrap: wrap; margin-left: auto; }
-  .simtree-scalewrap { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
-  .simtree-scale-title { font-size: var(--fs-micro); letter-spacing: var(--track-label); color: var(--ink-3); }
   .simtree-toggle { border: none; margin: 0; padding: 0; }
   .simtree-toggle-legend {
-    display: block; font-size: var(--fs-micro); letter-spacing: var(--track-label);
-    color: var(--ink-3); margin: 0 0 6px; padding: 0;
+    display: block; font-size: var(--fs-lg); letter-spacing: var(--track-label);
+    color: var(--ink); margin: 0 0 7px; padding: 0;
+  }
+  .simtree-refwhat {
+    font-size: var(--fs-md); line-height: 1.5; color: var(--ink-2); margin: 0 0 10px;
   }
   .simtree-toggle-tabs {
-    display: flex; align-items: baseline;
-    border-top: 0.5px solid var(--ink); border-bottom: 0.5px solid var(--ink); padding: 4px 0 3px;
+    display: flex; align-items: baseline; flex-wrap: wrap;
   }
   .simtree-toggle-input { position: absolute; opacity: 0; pointer-events: none; width: 0; height: 0; }
   .simtree-toggle-tab {
-    display: inline-block; font-size: var(--fs-xs); letter-spacing: var(--track-label);
-    color: var(--ink-2); padding: 3px 11px; cursor: pointer; user-select: none;
+    display: inline-block; font-size: var(--fs-base); letter-spacing: var(--track-label);
+    color: var(--ink-2); padding: 5px 13px; cursor: pointer; user-select: none;
     border-left: 0.5px solid var(--ink-2); transition: color 0.12s;
   }
   .simtree-toggle-tab:first-of-type { border-left: none; }
   .simtree-toggle-tab:hover { color: var(--ink); }
   .simtree-toggle-input:checked + .simtree-toggle-tab { color: var(--paper); background: var(--ink); }
   .simtree-toggle-input:focus-visible + .simtree-toggle-tab { outline: 1px dotted var(--ink); outline-offset: 2px; }
+
+  .simtree-dsnote {
+    font-size: var(--fs-md); line-height: 1.5; color: var(--ink-2);
+    margin: 10px 0 0; padding-top: 10px; border-top: 0.5px solid var(--rule-soft);
+  }
+  .simtree-dsnote b { color: var(--ink); font-weight: 600; }
+  .simtree-method { font-size: var(--fs-md); line-height: 1.5; color: var(--ink-3); margin-top: -6px; }
+
+  @media (max-width: 940px) {
+    .simtree-grid { grid-template-columns: 1fr; gap: 18px 0; }
+    .simtree-side { max-width: 62ch; }
+  }
 </style>
 
 <script>
@@ -195,7 +178,17 @@ import treeData from '../data/tree-data.json';
   const FAM: Record<string, { label: string; code: string }> = {
     eqV2: { label: 'Equivariant (EqV2)', code: 'EQV2' }, eSEN: { label: 'eSEN', code: 'ESEN' },
     UMA: { label: 'UMA', code: 'UMA' }, MACE: { label: 'MACE', code: 'MACE' },
+    'MACE-OFF': { label: 'MACE-OFF', code: 'MACE-OFF' },
     ORB: { label: 'Orb', code: 'ORB' }, 'PET-MAD': { label: 'PET-MAD', code: 'PET-MAD' },
+  };
+
+  // What each reference set is, and what its tree says. In-distribution sets (materials) pull models
+  // apart by training data; out-of-distribution sets (molecules) collapse them together by architecture.
+  const DS_NOTE: Record<string, string> = {
+    omat24: '<b>OMat24</b> holds bulk inorganic materials — the ground most of these models trained on. On home turf they spread across the tree: each has learned its own way of seeing.',
+    salex: '<b>sAlex</b> holds inorganic crystals from the Alexandria database, still close to most models’ training. The tree stays spread out — familiar structures, distinct views.',
+    omol25: '<b>OMol25</b> holds organic molecules, larger and further from equilibrium than the materials most models trained on. Even off home ground the models keep distinct views: the tree stays about as spread as before.',
+    qm9: '<b>QM9</b> holds small organic molecules near equilibrium — simple enough that there is little to tell apart. The materials models pull into a tight knot, falling back on one shared picture, while the few molecule-trained models sit far off (their long branch is shortened to fit).',
   };
 
   const esc = (s: any) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -210,14 +203,20 @@ import treeData from '../data/tree-data.json';
   }
 
   const data: { datasets: DS[] } = JSON.parse(document.getElementById('st-data')!.textContent!);
+  // MACE-OFF (trained on molecules) is its own group, apart from MACE (materials).
+  for (const ds of data.datasets) for (const p of ds.points) { if (p.family === 'MACE' && /off/i.test(p.label)) p.family = 'MACE-OFF'; }
   const byId = new Map(data.datasets.map((d) => [d.id, d]));
-  const state: { dsId: string; hover: { type: 'leaf' | 'sector'; key: string } | null; infoOpen: boolean } = {
-    dsId: data.datasets[0].id, hover: null, infoOpen: false,
+  const state: { dsId: string; hover: { type: 'leaf' | 'sector'; key: string } | null } = {
+    dsId: data.datasets[0].id, hover: null,
   };
+  const C = 520;
+  const rawCache: Record<string, any> = {};
   const cache: Record<string, any> = {};
+  let PX_PER_UNIT = 0;              // shared distance→pixel scale across ALL datasets
 
-  function buildTree(ds: DS) {
-    if (cache[ds.id]) return cache[ds.id];
+  // Neighbor-joining layout in true √JSD units — no per-dataset normalization.
+  function layoutRaw(ds: DS) {
+    if (rawCache[ds.id]) return rawCache[ds.id];
     const pts = ds.points, N = pts.length, M = ds.matrix;
     const dist = (i: number, j: number) => M[i][j];   // ← real √JSD distance
     const nodeById = new Map<number, any>();
@@ -257,48 +256,101 @@ import treeData from '../data/tree-data.json';
     };
     place(root.id, 0, 0, 0);
     const leafIds = [...nodeById.values()].filter((n) => n.leaf).map((n) => n.id);
-    const cen = { x: 0, y: 0 };
-    leafIds.forEach((id) => { cen.x += pos.get(id)!.x; cen.y += pos.get(id)!.y; }); cen.x /= leafIds.length; cen.y /= leafIds.length;
-    const famAng = (fam: string) => { const ids = leafIds.filter((id) => nodeById.get(id).p.family === fam); if (!ids.length) return null; let sx = 0, sy = 0; ids.forEach((id) => { sx += pos.get(id)!.x - cen.x; sy += pos.get(id)!.y - cen.y; }); return Math.atan2(sy, sx); };
-    const rot = -Math.PI / 2 - (famAng('eqV2') ?? 0);
-    const applyRot = (th: number, flip: boolean) => { pos.forEach((p, id) => { let dx = p.x - cen.x, dy = p.y - cen.y; if (flip) dx = -dx; pos.set(id, { x: dx * Math.cos(th) - dy * Math.sin(th), y: dx * Math.sin(th) + dy * Math.cos(th) }); }); };
-    applyRot(rot, false);
-    { const ids = leafIds.filter((id) => nodeById.get(id).p.family === 'ORB'); if (ids.length) { let sx = 0, sy = 0; ids.forEach((id) => { sx += pos.get(id)!.x; sy += pos.get(id)!.y; }); const a2 = Math.atan2(sy, sx); if (a2 > Math.PI / 2 || a2 < -Math.PI / 2) applyRot(0, true); } }
-    const C = 520, MAXR = 285;
-    let mnx = Infinity, mxx = -Infinity, mny = Infinity, mxy = -Infinity;
-    pos.forEach((p) => { mnx = Math.min(mnx, p.x); mxx = Math.max(mxx, p.x); mny = Math.min(mny, p.y); mxy = Math.max(mxy, p.y); });
-    const bx = (mnx + mxx) / 2, by = (mny + mxy) / 2, half = Math.max((mxx - mnx) / 2, (mxy - mny) / 2) || 1, scale = MAXR / half;
-    const T = new Map<number, { x: number; y: number }>();
-    pos.forEach((p, id) => T.set(id, { x: C + (p.x - bx) * scale, y: C + (p.y - by) * scale }));
-    const ctr = { x: C, y: C };
+    // Center on the leaf centroid (raw, unscaled coordinates).
+    let cx = 0, cy = 0; leafIds.forEach((id) => { const p = pos.get(id)!; cx += p.x; cy += p.y; }); cx /= leafIds.length; cy /= leafIds.length;
+    pos.forEach((p, id) => pos.set(id, { x: p.x - cx, y: p.y - cy }));
+    // Orient the longest branch straight down, so an outlier tail (e.g. QM9's molecule
+    // models) runs into vertical space instead of widening the tree. Every tree stays about
+    // column-width, so a converged knot reads as genuinely small beside a spread one.
+    let farId = leafIds[0], farR = -1;
+    for (const id of leafIds) { const p = pos.get(id)!; const r = Math.hypot(p.x, p.y); if (r > farR) { farR = r; farId = id; } }
+    const fp = pos.get(farId)!;
+    const rot = Math.PI / 2 - Math.atan2(fp.y, fp.x);
+    const csr = Math.cos(rot), snr = Math.sin(rot);
+    pos.forEach((p, id) => pos.set(id, { x: p.x * csr - p.y * snr, y: p.x * snr + p.y * csr }));
+    // Half-EXTENT that ignores the vertical tail: fit is driven by horizontal spread, so
+    // wide (spread) trees fill the frame and tall (outlier) trees don't shrink everything.
+    let half = 0; pos.forEach((p) => { half = Math.max(half, Math.abs(p.x)); });
+    if (!(half > 0)) half = 1;
     const nn = new Map<string, { name: string; dist: number }>();
     for (let i = 0; i < N; i++) { let bestD = Infinity, bestJ = -1; for (let j = 0; j < N; j++) { if (i === j) continue; const dd = dist(i, j); if (dd < bestD) { bestD = dd; bestJ = j; } } nn.set(prettyName(pts[i].label), { name: prettyName(pts[bestJ].label), dist: bestD }); }
-    const sizeOf = (m: number | null) => Math.max(3.2, Math.min(6.6, 2.8 + Math.log10((m || 1) + 1) * 1.35));
+    const raw = { nodeById, pos, leafIds, half, nn };
+    rawCache[ds.id] = raw;
+    return raw;
+  }
+
+  // Project a raw layout to screen with the SHARED scale; compute a per-dataset content bbox.
+  function project(raw: any, pxPerUnit: number) {
+    const { nodeById, pos, leafIds, nn } = raw;
+    const T = new Map<number, { x: number; y: number }>();
+    pos.forEach((p: any, id: number) => T.set(id, { x: C + p.x * pxPerUnit, y: C + p.y * pxPerUnit }));
+    const ctr = { x: C, y: C };
+    // Scale break: only when ONE branch stands far apart from the rest (a genuine outlier
+    // like QM9's molecule-model tail) — foreshorten it so it doesn't blow up the frame.
+    // Gate on longest ≫ second-longest, so a merely-longest branch never breaks.
+    let e1 = 0, e2 = 0, longest: any = null;
+    nodeById.forEach((nd: any) => { if (nd.leaf) return; const a = T.get(nd.id)!; for (const c of nd.children) { const b = T.get(c.node)!; const len = Math.hypot(b.x - a.x, b.y - a.y); if (len > e1) { e2 = e1; e1 = len; longest = { a, child: c.node, len }; } else if (len > e2) { e2 = len; } } });
+    let breakMark: any = null;
+    const CAP = 170;
+    if (longest && e1 > 320 && e1 > 2.0 * e2) {
+      const a = longest.a, b = T.get(longest.child)!;
+      const ux = (b.x - a.x) / e1, uy = (b.y - a.y) / e1;
+      const shift = e1 - CAP;
+      const desc = new Set<number>(); const stack = [longest.child];
+      while (stack.length) { const id = stack.pop()!; desc.add(id); const n = nodeById.get(id); if (!n.leaf) for (const c of n.children) stack.push(c.node); }
+      desc.forEach((id) => { const p = T.get(id)!; T.set(id, { x: p.x - ux * shift, y: p.y - uy * shift }); });
+      breakMark = { x: a.x + ux * (CAP * 0.5), y: a.y + uy * (CAP * 0.5), ux, uy };
+    }
+    const sizeOf = (_m: number | null) => 5.2;   // uniform dots — size carries no meaning here
     const branches: any[] = [], joins: any[] = [];
-    nodeById.forEach((nd) => { const pp = T.get(nd.id)!; if (!nd.leaf) { joins.push({ x: pp.x, y: pp.y }); for (const c of nd.children) { const cp = T.get(c.node)!, cn = nodeById.get(c.node); branches.push({ x1: pp.x, y1: pp.y, x2: cp.x, y2: cp.y, leaf: cn.leaf, meta: cn.leaf ? cn.p : null, name: cn.leaf ? prettyName(cn.p.label) : null }); } } });
-    const leaves = leafIds.map((id) => { const p = nodeById.get(id).p, t = T.get(id)!, ang = Math.atan2(t.y - ctr.y, t.x - ctr.x), rad = Math.hypot(t.x - ctr.x, t.y - ctr.y); return { id, name: prettyName(p.label), family: p.family, corpus: p.corpus, sizeM: p.sizeM, slug: p.slug, x: t.x, y: t.y, ang, rad, r: sizeOf(p.sizeM), lang: ang, lx: 0, ly: 0 }; });
-    const RINGMIN = 300, MINSEP = 0.060;
+    nodeById.forEach((nd: any) => { const pp = T.get(nd.id)!; if (!nd.leaf) { joins.push({ x: pp.x, y: pp.y }); for (const c of nd.children) { const cp = T.get(c.node)!, cn = nodeById.get(c.node); branches.push({ x1: pp.x, y1: pp.y, x2: cp.x, y2: cp.y, leaf: cn.leaf, meta: cn.leaf ? cn.p : null, name: cn.leaf ? prettyName(cn.p.label) : null }); } } });
+    const leaves = leafIds.map((id: number) => { const p = nodeById.get(id).p, t = T.get(id)!, ang = Math.atan2(t.y - ctr.y, t.x - ctr.x), rad = Math.hypot(t.x - ctr.x, t.y - ctr.y); return { id, name: prettyName(p.label), family: p.family, corpus: p.corpus, sizeM: p.sizeM, slug: p.slug, x: t.x, y: t.y, ang, rad, r: sizeOf(p.sizeM), lang: ang, lx: 0, ly: 0 }; });
+    const MINSEP = 0.060;
     const byAng = [...leaves].sort((p, q) => p.ang - q.ang);
     let prevA: number | null = null;
     for (const lf of byAng) { let aa = lf.ang; if (prevA !== null && aa < prevA + MINSEP) aa = prevA + MINSEP; lf.lang = aa; prevA = aa; }
-    for (const lf of leaves) { const lr = Math.max(lf.rad + 14, RINGMIN); lf.lx = ctr.x + lr * Math.cos(lf.lang); lf.ly = ctr.y + lr * Math.sin(lf.lang); }
-    const fams = [...new Set(leaves.map((l) => l.family))];
-    const sec = fams.map((fam) => { const ls = leaves.filter((l) => l.family === fam); let sx = 0, sy = 0; ls.forEach((l) => { sx += Math.cos(l.ang); sy += Math.sin(l.ang); }); const maxRad = Math.max(...ls.map((l) => l.rad)); return { fam, ang: Math.atan2(sy, sx), rad: Math.min(502, Math.max(432, maxRad + 86)), sang: 0, label: FAM[fam] ? FAM[fam].code : fam.toUpperCase() }; });
+    for (const lf of leaves) { const lr = lf.rad + 16; lf.lx = ctr.x + lr * Math.cos(lf.lang); lf.ly = ctr.y + lr * Math.sin(lf.lang); }
+    const fams = [...new Set(leaves.map((l: any) => l.family))];
+    // Singleton families get no sector label — their lone leaf already carries its name.
+    const sec = fams.filter((fam) => leaves.filter((l: any) => l.family === fam).length > 1).map((fam) => { const ls = leaves.filter((l: any) => l.family === fam); let sx = 0, sy = 0; ls.forEach((l: any) => { sx += Math.cos(l.ang); sy += Math.sin(l.ang); }); const maxRad = Math.max(...ls.map((l: any) => l.rad)); return { fam, ang: Math.atan2(sy, sx), rad: maxRad + 48, sang: 0, label: FAM[fam as string] ? FAM[fam as string].code : (fam as string).toUpperCase() }; });
     sec.sort((p, q) => p.ang - q.ang);
     const SSEP = 0.27; let prevS: number | null = null;
     for (const s of sec) { let aa = s.ang; if (prevS !== null && aa < prevS + SSEP) aa = prevS + SSEP; s.sang = aa; prevS = aa; }
     const sectors = sec.map((s) => ({ fam: s.fam, label: s.label, x: ctr.x + s.rad * Math.cos(s.sang), y: ctr.y + s.rad * Math.sin(s.sang), anchor: Math.cos(s.sang) < -0.25 ? 'end' : Math.cos(s.sang) > 0.25 ? 'start' : 'middle' }));
     const anchors = new Set<string>();
-    fams.forEach((fam) => { const ls = leaves.filter((l) => l.family === fam); if (ls.length === 1) anchors.add(ls[0].name); });
-    // Tight content bbox over every potential label position — stable across hover (no reflow).
+    fams.forEach((fam) => { const ls = leaves.filter((l: any) => l.family === fam); if (ls.length === 1) anchors.add(ls[0].name); });
+    // Content bbox: tree, dots, sector labels, always-visible anchor labels. Hover labels bleed via overflow.
     let bx0 = Infinity, by0 = Infinity, bx1 = -Infinity, by1 = -Infinity;
     const ext = (x: number, y: number) => { if (x < bx0) bx0 = x; if (y < by0) by0 = y; if (x > bx1) bx1 = x; if (y > by1) by1 = y; };
     branches.forEach((b) => { ext(b.x1, b.y1); ext(b.x2, b.y2); });
-    leaves.forEach((l) => { ext(l.x - l.r, l.y - l.r); ext(l.x + l.r, l.y + l.r); const tw = l.name.length * 6.8 + 12; ext(l.lx + Math.cos(l.lang) * tw, l.ly + Math.sin(l.lang) * tw); });
+    leaves.forEach((l: any) => { ext(l.x - l.r, l.y - l.r); ext(l.x + l.r, l.y + l.r); if (anchors.has(l.name)) { const tw = l.name.length * 6.8 + 12; const dx = Math.cos(l.lang) >= 0 ? tw : -tw; ext(l.lx + dx, l.ly - 8); ext(l.lx + dx, l.ly + 8); } });
     sectors.forEach((s) => { const tw = s.label.length * 9 + 6; const dir = s.anchor === 'end' ? -1 : s.anchor === 'start' ? 1 : 0; ext(s.x + dir * tw, s.y); ext(s.x, s.y); });
-    const PAD = 10;
-    const viewBox = { x: bx0 - PAD, y: by0 - PAD, w: bx1 - bx0 + 2 * PAD, h: by1 - by0 + 2 * PAD };
-    const out = { branches, joins, leaves, sectors, nn, scalePx: scale * 0.1, ctr, anchors, viewBox };
+    return { branches, joins, leaves, sectors, nn, ctr, anchors, breakMark, bbox: { bx0, by0, bx1, by1 } };
+  }
+
+  // One distance→pixel scale shared across ALL datasets, sized so the WIDEST-content tree
+  // fills the container. Each tree keeps a TIGHT per-dataset frame and draws at its natural
+  // size — a more-spread tree is physically bigger, a converged one genuinely smaller, and
+  // nothing is stretched or capped independently, so cross-dataset scale stays honest.
+  function ensureGlobal(containerW: number) {
+    if (PX_PER_UNIT) return;
+    let maxHalf = 0;
+    for (const ds of data.datasets) maxHalf = Math.max(maxHalf, layoutRaw(ds).half);
+    if (!(maxHalf > 0)) maxHalf = 1;
+    PX_PER_UNIT = 300 / maxHalf;                       // provisional
+    let maxContentW = 0;
+    for (const ds of data.datasets) { const b = project(layoutRaw(ds), PX_PER_UNIT).bbox; maxContentW = Math.max(maxContentW, b.bx1 - b.bx0); }
+    const target = Math.max(280, (containerW || 780) * 0.68);
+    if (maxContentW > 0) PX_PER_UNIT *= target / maxContentW;   // fit widest tree to container
+  }
+
+  function buildTree(ds: DS, containerW: number) {
+    if (cache[ds.id]) return cache[ds.id];
+    ensureGlobal(containerW);
+    const p = project(layoutRaw(ds), PX_PER_UNIT);
+    const b = p.bbox, PAD = 12;
+    const viewBox = { x: b.bx0 - PAD, y: b.by0 - PAD, w: b.bx1 - b.bx0 + 2 * PAD, h: b.by1 - b.by0 + 2 * PAD };
+    const out = { branches: p.branches, joins: p.joins, leaves: p.leaves, sectors: p.sectors, nn: p.nn, scalePx: PX_PER_UNIT * 0.1, ctr: p.ctr, anchors: p.anchors, breakMark: p.breakMark, viewBox };
     cache[ds.id] = out;
     return out;
   }
@@ -311,10 +363,30 @@ import treeData from '../data/tree-data.json';
     else if (hover && hover.type === 'sector') { hl = new Set(tree.leaves.filter((l: any) => l.family === hover.key).map((l: any) => l.name)); }
     const shown = new Set<string>(tree.anchors || []);
     if (hl) hl.forEach((n) => shown.add(n));
+    // De-collide the labels actually shown: per side, enforce a minimum vertical gap.
+    const labY = new Map<string, number>();
+    for (const side of [true, false]) {
+      const grp = tree.leaves
+        .filter((l: any) => shown.has(l.name) && (Math.cos(l.lang) >= 0) === side)
+        .sort((a: any, b: any) => a.ly - b.ly);
+      let prev = -Infinity;
+      for (const l of grp) { let y = l.ly; if (y < prev + 15) y = prev + 15; labY.set(l.name, y); prev = y; }
+    }
     const vb = tree.viewBox;
-    let s = `<svg width="100%" viewBox="${vb.x.toFixed(1)} ${vb.y.toFixed(1)} ${vb.w.toFixed(1)} ${vb.h.toFixed(1)}" style="display:block;">`;
+    // Natural pixel size (not stretched to 100%): shared scale becomes visible as real
+    // size differences, and dots/labels keep their true proportion to the tree.
+    let s = `<svg width="${vb.w.toFixed(0)}" height="${vb.h.toFixed(0)}" viewBox="${vb.x.toFixed(1)} ${vb.y.toFixed(1)} ${vb.w.toFixed(1)} ${vb.h.toFixed(1)}" style="display:block;max-width:100%;height:auto;margin:0 auto;overflow:visible;">`;
     s += `<rect x="${vb.x.toFixed(1)}" y="${vb.y.toFixed(1)}" width="${vb.w.toFixed(1)}" height="${vb.h.toFixed(1)}" fill="#faf7f1"></rect>`;
     tree.branches.forEach((b: any) => { const lit = !hl || (b.name && hl.has(b.name)); s += `<line x1="${b.x1}" y1="${b.y1}" x2="${b.x2}" y2="${b.y2}" stroke="#1f1c18" stroke-width="1" stroke-linecap="round" opacity="${hl && !lit ? 0.1 : 0.62}"></line>`; });
+    if (tree.breakMark) {
+      const bm = tree.breakMark; const px = -bm.uy, py = bm.ux;   // perpendicular unit
+      // erase a gap in the branch, then two slanted slashes across it (axis-break glyph)
+      s += `<line x1="${bm.x - bm.ux * 8}" y1="${bm.y - bm.uy * 8}" x2="${bm.x + bm.ux * 8}" y2="${bm.y + bm.uy * 8}" stroke="#faf7f1" stroke-width="5"></line>`;
+      for (const off of [-3.5, 3.5]) {
+        const ox = bm.x + bm.ux * off, oy = bm.y + bm.uy * off;
+        s += `<line x1="${ox - px * 7 - bm.ux * 3}" y1="${oy - py * 7 - bm.uy * 3}" x2="${ox + px * 7 + bm.ux * 3}" y2="${oy + py * 7 + bm.uy * 3}" stroke="#1f1c18" stroke-width="1"></line>`;
+      }
+    }
     tree.joins.forEach((j: any) => { s += `<circle cx="${j.x}" cy="${j.y}" r="1.5" fill="#1f1c18" opacity="${hl ? 0.1 : 0.3}"></circle>`; });
     tree.sectors.forEach((se: any) => { const lf = hoverName ? tree.leaves.find((l: any) => l.name === hoverName) : null; const lit = !hover || (hover.type === 'sector' && hover.key === se.fam) || (lf && lf.family === se.fam); s += `<text data-sector="${esc(se.fam)}" x="${se.x}" y="${se.y}" text-anchor="${se.anchor}" dominant-baseline="central" font-family="'IM Fell English SC',Georgia,serif" font-size="15.5" letter-spacing="2" fill="#1f1c18" opacity="${hover ? (lit ? 0.95 : 0.2) : 0.74}" style="cursor:default">${esc(se.label)}</text>`; });
     tree.leaves.forEach((lf: any) => {
@@ -323,15 +395,16 @@ import treeData from '../data/tree-data.json';
       const lox = Math.cos(lf.lang), loy = Math.sin(lf.lang);
       s += `<g data-leaf="${esc(lf.name)}" opacity="${hl && !lit ? 0.16 : 1}" style="cursor:pointer">`;
       if (shown.has(lf.name)) {
-        const deg = (lf.lang * 180) / Math.PI; const flip = deg > 90 || deg < -90; const rotDeg = flip ? deg + 180 : deg; const anchor = flip ? 'end' : 'start'; const ox = flip ? -6 : 6;
+        const right = Math.cos(lf.lang) >= 0; const anchor = right ? 'start' : 'end'; const ox = right ? 5 : -5;
+        const ly2 = labY.get(lf.name) ?? lf.ly;
         const labFill = isSel ? '#7a1f1f' : '#1f1c18';
-        s += `<line x1="${lf.x + lox * (lf.r + 2)}" y1="${lf.y + loy * (lf.r + 2)}" x2="${lf.lx}" y2="${lf.ly}" stroke="#1f1c18" stroke-width="0.4" opacity="${hl && !lit ? 0.05 : 0.24}"></line>`;
+        s += `<line x1="${lf.x + lox * (lf.r + 2)}" y1="${lf.y + loy * (lf.r + 2)}" x2="${lf.lx}" y2="${ly2}" stroke="#1f1c18" stroke-width="0.4" opacity="${hl && !lit ? 0.05 : 0.24}"></line>`;
         s += `<circle cx="${lf.x}" cy="${lf.y}" r="${dotR}" fill="${col}" stroke="${dotStroke}" stroke-width="${dotSW}"></circle>`;
-        s += `<text transform="translate(${lf.lx} ${lf.ly}) rotate(${rotDeg})" x="${ox}" y="0" text-anchor="${anchor}" dominant-baseline="central" font-family="'Source Serif 4',Georgia,serif" font-size="12.5" font-style="${lf.slug ? 'italic' : 'normal'}" fill="${labFill}" paint-order="stroke" stroke="#faf7f1" stroke-width="3" stroke-linejoin="round">${esc(lf.name)}</text>`;
+        s += `<text x="${lf.lx + ox}" y="${ly2}" text-anchor="${anchor}" dominant-baseline="central" font-family="'Source Serif 4',Georgia,serif" font-size="12.5" font-style="${lf.slug ? 'italic' : 'normal'}" fill="${labFill}" paint-order="stroke" stroke="#faf7f1" stroke-width="3" stroke-linejoin="round">${esc(lf.name)}</text>`;
       } else {
         s += `<circle cx="${lf.x}" cy="${lf.y}" r="${dotR}" fill="${col}" stroke="${dotStroke}" stroke-width="${dotSW}"></circle>`;
       }
-      s += `<circle cx="${lf.x}" cy="${lf.y}" r="11" fill="transparent"></circle></g>`;
+      s += `<circle cx="${lf.x}" cy="${lf.y}" r="13" fill="transparent"></circle></g>`;
     });
     s += '</svg>';
     return s;
@@ -339,11 +412,11 @@ import treeData from '../data/tree-data.json';
 
   function renderScaleSVG(px: number): string {
     const w = Math.round(px);
-    let s = `<svg xmlns="http://www.w3.org/2000/svg" width="${w + 150}" height="22" style="display:block;overflow:visible;">`;
+    let s = `<svg xmlns="http://www.w3.org/2000/svg" width="${w + 100}" height="22" style="display:block;overflow:visible;">`;
     s += `<line x1="1" y1="11" x2="${w + 1}" y2="11" stroke="#1f1c18" stroke-width="1.1"></line>`;
     s += `<line x1="1" y1="6" x2="1" y2="16" stroke="#1f1c18" stroke-width="1.1"></line>`;
     s += `<line x1="${w + 1}" y1="6" x2="${w + 1}" y2="16" stroke="#1f1c18" stroke-width="1.1"></line>`;
-    s += `<text x="${w + 9}" y="12" dominant-baseline="central" font-family="'JetBrains Mono',monospace" font-size="11" fill="#4a4540">0.10  repr. distance</text>`;
+    s += `<text x="${w + 9}" y="12" dominant-baseline="central" font-family="'JetBrains Mono',monospace" font-size="11" fill="#4a4540">0.10 distance</text>`;
     s += '</svg>';
     return s;
   }
@@ -352,6 +425,11 @@ import treeData from '../data/tree-data.json';
   const elScale = document.getElementById('st-scale')!;
   const elReadout = document.getElementById('st-readout')!;
   const elLegend = document.getElementById('st-legend')!;
+  const elDsNote = document.getElementById('st-dsnote-body')!;
+
+  function renderDsNote() {
+    elDsNote.innerHTML = DS_NOTE[state.dsId] ?? '';
+  }
 
   function renderLegend(tree: any) {
     const order = ['omat', 'mp', 'spice', 'mad', 'other'];
@@ -366,6 +444,10 @@ import treeData from '../data/tree-data.json';
     if (!state.hover || state.hover.type !== 'leaf') { elReadout.hidden = true; return; }
     const lf = tree.leaves.find((l: any) => l.name === state.hover!.key);
     if (!lf) { elReadout.hidden = true; return; }
+    // Sit in the corner farthest from the hovered dot so its label stays visible.
+    const onRight = lf.x > tree.ctr.x;
+    elReadout.style.left = onRight ? '4px' : 'auto';
+    elReadout.style.right = onRight ? 'auto' : '4px';
     const nn = tree.nn.get(lf.name);
     const params = lf.sizeM ? (lf.sizeM >= 1000 ? (lf.sizeM / 1000).toFixed(1) + 'B' : Math.round(lf.sizeM) + 'M') : '—';
     const famLabel = FAM[lf.family] ? FAM[lf.family].label : lf.family;
@@ -378,13 +460,21 @@ import treeData from '../data/tree-data.json';
     elReadout.hidden = false;
   }
 
+  let USED_W = 0;
+  const figwrap = elTree.closest('.simtree-figwrap') as HTMLElement | null;
+  const currentW = () => elTree.clientWidth || (figwrap ? figwrap.clientWidth : 0) || 780;
+
   function render() {
+    const W = currentW();
+    if (PX_PER_UNIT && Math.abs(W - USED_W) > 8) { PX_PER_UNIT = 0; for (const k of Object.keys(cache)) delete cache[k]; }
+    USED_W = W;
     const ds = byId.get(state.dsId)!;
-    const tree = buildTree(ds);
+    const tree = buildTree(ds, W);
     elTree.innerHTML = renderTreeSVG(tree, state.hover);
     elScale.innerHTML = renderScaleSVG(tree.scalePx);
     renderLegend(tree);
     renderReadout(tree);
+    renderDsNote();
   }
 
   elTree.addEventListener('mouseover', (e) => {
@@ -405,13 +495,22 @@ import treeData from '../data/tree-data.json';
     input.addEventListener('change', () => { if (input.checked) { state.dsId = input.value; state.hover = null; render(); } });
   });
 
-  const infoBtn = document.getElementById('st-info-btn')!;
-  const infoPop = document.getElementById('st-info-pop')!;
-  const infoClose = document.getElementById('st-info-close')!;
-  const setInfo = (open: boolean) => { state.infoOpen = open; infoPop.hidden = !open; infoBtn.setAttribute('aria-expanded', String(open)); };
-  infoBtn.addEventListener('click', () => setInfo(!state.infoOpen));
-  infoClose.addEventListener('click', () => setInfo(false));
-  document.addEventListener('click', (e) => { if (!state.infoOpen) return; const t = e.target as Node; if (!infoPop.contains(t) && !infoBtn.contains(t)) setInfo(false); });
+  // Deep-link the reference dataset via ?ds=<id>.
+  const wantDs = new URLSearchParams(location.search).get('ds');
+  if (wantDs && byId.has(wantDs)) {
+    state.dsId = wantDs;
+    const radio = document.getElementById(`st-ds-${wantDs}`) as HTMLInputElement | null;
+    if (radio) radio.checked = true;
+  }
+
+  // Recompute the shared scale to the container width on resize (debounced).
+  let rzT: number | undefined;
+  window.addEventListener('resize', () => {
+    window.clearTimeout(rzT);
+    rzT = window.setTimeout(render, 150);
+  });
 
   render();
+  // Re-measure once layout has settled, in case the first pass read a stale width.
+  requestAnimationFrame(render);
 </script>
