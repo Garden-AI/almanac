@@ -140,7 +140,7 @@ export function cellSvg(state: CellState, dim = false): string {
   }
   const id = dim ? 'am-hatch-d' : 'am-hatch-n';
   const op = dim ? 0.28 : 0.45;
-  return `<svg aria-label="not applicable" style="position: absolute; inset: 0; width: 100%; height: 100%; display: block;"><defs><pattern id="${id}" patternUnits="userSpaceOnUse" width="7" height="7" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="7" stroke="var(--ink)" stroke-width="0.9" opacity="${op}" /></pattern></defs><rect x="0" y="0" width="100%" height="100%" fill="url(#${id})" /></svg>`;
+  return `<svg aria-label="not installed" style="position: absolute; inset: 0; width: 100%; height: 100%; display: block;"><defs><pattern id="${id}" patternUnits="userSpaceOnUse" width="7" height="7" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="7" stroke="var(--ink)" stroke-width="0.9" opacity="${op}" /></pattern></defs><rect x="0" y="0" width="100%" height="100%" fill="url(#${id})" /></svg>`;
 }
 
 export interface ClusterEnvGroup {
@@ -465,7 +465,7 @@ export function renderClusterModelsHtml(
       )
       .join('');
     return `<div style="display: grid; grid-template-columns: 160px 1fr; gap: 7px 28px; align-items: baseline; padding: 12px 0; border-top: 0.5px solid var(--rule-soft);">
-        <a class="${famCls}" href="${href}" style="font-size: 15px; font-weight: 600; letter-spacing: -0.002em; line-height: 1.5; justify-self: start;">${escCluster(fam.name)}</a>
+        <a class="${famCls}" href="${href}" style="font-size: var(--fs-lg); font-weight: 600; letter-spacing: -0.002em; line-height: 1.5; justify-self: start;">${escCluster(fam.name)}</a>
         <div style="display: flex; flex-direction: column; gap: 8px;">${rows}</div>
       </div>`;
   };

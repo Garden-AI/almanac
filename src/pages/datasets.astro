@@ -3,10 +3,10 @@ import { getCollection } from 'astro:content';
 import Page from '../layouts/Page.astro';
 import { url } from '../lib/url';
 
-// Candidate replacement for /datasets + /dataset/[slug] — the Architecture
-// Families pattern (one page, one section per entry) instead of list + detail.
-// Metadata comes from the verified fields on the datasets collection; the
-// hand-written notes/howToGet prose from the first draft is deliberately
+// The Architecture Families pattern (one page, one section per entry) instead
+// of list + detail; model pages deep-link to /datasets#<slug>. Metadata comes
+// from the verified fields on the datasets collection; the hand-written
+// notes/howToGet prose from the first-draft detail pages is deliberately
 // not rendered here.
 
 const allModels = await getCollection('models');
@@ -52,9 +52,9 @@ const citationFor = (d: (typeof datasets)[number]['data']): string | null => {
 
 <Page title="Datasets — Garden's Almanac">
   <h1 class="ds-h1">Datasets</h1>
-  <p class="it ds-dek">The structure libraries that models in the almanac trained on.</p>
+  <p class="page-dek">The structure libraries that models in the almanac trained on.</p>
 
-  <hr class="ds-rule" />
+  <hr class="double-rule ds-rule" />
 
   <section class="ds-grid">
     {datasets.map((d) => {
@@ -79,9 +79,9 @@ const citationFor = (d: (typeof datasets)[number]['data']): string | null => {
 
           <div class="ds-models">
             <span class="sc ds-k">models trained on this dataset</span>
-            {models.map((m) => (
+            {models.map((m, i) => (
               <>
-                <span class="ds-sep" aria-hidden="true">·</span>
+                {i > 0 && <span class="ds-sep" aria-hidden="true">·</span>}
                 <a class="ink-link it" href={url(`/model/${m.id}`)}>{m.name}</a>
               </>
             ))}
@@ -106,15 +106,8 @@ const citationFor = (d: (typeof datasets)[number]['data']): string | null => {
 
 <style>
   .ds-h1 { margin-top: 3px; }
-  .ds-dek {
-    margin: 4px 0 0; max-width: 60ch;
-    font-size: var(--fs-base); color: var(--ink-2);
-  }
 
-  .ds-rule {
-    border: 0; border-top: 1.5px solid var(--ink); border-bottom: 0.5px solid var(--ink);
-    height: 3px; margin: 14px 0 0;
-  }
+  .ds-rule { margin-top: 14px; }
 
   .ds-grid {
     display: grid;
@@ -155,7 +148,7 @@ const citationFor = (d: (typeof datasets)[number]['data']): string | null => {
   .ds-sep { color: var(--ink-3); margin: 0 6px 0 7px; }
 
 
-  @media (max-width: 960px) {
+  @media (max-width: 720px) {
     .ds-grid { grid-template-columns: 1fr; }
   }
 </style>

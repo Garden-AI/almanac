@@ -41,7 +41,7 @@ The client lives in `src/lib/rootstock.ts`. By default it reads from a captured 
 
 The site is statically built (GitHub Pages), but every page that renders Rootstock data also runs a client-side `loadLiveDump()` refresh on load. The rule that keeps stale builds from stranding real data:
 
-- **Catalog identity is build-time.** Which clusters, models, checkpoints, datasets, architectures *exist as pages or rows* comes from `src/content/**` and is baked at build. The live script cannot conjure a row or column that wasn't rendered. If Rootstock starts reporting a cluster (e.g. `polaris`) or a checkpoint that has no JSON entry, it's silently invisible everywhere — except `/cluster/[slug]`, whose "Available checkpoints" section iterates the live manifest directly.
+- **Catalog identity is build-time.** Which clusters, models, checkpoints, datasets, architectures *exist as pages or rows* comes from `src/content/**` and is baked at build. The live script cannot conjure a row or column that wasn't rendered. If Rootstock starts reporting a cluster (e.g. `polaris`) or a checkpoint that has no JSON entry, it's silently invisible everywhere.
 - **Status is live.** Cell glyphs, verified/lapsed/na counts, family/cluster row totals, and any visibility decision driven by "does this currently have a record in Rootstock" must be re-derived in the client script. The server render should produce a best-effort placeholder (build-time dump as the seed) plus `data-rs-*` hooks so the script can rewrite it.
 
 A footgun this rule exists to prevent: filtering rows or columns at build time based on Rootstock state. The live script can update the cells of a row that's in the DOM, but it can't bring back a row that was filtered out — so a stale build masks new verifications until the next deploy. Always render the row/column, give it `am-hidden` based on build-time data, and let the script toggle that class from live data.
@@ -62,27 +62,32 @@ loadLiveDump().then(dump => {
 });
 ```
 
-Pages following this pattern as of this writing: `pages/index.astro` (matrix + mobile cluster cards), `pages/model/[slug].astro`, `pages/clusters.astro`. `pages/cluster/[slug].astro` is the simpler case — its script rewrites the whole "Available checkpoints" section wholesale.
+Pages following this pattern as of this writing: `pages/index.astro` (matrix + mobile cluster cards) and `pages/model/[slug].astro`. `pages/clusters.astro` is the simpler case — its script rewrites each cluster's models region wholesale (`renderClusterModelsHtml` emits identical markup at build seed and live refresh).
 
 ### Page chrome
 `src/layouts/Page.astro` is the shared shell: running head + folio + paper background, wrapping a `<slot />`. Loads Google Fonts (Source Serif 4, IM Fell English SC, JetBrains Mono). All design tokens live in `src/styles/almanac.css` as `:root` custom properties.
 
 ### Typography system
 Three faces, **one job each** — keep them in their lanes or the page reads as noise:
-- **Source Serif 4** (`--serif`) → reading + identity: H1s, body copy, **and model-family names in the matrix** (the table's primary scan target — serif 600, near-zero tracking, so it out-reads the mono IDs beneath it).
-- **IM Fell English SC** (`--smallcaps`, via the `.sc` helper) → labels + nav only: masthead wordmark/nav, column headers, eyebrows, the legend. Set label text in **true lowercase** so it renders as uniform small caps (no oversized initial cap).
+- **Source Serif 4** (`--serif`) → reading + identity: H1s, body copy, **and model names in the matrix** (the table's primary scan target — serif 600, near-zero tracking, so it out-reads the mono IDs beneath it).
+- **IM Fell English SC** (`--smallcaps`, via the `.sc` helper) → labels, nav, and section heads: masthead wordmark/nav, column headers, eyebrows, the legend, and `.section-head`. Set label text in **true lowercase** so it renders as uniform small caps (no oversized initial cap).
 - **JetBrains Mono** (`--mono`) → data only: checkpoint IDs, GPU types, code. (The matrix's lowercase **checkpoint** sub-header is deliberately mono too, mirroring the IDs it labels — the one intentional exception to "column heads are IM Fell SC".)
 - **Oxblood** (`--oxblood`) → links + verified/lapsed status marks only. Never decoration.
 
 Small-caps tracking comes from two tokens, **never ad-hoc em values**: `--track-label` (0.08em) for table/label uses, `--track-display` (0.14em) for masthead nav + eyebrows.
 
-**Type sizes come from the `--fs-*` scale** in `:root` (`--fs-micro` … `--fs-display`), **not ad-hoc px**. Reach for a token; if nothing fits, the scale is probably wrong — fix the token, don't add a one-off px. The **primer wing** (`primer.css`) intentionally keeps its own scale and is out of this system. Two deliberate exceptions remain inline: the mobile-only `.landing-h1` (34px) and the mobile `h1` override (30px) — responsive breakpoint values, not scale steps.
+**Type sizes come from the `--fs-*` scale** in `:root` (`--fs-micro` … `--fs-display`), **not ad-hoc px**. Reach for a token; if nothing fits, the scale is probably wrong — fix the token, don't add a one-off px. The **primer wing** (`primer.css`) intentionally keeps its own scale and is out of this system. One deliberate exception remains inline: the mobile `h1` override (30px) — a responsive breakpoint value, not a scale step.
+
+Two sitewide structural classes in `almanac.css` — use them, don't restyle per page:
+- **`.page-dek`** — the one-sentence framing line directly under every page H1 (`--fs-lg`, roman, `--ink-2`, 62ch). Every catalog page has one; it may carry inline `.ink-link` anchors (on `/models` it doubles as the section nav).
+- **`.double-rule` + `.section-head`** — the "new section starts here" furniture: a double rule, then a small-caps head naming the section when a page has more than one (`/models`' three arrangements, the index's "Running a model"). `/datasets` uses the rule alone — single-section page, nothing to name.
 
 ### Routes
-- `/` — index (links to all entities)
+- `/` — the availability matrix (checkpoint × cluster status), mobile cluster cards, and the "Running a model" how-to
+- `/models` — the model landscape three ways: similarity tree, architecture-family cards, publication-year list
 - `/model/[slug]` — model detail
 - `/datasets` — one section per dataset (the "Architecture Families" pattern, not a list+detail). Only renders datasets at least one catalog model trained on; sections carry `id={slug}` anchors. There is **no** `/dataset/[slug]` detail route — the model page's "Trained on" links point at `/datasets#<slug>`.
-- `/cluster/[slug]` — cluster page; reads live env status from Rootstock, plus a `<details>` listing all envs (including ones no catalog model claims yet)
+- `/clusters` — one section per cluster with live model/checkpoint status from Rootstock; sections carry `id={slug}` anchors and auto-expand on hash navigation. There is **no** `/cluster/[slug]` detail route.
 
 Architecture families have **no detail route** — they render only as the "Architecture Families" section on `/models`, sourced from the `architectures` collection (`name` + `brief` + example paper). Each family card carries an `id={slug}` anchor, and each model's "Family" field links to `/models#<slug>`.
 
@@ -93,5 +98,5 @@ Adding records is a matter of dropping JSON files into `src/content/{type}/`.
 - **No shadows, no border-radius, no gradients.** The almanac aesthetic is paper-and-ink — hairline rules only.
 - **Tabular-nums on every numeric column.**
 - **Anchor every cross-reference.** Model/dataset/cluster names are links. Prose uses `.ink-link` (persistent oxblood underline); dense tables use a hover-reveal underline instead (`.am-slug-link`, `.am-cluster-link`, `.am-fhead-name`) so the matrix stays calm at rest. No element carries a resting link indicator inside the matrix.
-- **Status glyphs are Unicode**: `●` verified within thirty days, `○` installed but not recently verified (covers stale and errored), `—` not installed. Half-moon (`◐`) is removed.
+- **Status has three states and one vocabulary**: *verified* (ran in last 30 days), *installed* (present but not recently verified — covers stale and errored), *not installed* (no env on that cluster carries the checkpoint). Matrix cells render these as SVG via `cellSvg` (filled dot / open circle / hatch); the mobile cluster cards use text `●` / `○` / `//`. Don't introduce new state names ("n/a", "not applicable", "lapsed") in user-facing copy — `lapsed`/`na` live in code only.
 - **Don't invent new colors.** Tokens in `almanac.css` were tuned for the paper feel.

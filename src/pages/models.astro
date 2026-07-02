@@ -61,27 +61,25 @@ const familyCards = await Promise.all(
 
 <Page title="Models — Garden's Almanac">
   <div class="models-page">
-    <div class="models-titlerow">
-      <h1 class="models-h1">Models</h1>
-      <nav class="models-nav" aria-label="Sections">
-        <a class="sc" href="#similarity">by similarity</a>
-        <span aria-hidden="true">·</span>
-        <a class="sc" href="#families">by family</a>
-        <span aria-hidden="true">·</span>
-        <a class="sc" href="#years">by year</a>
-      </nav>
-    </div>
+    <h1 class="models-h1">Models</h1>
+
+    <p class="page-dek">
+      Machine-learned interatomic potentials, grouped by
+      <a class="ink-link" href="#similarity">similarity of representation</a>, by
+      <a class="ink-link" href="#families">architecture family</a>, and by
+      <a class="ink-link" href="#years">publication year</a>.
+    </p>
 
     <section id="similarity" class="models-section">
-      <hr class="models-rule" />
-      <h2 class="models-h2">By Similarity of Representation</h2>
+      <hr class="double-rule" />
+      <h2 class="section-head">By Similarity of Representation</h2>
       <SimilarityTree />
     </section>
 
     {familyCards.length > 0 && (
       <section id="families" class="models-section">
-        <hr class="models-rule" />
-        <h2 class="models-h2">By Architecture Family</h2>
+        <hr class="double-rule" />
+        <h2 class="section-head">By Architecture Family</h2>
         <div class="models-families-grid">
           {familyCards.map((f) => (
             <div class="models-family" id={f.id}>
@@ -89,9 +87,9 @@ const familyCards = await Promise.all(
               <p class="models-family-brief">{f.brief}</p>
               <div class="models-family-models">
                 <span class="sc models-family-k">Models</span>
-                {modelsByFamily[f.id].map((m) => (
+                {modelsByFamily[f.id].map((m, i) => (
                   <>
-                    <span class="models-family-sep" aria-hidden="true">·</span>
+                    {i > 0 && <span class="models-family-sep" aria-hidden="true">·</span>}
                     <a class="ink-link it" href={url(`/model/${m.id}`)}>{m.name}</a>
                   </>
                 ))}
@@ -109,8 +107,8 @@ const familyCards = await Promise.all(
     )}
 
     <section id="years" class="models-section">
-      <hr class="models-rule" />
-      <h2 class="models-h2">By Publication Year</h2>
+      <hr class="double-rule" />
+      <h2 class="section-head">By Publication Year</h2>
       <div class="models-years-cols">
         {models.map(({ model: m, year }) => (
           <div class="models-rail-row">
@@ -124,36 +122,16 @@ const familyCards = await Promise.all(
 </Page>
 
 <style>
-  .models-titlerow {
-    display: flex; align-items: baseline; justify-content: space-between;
-    gap: 20px 28px; flex-wrap: wrap; margin-bottom: 28px;
-  }
   .models-h1 {
     font-family: var(--serif); font-size: var(--fs-h1); font-weight: 600;
     line-height: 1; letter-spacing: -0.01em; margin: 0;
   }
-  .models-nav {
-    display: flex; align-items: baseline; gap: 12px;
-    font-size: var(--fs-base); letter-spacing: var(--track-label);
-    color: var(--ink-3);
-  }
-  .models-nav a { color: var(--ink); text-decoration: none; }
-  .models-nav a:hover { color: var(--oxblood); }
   @media (prefers-reduced-motion: no-preference) {
     :global(html) { scroll-behavior: smooth; }
   }
 
   .models-section { margin-top: 38px; }
-  .models-section:first-of-type { margin-top: 0; }
-  .models-rule {
-    border: 0; border-top: 1.5px solid var(--ink); border-bottom: 0.5px solid var(--ink);
-    height: 3px; margin: 0 0 12px;
-  }
-  .models-h2 {
-    font-family: var(--smallcaps); text-transform: lowercase; font-weight: 400;
-    font-size: var(--fs-h3); letter-spacing: var(--track-display);
-    line-height: 1.2; margin: 0 0 18px; color: var(--ink);
-  }
+  .models-section:first-of-type { margin-top: 20px; }
 
   .models-years-cols { columns: 170px; column-gap: 48px; }
   .models-rail-row {
@@ -177,7 +155,7 @@ const familyCards = await Promise.all(
   .models-family-models { margin-top: 10px; font-size: var(--fs-md); line-height: 1.7; }
   .models-family-paper { margin: 6px 0 0; font-size: var(--fs-md); line-height: 1.6; }
   .models-family-k {
-    font-size: var(--fs-micro); letter-spacing: var(--track-label); color: var(--ink-3); margin-right: 4px;
+    font-size: var(--fs-base); letter-spacing: var(--track-label); color: var(--ink-3); margin-right: 4px;
   }
   .models-family-sep { color: var(--ink-3); margin: 0 6px 0 7px; }
 
