@@ -2,9 +2,10 @@
 import { getCollection, getEntry } from 'astro:content';
 import { marked } from 'marked';
 import Page from '../../layouts/Page.astro';
-import { getRootstockDump, findVerification, cellStateFor, envFilesForModel, renderEnvBody, type CellState } from '../../lib/rootstock';
+import { getRootstockDump, findVerification, cellStateFor, statusGlyph, envFilesForModel, envCaption, renderEnvBody, type CellState } from '../../lib/rootstock';
 import { url } from '../../lib/url';
 import { formatMonthYear, yearOf } from '../../lib/format';
+import { getSortedClusters } from '../../lib/clusters';
 
 export async function getStaticPaths() {
   const models = await getCollection('models');
@@ -42,12 +43,7 @@ const primaryPaper = papers.find((p) => p?.data.published) ?? null;
 const resolvedDate = model.data.releaseDate ?? primaryPaper?.data.published ?? null;
 const dateLine = formatMonthYear(resolvedDate);
 
-const allClusters = (await getCollection('clusters')).sort((a, b) => {
-  const oa = a.data.order ?? 999;
-  const ob = b.data.order ?? 999;
-  if (oa !== ob) return oa - ob;
-  return a.data.name.localeCompare(b.data.name);
-});
+const allClusters = await getSortedClusters();
 
 const dump = await getRootstockDump();
 
@@ -91,21 +87,9 @@ const envConfig = {
   clusters: allClusters.map((c) => ({ id: c.id, name: c.data.name })),
   checkpoints: checkpointIds,
 };
-const envProvenance = (f: { clusterName: string; builtAt: string | null }) =>
-  `Shown verbatim — Rootstock installs this file unmodified. ${f.clusterName} · built ${(f.builtAt ?? '').slice(0, 10)}.`;
 // JSON embedded in <script type="application/json"> — neutralize any `<` so a
 // stray `</script>` in env source can't close the tag early.
 const jsonAttr = (v: unknown) => JSON.stringify(v).replace(/</g, '\\u003c');
-
-const glyphHtml = (state: CellState): string => {
-  if (state === 'verified') {
-    return '<span class="status-verified" title="Verified within the last 30 days" aria-label="verified">●</span>';
-  }
-  if (state === 'lapsed') {
-    return '<span class="status-stale" title="Installed but not recently verified" aria-label="installed, not recently verified">○</span>';
-  }
-  return '<span class="status-na" title="Not installed on this cluster" aria-label="not installed">—</span>';
-};
 
 const weightsDomainLabel = (u: string): string => {
   try {
@@ -247,7 +231,7 @@ const notesHtml = model.data.notes ? marked.parse(model.data.notes) : null;
                   style="text-align: center;"
                   data-rs-col={cell.cluster.id}
                   data-rs-cell={`${cell.cluster.id}:${checkpoint.id}`}
-                  set:html={glyphHtml(cell.state)}
+                  set:html={statusGlyph(cell.state)}
                 />
               ))}
             </tr>
@@ -298,7 +282,7 @@ const notesHtml = model.data.notes ? marked.parse(model.data.notes) : null;
       </div>
       <div class="am-env-body" data-env-body set:html={envFiles[0] ? renderEnvBody(envFiles[0].source) : ''} />
     </div>
-    <p class="am-env-caption" data-env-caption>{envFiles[0] ? envProvenance(envFiles[0]) : ''}</p>
+    <p class="am-env-caption" data-env-caption>{envFiles[0] ? envCaption(envFiles[0]) : ''}</p>
     <p class="am-env-error am-hidden" data-env-error>Couldn't load the current environments from Rootstock.</p>
 
     <script type="application/json" data-env-config set:html={jsonAttr(envConfig)}></script>
@@ -482,21 +466,12 @@ const notesHtml = model.data.notes ? marked.parse(model.data.notes) : null;
   import {
     findVerification,
     cellStateFor,
+    statusGlyph,
     envFilesForModel,
+    envCaption,
     renderEnvBody,
-    type CellState,
     type ModelEnvFile,
   } from '../../lib/rootstock';
-
-  const glyphHtml = (state: CellState): string => {
-    if (state === 'verified') {
-      return '<span class="status-verified" title="Verified within the last 30 days" aria-label="verified">●</span>';
-    }
-    if (state === 'lapsed') {
-      return '<span class="status-stale" title="Installed but not recently verified" aria-label="installed, not recently verified">○</span>';
-    }
-    return '<span class="status-na" title="Not installed on this cluster" aria-label="not installed">—</span>';
-  };
 
   loadLiveDump()
     .then((dump) => {
@@ -504,7 +479,7 @@ const notesHtml = model.data.notes ? marked.parse(model.data.notes) : null;
       document.querySelectorAll<HTMLElement>('[data-rs-cell]').forEach((td) => {
         const [cluster, checkpoint] = td.dataset.rsCell!.split(':');
         const state = cellStateFor(findVerification(dump, cluster, checkpoint));
-        td.innerHTML = glyphHtml(state);
+        td.innerHTML = statusGlyph(state);
         if (state !== 'na') clusterHasPresence[cluster] = true;
       });
       // Toggle column visibility based on live presence (re-derived per page
@@ -574,8 +549,7 @@ const notesHtml = model.data.notes ? marked.parse(model.data.notes) : null;
       if (!f) return;
       filenameEl.textContent = f.filename;
       bodyEl.innerHTML = renderEnvBody(f.source);
-      const date = (f.builtAt ?? '').slice(0, 10);
-      captionEl.textContent = `Shown verbatim — Rootstock installs this file unmodified. ${f.clusterName} · built ${date}.`;
+      captionEl.textContent = envCaption(f);
     };
 
     copyBtn.addEventListener('click', () => {

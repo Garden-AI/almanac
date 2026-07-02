@@ -1,13 +1,3 @@
-/** Compact byte count: GB / MB / KB / B. One decimal at the small end,
- *  zero at the large end — keeps the Size column visually narrow. */
-export function formatBytes(n: number | undefined | null): string {
-  if (n == null) return '';
-  if (n >= 1e9) return (n / 1e9).toFixed(n >= 10e9 ? 0 : 1) + ' GB';
-  if (n >= 1e6) return (n / 1e6).toFixed(n >= 10e6 ? 0 : 1) + ' MB';
-  if (n >= 1e3) return (n / 1e3).toFixed(0) + ' KB';
-  return n + ' B';
-}
-
 const MONTHS = [
   'January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December',

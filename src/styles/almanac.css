@@ -76,24 +76,8 @@ html, body {
   font-feature-settings: "smcp" 1, "c2sc" 1;
   text-transform: lowercase;
 }
-.sc-fallback {
-  font-family: var(--serif);
-  text-transform: uppercase;
-  letter-spacing: 0.14em;
-  font-size: 0.82em;
-  font-weight: 600;
-}
 .it { font-style: italic; font-family: var(--serif-italic); }
 .mono { font-family: var(--mono); font-size: 0.86em; }
-.drop-cap::first-letter {
-  font-family: var(--serif);
-  font-weight: 700;
-  float: left;
-  font-size: 3.2em;
-  line-height: 0.9;
-  padding: 4px 8px 0 0;
-  color: var(--ink);
-}
 h1, h2, h3, h4 { font-weight: 600; margin: 0; }
 /* Standard page dek — the one-sentence framing line directly under every
    page H1. One style sitewide; pages don't restyle it locally. */
@@ -157,11 +141,6 @@ table.almanac thead th {
   background: rgba(26, 22, 18, 0.025);
 }
 table.almanac tbody tr:last-child td { border-bottom: 1.5px solid var(--ink); }
-
-table.fam-table th, table.fam-table td { padding: 2.5px 8px; }
-
-/* Tighter rows for the Compatibility Matrix to leave room for the How-To block. */
-.cm-tight table.almanac th, .cm-tight table.almanac td { padding: 1.5px 6px; }
 
 /* Site chrome — paper-and-ink newspaper masthead. Wordmark + home glyph
    on the left, primary nav on the right, single hairline beneath both.
@@ -284,47 +263,7 @@ a.ink-link:hover { background: rgba(122, 31, 31, 0.06); }
   color: var(--ink);
 }
 
-.margin {
-  font-size: var(--fs-md);
-  line-height: 1.4;
-  color: var(--ink-2);
-  font-family: var(--serif);
-}
-.margin .label {
-  font-family: var(--smallcaps);
-  font-size: var(--fs-micro);
-  letter-spacing: var(--track-label);
-  color: var(--ink);
-  display: block;
-  margin-bottom: 2px;
-}
-
-.ornament { display: flex; align-items: center; gap: 10px; color: var(--ink); }
-.ornament hr { flex: 1; border: 0; border-top: 0.5px solid var(--ink); }
-.ornament .glyph { font-family: var(--serif); font-size: var(--fs-base); }
-
-/* Two-column body with right-rail marginalia, used by detail pages. */
-.detail-body {
-  display: grid;
-  grid-template-columns: 1fr 220px;
-  gap: 22px;
-  margin-top: 18px;
-}
-.detail-rail {
-  border-left: 0.5px solid var(--rule-soft);
-  padding-left: 18px;
-}
-.detail-rail .margin + .margin { margin-top: 18px; }
-
-/* Detail pages share the wide (1200px) shell with the catalog pages so their
-   tables and code listings have room. Running prose in the main column would
-   otherwise stretch to ~110 characters, so cap its measure; tables, reference
-   lists, and the code block keep the full column width. */
-.detail-body > div:first-child p { max-width: 680px; }
-
 @media (max-width: 720px) {
-  .detail-body { grid-template-columns: 1fr; }
-  .detail-rail { border-left: 0; padding-left: 0; }
   .page { padding: 32px 22px 32px; }
   h1 { font-size: 30px; }
 }
