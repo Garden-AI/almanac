@@ -1,12 +1,25 @@
 {
-  "name": "MD17 / rMD17",
-  "fullName": "MD17 (revised: rMD17)",
+  "name": "MD17",
+  "fullName": "Molecular dynamics trajectories of small organic molecules",
   "domain": "molecules",
+  "systemType": "molecules",
+  "application": "general",
   "curator": "Chmiela, Tkatchenko et al.",
   "year": 2017,
-  "size": "~3.6M MD frames across 10 small organic molecules",
-  "dftLevel": "PBE+TS / CCSD(T) for select molecules",
-  "license": "CC-BY 4.0",
-  "doi": "https://doi.org/10.1126/sciadv.1603015",
+  "size": "~ 3.6M frames (3,611,115) across 8 molecules",
+  "elements": "C, H, N, O",
+  "labels": "E, F",
+  "dftLevel": "PBE + vdW-TS",
+  "license": "unspecified (sgdml.org host states no data license)",
+  "doi": "https://www.sgdml.org/#datasets",
+  "paperTitle": "Machine learning of accurate energy-conserving molecular force fields",
+  "authors": [
+    "Chmiela",
+    "Tkatchenko",
+    "Sauceda",
+    "Poltavsky",
+    "Schütt",
+    "Müller"
+  ],
   "primaryPaper": "Chmiela et al., Machine learning of accurate energy-conserving molecular force fields, Sci. Adv. (2017). Revised: Christensen & von Lilienfeld (2020)."
 }

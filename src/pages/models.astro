@@ -84,7 +84,7 @@ const familyCards = await Promise.all(
         <h2 class="models-h2">By Architecture Family</h2>
         <div class="models-families-grid">
           {familyCards.map((f) => (
-            <div class="models-family">
+            <div class="models-family" id={f.id}>
               <h3 class="models-family-h3">{f.name}</h3>
               <p class="models-family-brief">{f.brief}</p>
               <div class="models-family-models">
@@ -168,7 +168,7 @@ const familyCards = await Promise.all(
   }
 
   .models-families-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(440px, 1fr)); gap: 0 44px; }
-  .models-family { padding: 16px 0 18px; border-top: 0.5px solid var(--rule); }
+  .models-family { padding: 16px 0 18px; border-top: 0.5px solid var(--rule); scroll-margin-top: 24px; }
   .models-family-h3 {
     font-family: var(--serif); font-size: var(--fs-h3); font-weight: 600;
     line-height: 1.15; letter-spacing: -0.003em; margin: 0;

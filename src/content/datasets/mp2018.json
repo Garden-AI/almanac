@@ -1,12 +1,24 @@
 {
-  "name": "MP-2018+",
-  "fullName": "Materials Project structures",
+  "name": "MP-crystals-2018.6.1",
+  "fullName": "Materials Project crystals snapshot (1 June 2018)",
   "domain": "materials",
+  "systemType": "inorganic crystals",
+  "application": "general",
   "curator": "Materials Project (LBNL)",
   "year": 2018,
-  "size": "~150k DFT-relaxed inorganic crystals (MP-2018 snapshot, growing)",
-  "dftLevel": "PBE; PBE+U for selected TM oxides; VASP",
+  "size": "69,640 crystals (69,239 usable), fixed snapshot pulled 1 June 2018",
+  "elements": "inorganic crystals, most of the periodic table",
+  "labels": "E",
+  "dftLevel": "PBE (+U for some TM oxides); VASP",
   "license": "CC-BY 4.0",
-  "doi": "https://doi.org/10.1063/1.4812323",
+  "doi": "https://doi.org/10.6084/m9.figshare.7451351",
+  "paperTitle": "Graph Networks as a Universal Machine Learning Framework for Molecules and Crystals",
+  "authors": [
+    "Chen",
+    "Ye",
+    "Zuo",
+    "Zheng",
+    "Ong"
+  ],
   "primaryPaper": "Jain et al., Commentary: The Materials Project, APL Materials 1:011002 (2013)."
 }
