@@ -118,6 +118,19 @@ h3 { font-size: var(--fs-lg); line-height: 1.2; }
   border-top: 1.5px solid var(--ink);
   border-bottom: 0.5px solid var(--ink);
   height: 3px;
+  margin: 0;
+}
+/* Section furniture: a .double-rule marks "new section"; when a page has more
+   than one section, a .section-head beneath it names the section. */
+.section-head {
+  font-family: var(--smallcaps);
+  text-transform: lowercase;
+  font-weight: 400;
+  font-size: var(--fs-h3);
+  letter-spacing: var(--track-display);
+  line-height: 1.2;
+  margin: 12px 0 18px;
+  color: var(--ink);
 }
 
 table.almanac {

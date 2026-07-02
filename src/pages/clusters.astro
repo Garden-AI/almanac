@@ -44,13 +44,14 @@ const entries = clusters.map((c) => {
   };
 });
 ---
-<Page title="Supported Clusters — Garden's Almanac">
+<Page title="Clusters — Garden's Almanac">
   <div style="margin-bottom: 6px;">
-    <h1>Supported Clusters</h1>
+    <h1>Clusters</h1>
     <p class="page-dek">
       Clusters where MLIPs are ready to run with
       {' '}<a class="ink-link" href="https://garden-ai.github.io/rootstock/">Rootstock</a>.
     </p>
+    <hr class="double-rule cl-rule" />
   </div>
 
   {entries.map((e) => (
@@ -106,10 +107,12 @@ const entries = clusters.map((c) => {
 </Page>
 
 <style>
+  .cl-rule { margin-top: 14px; }
   .cl {
     border-top: 0.5px solid var(--rule);
     padding: 30px 0;
   }
+  .cl:first-of-type { border-top: 0; }
   .cl-head {
     display: flex;
     align-items: baseline;
@@ -128,7 +131,7 @@ const entries = clusters.map((c) => {
   .cl-gpu {
     font-family: var(--serif-italic);
     font-style: italic;
-    font-size: 15px;
+    font-size: var(--fs-base);
     color: var(--ink-2);
     white-space: nowrap;
   }
@@ -142,7 +145,7 @@ const entries = clusters.map((c) => {
   .cl-docs {
     font-family: var(--serif-italic);
     font-style: italic;
-    font-size: 15px;
+    font-size: var(--fs-base);
     color: var(--oxblood);
     text-decoration: none;
     border-bottom: 0.5px solid var(--oxblood);
@@ -153,7 +156,7 @@ const entries = clusters.map((c) => {
   .cl-facility {
     font-family: var(--serif-italic);
     font-style: italic;
-    font-size: 15px;
+    font-size: var(--fs-base);
     line-height: 1.4;
     color: var(--ink-2);
     margin: 6px 0 0;

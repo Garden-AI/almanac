@@ -151,7 +151,7 @@ with RootstockCalculator(
         <div class="cc-status">
           <span><span style="color: var(--oxblood);">●</span> <span data-rs-cluster-count={`${c.id}:verified`}>{c.counts.verified}</span> verified</span>
           <span style="color: var(--ink-2);">○ <span data-rs-cluster-count={`${c.id}:lapsed`}>{c.counts.lapsed}</span> installed</span>
-          <span class="it">// <span data-rs-cluster-count={`${c.id}:na`}>{c.counts.na}</span> not applicable</span>
+          <span class="it">// <span data-rs-cluster-count={`${c.id}:na`}>{c.counts.na}</span> not installed</span>
         </div>
       </a>
     ))}
@@ -255,9 +255,10 @@ with RootstockCalculator(
   </section>
 
   <section class="howto">
+    <hr class="double-rule" />
+    <h2 class="section-head">Running a model</h2>
     <div class="howto-grid">
       <div class="howto-prose">
-        <h2 class="howto-head">Switch MLIPs without rebuilding environments</h2>
         <p>
           Cluster admins pre-install each MLIP with its own dependencies.
           You just install the lightweight <code>rootstock</code> package in your working environment and pick a supported checkpoint. 
@@ -468,16 +469,7 @@ with RootstockCalculator(
 
 
   /* How-to block — full width below the matrix; two-column on desktop. */
-  .howto { margin-top: 32px; }
-  .howto-head {
-    font-family: var(--serif);
-    font-size: var(--fs-h3);
-    font-weight: 600;
-    line-height: 1.2;
-    letter-spacing: 0;
-    color: var(--ink);
-    margin: 0 0 10px;
-  }
+  .howto { margin-top: 38px; }
   .howto-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -514,6 +506,7 @@ with RootstockCalculator(
   }
   .howto :global(pre) {
     margin: 0;
+    min-width: 0; /* grid item: let overflow-x scroll instead of widening the page */
     font-family: var(--mono);
     font-size: var(--fs-base);
     line-height: 1.5;
