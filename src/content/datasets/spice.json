@@ -4,7 +4,7 @@
   "domain": "molecules",
   "systemType": "molecules",
   "application": "biomolecular",
-  "brief": "Drug-like molecules from PubChem, dipeptides and solvated amino acids, non-covalent dimers, and monatomic ion pairs, computed at the ωB97M-D3(BJ)/def2-TZVPPD level. Assembled by the Open Force Field Initiative to train potentials for drug-like molecules interacting with proteins.",
+  "brief": "Drug-like molecules from PubChem. Includes dipeptides, solvated amino acids, non-covalent dimers, and monatomic ion pairs. Assembled to train potentials for drug-like molecules interacting with proteins.",
   "curator": "Eastman, Pande et al. (OpenMM)",
   "year": 2023,
   "size": "~1.1M conformations",

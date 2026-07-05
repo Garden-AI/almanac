@@ -52,7 +52,7 @@ const citationFor = (d: (typeof datasets)[number]['data']): string | null => {
 
 <Page title="Datasets — Garden's Almanac">
   <h1 class="ds-h1">Datasets</h1>
-  <p class="page-dek">The structure libraries that models in the almanac trained on.</p>
+  <p class="page-dek">Collections of atomic structures with DFT-generated labels used to train the models in the Almanac.</p>
 
   <hr class="double-rule ds-rule" />
 
@@ -74,7 +74,7 @@ const citationFor = (d: (typeof datasets)[number]['data']): string | null => {
             <dt class="sc">size</dt>
             <dd>{d.data.size}</dd>
             <dt class="sc">dft level</dt>
-            <dd class="mono ds-mono">{dftDisplay(d.data.dftLevel)}</dd>
+            <dd>{dftDisplay(d.data.dftLevel)}</dd>
           </dl>
 
           <div class="ds-models">
@@ -137,7 +137,6 @@ const citationFor = (d: (typeof datasets)[number]['data']): string | null => {
     margin: 0; line-height: inherit;
   }
   .ds-specs dd { margin: 0; }
-  .ds-mono { font-size: var(--fs-sm); }
 
   .ds-models { margin-top: 12px; font-size: var(--fs-md); line-height: 1.7; }
   .ds-cite { margin: 6px 0 0; font-size: var(--fs-md); line-height: 1.6; }

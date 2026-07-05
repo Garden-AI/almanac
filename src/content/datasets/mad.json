@@ -6,7 +6,7 @@
   "application": "universal",
   "curator": "Garden Collaboration",
   "year": 2025,
-  "size": "95,595 structures",
+  "size": "~96k structures",
   "elements": "85 (Z 1–86 except At)",
   "labels": "E, F, S",
   "dftLevel": "PBEsol; Quantum ESPRESSO (non-spin-polarized)",

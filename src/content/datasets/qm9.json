@@ -6,7 +6,7 @@
   "application": "general",
   "curator": "Ramakrishnan, Dral, Rupp, von Lilienfeld",
   "year": 2014,
-  "size": "133,885",
+  "size": "~134k molecules",
   "elements": "C, H, N, O, F",
   "labels": "E, Q",
   "dftLevel": "B3LYP/6-31G(2df,p)",
