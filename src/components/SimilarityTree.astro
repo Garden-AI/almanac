@@ -38,7 +38,7 @@ const orderedDatasets = [...treeData.datasets].sort(
       </p>
 
       <p class="simtree-method">
-         "Similar" here means the two models agree about which structures are near-neighbors of which in embedding space (CKNNA scores). 
+         "Similar" here means the two models agree about which structure embeddings are near-neighbors of which in latent space (CKNNA scores). 
          Branch lengths are distances (Jensen–Shannon Divergence) derived from the CKNNA scores.
       </p>
 
@@ -193,9 +193,9 @@ const orderedDatasets = [...treeData.datasets].sort(
   // apart by training data; out-of-distribution sets (molecules) collapse them together by architecture.
   const DS_NOTE: Record<string, string> = {
     omat24: '<b>OMat24</b> contains bulk inorganic materials, a class of structure that most of these models were trained on. Because these structures are in-domain, the models have learned distinct representations of them and the tree is fairly spread out.',
-    salex: '<b>sAlex</b> has inorganic crystals from the Alexandria database, another class of structure that is in-domain for this selection of models.',
+    salex: '<b>sAlex</b> has inorganic crystals, another class of structure that is in-domain for most models here.',
     omol25: '<b>OMol25</b> has a range of structures, including small molecules, biomolecules, metal complexes, and electrolytes. Fewer of these structures are in-domain for the models tested. Accordingly, this tree is less spread out than the OMat24 tree; models seem to represent out-of-domain structures more similarly.',
-    qm9: '<b>QM9</b> has small organic molecules near equilibrium. These structures are relatively homogenous and out-of-domain for the models tested. Accordingly, this tree is the most tightly bunched. (Except for MACE-OFF which was trained on small molecules. MACE-OFF\'s representations are so far away that we had to shorten that branch to fit it in this figure.)',
+    qm9: '<b>QM9</b> has small organic molecules near equilibrium. These structures are relatively homogenous and out-of-domain for many of the models tested. Accordingly, this tree is the most tightly bunched. (The exception is MACE-OFF, which was trained on small molecules. Its representations are so dissimilar that we had to shorten its branch to fit in the figure.)',
   };
 
   const esc = (s: any) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -423,7 +423,7 @@ const orderedDatasets = [...treeData.datasets].sort(
     s += `<line x1="1" y1="11" x2="${w + 1}" y2="11" stroke="#1f1c18" stroke-width="1.1"></line>`;
     s += `<line x1="1" y1="6" x2="1" y2="16" stroke="#1f1c18" stroke-width="1.1"></line>`;
     s += `<line x1="${w + 1}" y1="6" x2="${w + 1}" y2="16" stroke="#1f1c18" stroke-width="1.1"></line>`;
-    s += `<text x="${w + 9}" y="12" dominant-baseline="central" font-family="'JetBrains Mono',monospace" font-size="11" fill="#4a4540">0.10 distance</text>`;
+    s += `<text x="${w + 9}" y="12" dominant-baseline="central" font-family="'JetBrains Mono',monospace" font-size="11" fill="#4a4540">0.10 distance (√JSD)</text>`;
     s += '</svg>';
     return s;
   }
