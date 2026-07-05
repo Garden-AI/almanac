@@ -1,10 +1,10 @@
 {
   "name": "ANI-1x",
-  "fullName": "Active-learning DFT data set of organic molecules",
+  "fullName": "ANAKIN-ME (Accurate NeurAl networK engINe for Molecular Energies)",
   "domain": "molecules",
   "systemType": "molecules",
   "application": "general",
-  "brief": "Small organic molecules of carbon, hydrogen, nitrogen, and oxygen. Sampling was done via active learning; an ensemble of models flagged the conformations it disagreed on, and only those were sent for DFT labelling.",
+  "brief": "Small organic molecules of carbon, hydrogen, nitrogen, and oxygen. Sampling was done via active learning. An ensemble of models flagged the conformations it disagreed on, and those were sent for DFT labelling.",
   "curator": "Smith, Isayev, Roitberg et al.",
   "year": 2020,
   "size": "~5.5M conformations of ~64k molecules",

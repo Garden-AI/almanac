@@ -1,6 +1,6 @@
 {
   "name": "ANI-2x",
-  "fullName": "ANI data set extended to sulfur and halogens",
+  "fullName": "ANAKIN-ME (Accurate NeurAl networK engINe for Molecular Energies)",
   "domain": "molecules",
   "systemType": "molecules",
   "application": "general",
@@ -21,5 +21,6 @@
     "Zubatyuk",
     "Isayev",
     "Roitberg"
-  ]
+  ],
+  "brief": "Extends ANI's coverage beyond carbon, hydrogen, nitrogen, and oxygen to include sulfur, fluorine, and chlorine."
 }
