@@ -6,7 +6,7 @@
   "application": "general",
   "curator": "Christensen, von Lilienfeld",
   "year": 2020,
-  "size": "~1,000,000 structures (100,000 × 10 molecules)",
+  "size": "~1M frames (100k each for 10 molecules)",
   "elements": "C, H, N, O",
   "labels": "E, F",
   "dftLevel": "PBE/def2-SVP",

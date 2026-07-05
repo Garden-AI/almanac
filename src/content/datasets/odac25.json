@@ -7,7 +7,7 @@
   "brief": "Metal–organic frameworks with CO₂, H₂O, N₂, and O₂ adsorbates, built for screening direct-air-capture sorbents. A large expansion of the earlier ODAC23 dataset.",
   "curator": "Meta FAIR-Chem (Sriram, Brabson, Medford, Sholl et al.)",
   "year": 2025,
-  "size": "~70M DFT single points; 15,000 MOFs",
+  "size": "~70M single points across ~15k MOFs",
   "elements": "MOF-forming metals + C, H, N, O (frameworks; CO₂/H₂O/N₂/O₂ adsorbates)",
   "labels": "E, F",
   "dftLevel": "PBE-D3; VASP (spin-polarized)",

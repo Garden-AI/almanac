@@ -30,14 +30,38 @@ OUT = ALMANAC / "src" / "data" / "tree-data.json"
 DATASETS = [("omat24", "OMat24"), ("omol25", "OMol25"), ("qm9", "QM9"), ("salex", "sAlex")]
 
 
+# Dataset name -> broad domain, for spotting genuinely multi-domain models
+# (UMA's OMat+OMol+OMC+ODAC+OC20). Same-domain unions (OMPA = OMat+MPtrj+sAlex,
+# all materials) do NOT count as multi-domain — they still fold into one bucket.
+_DOMAIN_OF = [
+    ("molecules", ("spice", "omol", "qm9", "ani")),
+    ("catalysis", ("oc20", "odac")),
+    ("molcrystals", ("omc",)),
+    ("materials", ("omat", "mptrj", "salex", "alexandria", "mad", "mc3d", "mc2d", "shiftml", "mp")),
+]
+
+
+def _domains(ds):
+    out = set()
+    for name in ds:
+        for domain, keys in _DOMAIN_OF:
+            if any(k in name for k in keys):
+                out.add(domain)
+                break
+    return out
+
+
 def corpus_of(model_name, family, label, metadata):
-    """Four-bucket training corpus, from real metadata (handoff §'while you're in
-    the data'). OMPA unions fold into 'omat'. Fallback only for missing records."""
+    """Five-bucket training corpus, from real metadata (handoff §'while you're in
+    the data'). Lists spanning multiple domains -> 'multi'; same-domain unions
+    (OMPA) fold into 'omat'. Fallback only for missing records."""
     rec = metadata.get(model_name)
     if rec:
         ds = [d.lower() for d in rec.get("dataset", [])]
         if any("mad" in d for d in ds):
             return "mad"
+        if len(_domains(ds)) > 1:
+            return "multi"
         if any("spice" in d for d in ds):
             return "spice"
         if any("omat" in d for d in ds):
@@ -57,6 +81,14 @@ def corpus_of(model_name, family, label, metadata):
     if family == "MACE" and "off" in (label or "").lower():
         return "spice"
     return "mp"
+
+
+def trained_on_of(model_name, metadata):
+    """Verbatim dataset roll for the hover readout ('OMat + OMol + …'), or None
+    when the record is missing (readout falls back to the corpus bucket label)."""
+    rec = metadata.get(model_name)
+    ds = rec.get("dataset", []) if rec else []
+    return " + ".join(ds) if ds else None
 
 
 def main():
@@ -89,6 +121,7 @@ def main():
                 "label": p["label"],
                 "family": p["family"],
                 "corpus": corpus_of(mn, p["family"], p["label"], metadata),
+                "trainedOn": trained_on_of(mn, metadata),
                 "sizeM": p.get("sizeM"),
                 "numParams": p.get("numParams"),
                 "slug": p.get("slug"),

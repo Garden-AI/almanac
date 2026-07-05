@@ -21,7 +21,7 @@ const orderedDatasets = [...treeData.datasets].sort(
         <div id="st-readout" class="simtree-readout" hidden></div>
       </figure>
       <div class="simtree-key">
-        <span class="sc simtree-key-k">training data</span>
+        <span class="sc simtree-key-k">training corpus</span>
         <ul class="simtree-legend-list" id="st-legend"></ul>
         <span class="simtree-key-group">
           <div id="st-scale"></div>
@@ -38,7 +38,7 @@ const orderedDatasets = [...treeData.datasets].sort(
       </p>
 
       <p class="simtree-method">
-         "Similar" here means the two models agree about which structures are near-neighbors of which in embedding space (CKNNA scores). 
+         "Similar" here means the two models agree about which structure embeddings are near-neighbors of which in latent space (CKNNA scores). 
          Branch lengths are distances (Jensen–Shannon Divergence) derived from the CKNNA scores.
       </p>
 
@@ -165,12 +165,19 @@ const orderedDatasets = [...treeData.datasets].sort(
 </style>
 
 <script>
-  type Pt = { modelName: string; label: string; family: string; corpus: string; sizeM: number | null; numParams: number | null; slug: string | null };
+  type Pt = { modelName: string; label: string; family: string; corpus: string; trainedOn: string | null; sizeM: number | null; numParams: number | null; slug: string | null };
   type DS = { id: string; dataset: string; n: number; points: Pt[]; labels: string[]; matrix: number[][] };
 
+  // Bucket labels describe inclusion, not disjoint corpora: 'omat' = training
+  // includes OMat24 (OMat-only and OMPA unions alike); 'mp' = MP-flavored
+  // materials data (MPtrj ± sAlex) with no OMat. Exact per-model rolls are in
+  // the hover readout (trainedOn).
   const CORPUS: Record<string, { label: string; short: string; color: string }> = {
-    omat: { label: 'OMat24 (PBE)', short: 'OMat24 (PBE)', color: '#b3582f' },
-    mp: { label: 'Materials Project (PBE)', short: 'Mat. Project (PBE)', color: '#2f7d5f' },
+    omat: { label: 'Includes OMat24', short: 'incl. OMat24', color: '#b3582f' },
+    mp: { label: 'MPtrj / sAlex', short: 'MPtrj / sAlex', color: '#2f7d5f' },
+    // Spans domains (materials + molecules + catalysis…), e.g. UMA's
+    // OMat+OMol+OMC+ODAC+OC20. Same-domain unions (OMPA) stay 'omat'.
+    multi: { label: 'Multi-domain', short: 'Multi-domain', color: '#7b4b83' },
     spice: { label: 'Molecules (SPICE)', short: 'Molecules (SPICE)', color: '#3d59a1' },
     mad: { label: 'MAD set', short: 'MAD set', color: '#b08820' },
     other: { label: 'Mixed / unspecified', short: 'Mixed / unspec.', color: '#9a9189' },
@@ -185,10 +192,10 @@ const orderedDatasets = [...treeData.datasets].sort(
   // What each reference set is, and what its tree says. In-distribution sets (materials) pull models
   // apart by training data; out-of-distribution sets (molecules) collapse them together by architecture.
   const DS_NOTE: Record<string, string> = {
-    omat24: '<b>OMat24</b> holds bulk inorganic materials — the ground most of these models trained on. On home turf they spread across the tree: each has learned its own way of seeing.',
-    salex: '<b>sAlex</b> holds inorganic crystals from the Alexandria database, still close to most models’ training. The tree stays spread out — familiar structures, distinct views.',
-    omol25: '<b>OMol25</b> holds organic molecules, larger and further from equilibrium than the materials most models trained on. Even off home ground the models keep distinct views: the tree stays about as spread as before.',
-    qm9: '<b>QM9</b> holds small organic molecules near equilibrium — simple enough that there is little to tell apart. The materials models pull into a tight knot, falling back on one shared picture, while the few molecule-trained models sit far off (their long branch is shortened to fit).',
+    omat24: '<b>OMat24</b> contains bulk inorganic materials, a class of structure that most of these models were trained on. Because these structures are in-domain, the models have learned distinct representations of them and the tree is fairly spread out.',
+    salex: '<b>sAlex</b> has inorganic crystals, another class of structure that is in-domain for most models here.',
+    omol25: '<b>OMol25</b> has a range of structures, including small molecules, biomolecules, metal complexes, and electrolytes. Fewer of these structures are in-domain for the models tested. Accordingly, this tree is less spread out than the OMat24 tree; models seem to represent out-of-domain structures more similarly.',
+    qm9: '<b>QM9</b> has small organic molecules near equilibrium. These structures are relatively homogenous and out-of-domain for many of the models tested. Accordingly, this tree is the most tightly bunched. (The exception is MACE-OFF, which was trained on small molecules. Its representations are so dissimilar that we had to shorten its branch to fit in the figure.)',
   };
 
   const esc = (s: any) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -304,7 +311,7 @@ const orderedDatasets = [...treeData.datasets].sort(
     const sizeOf = (_m: number | null) => 5.2;   // uniform dots — size carries no meaning here
     const branches: any[] = [], joins: any[] = [];
     nodeById.forEach((nd: any) => { const pp = T.get(nd.id)!; if (!nd.leaf) { joins.push({ x: pp.x, y: pp.y }); for (const c of nd.children) { const cp = T.get(c.node)!, cn = nodeById.get(c.node); branches.push({ x1: pp.x, y1: pp.y, x2: cp.x, y2: cp.y, leaf: cn.leaf, meta: cn.leaf ? cn.p : null, name: cn.leaf ? prettyName(cn.p.label) : null }); } } });
-    const leaves = leafIds.map((id: number) => { const p = nodeById.get(id).p, t = T.get(id)!, ang = Math.atan2(t.y - ctr.y, t.x - ctr.x), rad = Math.hypot(t.x - ctr.x, t.y - ctr.y); return { id, name: prettyName(p.label), family: p.family, corpus: p.corpus, sizeM: p.sizeM, slug: p.slug, x: t.x, y: t.y, ang, rad, r: sizeOf(p.sizeM), lang: ang, lx: 0, ly: 0 }; });
+    const leaves = leafIds.map((id: number) => { const p = nodeById.get(id).p, t = T.get(id)!, ang = Math.atan2(t.y - ctr.y, t.x - ctr.x), rad = Math.hypot(t.x - ctr.x, t.y - ctr.y); return { id, name: prettyName(p.label), family: p.family, corpus: p.corpus, trainedOn: p.trainedOn, sizeM: p.sizeM, slug: p.slug, x: t.x, y: t.y, ang, rad, r: sizeOf(p.sizeM), lang: ang, lx: 0, ly: 0 }; });
     const MINSEP = 0.060;
     const byAng = [...leaves].sort((p, q) => p.ang - q.ang);
     let prevA: number | null = null;
@@ -416,7 +423,7 @@ const orderedDatasets = [...treeData.datasets].sort(
     s += `<line x1="1" y1="11" x2="${w + 1}" y2="11" stroke="#1f1c18" stroke-width="1.1"></line>`;
     s += `<line x1="1" y1="6" x2="1" y2="16" stroke="#1f1c18" stroke-width="1.1"></line>`;
     s += `<line x1="${w + 1}" y1="6" x2="${w + 1}" y2="16" stroke="#1f1c18" stroke-width="1.1"></line>`;
-    s += `<text x="${w + 9}" y="12" dominant-baseline="central" font-family="'JetBrains Mono',monospace" font-size="11" fill="#4a4540">0.10 distance</text>`;
+    s += `<text x="${w + 9}" y="12" dominant-baseline="central" font-family="'JetBrains Mono',monospace" font-size="11" fill="#4a4540">0.10 distance (√JSD)</text>`;
     s += '</svg>';
     return s;
   }
@@ -432,7 +439,7 @@ const orderedDatasets = [...treeData.datasets].sort(
   }
 
   function renderLegend(tree: any) {
-    const order = ['omat', 'mp', 'spice', 'mad', 'other'];
+    const order = ['omat', 'mp', 'multi', 'spice', 'mad', 'other'];
     const present = new Set(tree.leaves.map((l: any) => l.corpus));
     elLegend.innerHTML = order.filter((k) => present.has(k)).map((k) => {
       const e = CORPUS[k];
@@ -451,7 +458,9 @@ const orderedDatasets = [...treeData.datasets].sort(
     const nn = tree.nn.get(lf.name);
     const params = lf.sizeM ? (lf.sizeM >= 1000 ? (lf.sizeM / 1000).toFixed(1) + 'B' : Math.round(lf.sizeM) + 'M') : '—';
     const famLabel = FAM[lf.family] ? FAM[lf.family].label : lf.family;
-    const corpusLabel = CORPUS[lf.corpus] ? CORPUS[lf.corpus].short : '—';
+    // Per-model precision where a reader expects it: the verbatim dataset roll
+    // ("OMat + OMol + …"), falling back to the corpus bucket label.
+    const corpusLabel = lf.trainedOn ?? (CORPUS[lf.corpus] ? CORPUS[lf.corpus].short : '—');
     const swatch = colorOf(lf);
     elReadout.innerHTML =
       `<div class="ro-head"><span class="ro-swatch" style="background:${swatch};width:9px;height:9px;flex:0 0 auto"></span><span class="ro-name">${esc(lf.name)}</span></div>` +
