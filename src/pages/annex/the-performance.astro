@@ -114,7 +114,7 @@ import Annex from '../../layouts/Annex.astro';
         <text x="120" y="214" class="t-xs t-lab">bookkeeping unchanged; the fast path cuts compute, and backward ≈ forward</text>
       </svg>
     </div>
-    <figcaption class="afig-cap"><b>Fig 2</b> One MD step at ~1,000 atoms on a single GPU. Backward costs about as much as forward, because it is a full differentiation of the network. Bucketing and fused kernels shrink the compute bands; the neighbor-list and graph bands do not move, because they were never the arithmetic.</figcaption>
+    <figcaption class="afig-cap"><b>Fig 1</b> One MD step at ~1,000 atoms on a single GPU. Backward costs about as much as forward, because it is a full differentiation of the network. Bucketing and fused kernels shrink the compute bands; the neighbor-list and graph bands do not move, because they were never the arithmetic.</figcaption>
   </figure>
 
   <p>
@@ -224,7 +224,7 @@ import Annex from '../../layouts/Annex.astro';
         <text x="540" y="252" class="t-xs t-acc" text-anchor="middle">halo = 1 × cutoff (thin rim)</text>
       </svg>
     </div>
-    <figcaption class="afig-cap"><b>Fig 3</b> Domain decomposition copies a halo of ghost atoms as thick as the receptive field. Four message-passing blocks at 6 Å demand a 24 Å halo, so most of a rank's traffic is atoms it does not own. Allegro's one-cutoff receptive field keeps the rim thin, which is why it scales where deep message-passers stall.</figcaption>
+    <figcaption class="afig-cap"><b>Fig 2</b> Domain decomposition copies a halo of ghost atoms as thick as the receptive field. Four message-passing blocks at 6 Å demand a 24 Å halo, so most of a rank's traffic is atoms it does not own. Allegro's one-cutoff receptive field keeps the rim thin, which is why it scales where deep message-passers stall.</figcaption>
   </figure>
 
   <p>

@@ -365,6 +365,7 @@ a.step:hover h2 { color: var(--accent-ink); }
 .afig .nbr circle { fill: var(--ink); }
 .afig .nbr.out line { visibility: hidden; }
 .afig .nbr.out circle { fill: var(--ink-3); opacity: 0.35; }
+.afig .rbf-bar { fill: var(--accent); }
 .fig-controls {
   display: flex;
   align-items: center;

@@ -38,15 +38,15 @@ const plotUrl = url('/annex/nanopotential-md-energy.png');
         <p class="hero-eyebrow">Garden's Almanac · Builder's Annex</p>
         <h1>Matter models, from the serving side.</h1>
         <div class="sig">
-<span class="c"># an MLIP is a function you already know how to reason about</span><br />
+<span class="c"># an MLIP is a function of the atoms</span><br />
 energy <span class="op">=</span> model(Z, positions, cell)      <span class="c"># one scalar, forward pass</span><br />
 forces <span class="op">=</span> <span class="k">-∂</span>energy<span class="k">/∂</span>positions        <span class="a">← every inference is a backward pass</span>
         </div>
         <p class="hero-dek">
-          The Almanac explains <em>what</em> these models are. This annex is for the team building
-          around them: serving them on clusters, speeding up inference, making fine-tuning easy. It
-          assumes you know PyTorch, autograd, and a GPU, and not much chemistry. Transformer ideas
-          get explained where they come up. Four pieces, in reading order.
+          The Almanac explains <em>what</em> these models are. This annex is for the people building
+          around them: serving them, speeding them up, fine-tuning them. It assumes PyTorch,
+          autograd, and a GPU, and not much chemistry. Transformer ideas get explained where they
+          come up. Four pieces, in reading order.
         </p>
       </section>
 
@@ -97,9 +97,8 @@ forces <span class="op">=</span> <span class="k">-∂</span>energy<span class="k
       </div>
 
       <p class="hero-dek" style="max-width:64ch;">
-        Self-contained. You don't need the main Almanac to read these, though its
-        {' '}<a href={url('/primer/')}>primer</a> covers the physics if you want it. The register is
-        deliberately the engineer's, not the book's.
+        You don't need the main Almanac to read these. Its
+        {' '}<a href={url('/primer/')}>primer</a> covers the underlying physics if you want it.
       </p>
 
       <footer class="annex-foot">
