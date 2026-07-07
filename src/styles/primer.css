@@ -432,3 +432,29 @@ figure.fig figcaption .fig-num {
   .primer-body ul, .primer-body ol { font-size: 16.5px; }
   figure.fig .fig-frame { padding: 14px 8px 12px; }
 }
+
+/* Interactive-figure controls (paper-and-ink; used by the two-atom dial in Ch.1) */
+figure.fig .fig-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  margin: 0.7rem 0 0;
+  flex-wrap: wrap;
+}
+figure.fig .fig-ctl-label {
+  font-family: var(--smallcaps);
+  font-size: 13px;
+  letter-spacing: var(--track-label);
+  color: var(--ink-3);
+}
+figure.fig .fig-slider {
+  flex: 1 1 200px;
+  max-width: 320px;
+  accent-color: var(--oxblood);
+  cursor: pointer;
+}
+figure.fig .fig-readout {
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--oxblood);
+}
