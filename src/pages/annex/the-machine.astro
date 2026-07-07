@@ -1,0 +1,703 @@
+---
+import Annex from '../../layouts/Annex.astro';
+
+// Interactive cutoff figure: neighbor layout computed at build time.
+const CX = 250, CY = 190, SCALE = 16; // pixels per ångström
+const DEFAULT_RC = 6;
+const NBRS = [
+  { d: 2.3, a: 18 }, { d: 2.7, a: 152 }, { d: 3.1, a: 268 }, { d: 3.5, a: 74 },
+  { d: 3.9, a: 205 }, { d: 4.2, a: 332 }, { d: 4.6, a: 112 }, { d: 5.0, a: 12 },
+  { d: 5.3, a: 242 }, { d: 5.7, a: 300 }, { d: 6.1, a: 176 }, { d: 6.4, a: 44 },
+  { d: 6.8, a: 128 }, { d: 7.1, a: 210 }, { d: 7.4, a: 350 }, { d: 7.8, a: 88 },
+  { d: 8.2, a: 268 }, { d: 8.6, a: 158 }, { d: 9.0, a: 28 }, { d: 9.4, a: 228 },
+].map((n) => ({
+  ...n,
+  x: +(CX + n.d * SCALE * Math.cos((n.a * Math.PI) / 180)).toFixed(1),
+  y: +(CY + n.d * SCALE * Math.sin((n.a * Math.PI) / 180)).toFixed(1),
+}));
+
+// Interactive radial-basis figure: 8 Gaussian centers over [0, 5 Å], as in the notebook's RadialBasis.
+const RBF_N = 8, RBF_CUT = 5, RBF_X0 = 60, RBF_SCALE = 77, RBF_BASE = 245, RBF_MAXH = 140;
+const RBF_GAMMA = (RBF_N / RBF_CUT) ** 2;
+const rbfAct = (d, c) =>
+  Math.exp(-RBF_GAMMA * (d - c) ** 2) * 0.5 * (Math.cos((Math.PI * Math.min(d, RBF_CUT)) / RBF_CUT) + 1);
+const RBF_D0 = 2.1;
+const RBF = Array.from({ length: RBF_N }, (_, i) => {
+  const c = (i / (RBF_N - 1)) * RBF_CUT;
+  const h = rbfAct(RBF_D0, c) * RBF_MAXH;
+  return { c: +c.toFixed(3), x: +(RBF_X0 + c * RBF_SCALE).toFixed(1), h: +h.toFixed(1) };
+});
+const RBF_NBRX = +(RBF_X0 + RBF_D0 * RBF_SCALE).toFixed(1);
+---
+<Annex
+  title="The Machine"
+  piece="01"
+  eyebrow="Builder's Annex · 01 · Understand"
+  dek="How a pile of atoms becomes an energy and a force, and the five properties of that computation that shape everything you serve, speed up, or fine-tune."
+  nextHref="/annex/the-performance"
+  nextLabel="Where the Time Goes"
+>
+  <p>
+    A machine-learned interatomic potential is a function. Atoms go in, each with an atomic number
+    and a position, and one number comes out: the energy of that arrangement, in electron-volts.
+    The force on each atom is the gradient of that number, how fast the energy changes as the atom
+    moves, and forces are what a simulation actually consumes. The output you care about is a
+    derivative of the output the model computes.
+  </p>
+
+  <p>
+    The function is called inside a loop. Molecular dynamics reads the forces, moves every atom by a
+    femtosecond, and calls again, a million times over; a relaxation walks the atoms downhill until
+    the forces vanish. Nothing else runs between calls, so the model is the whole workload, and its
+    shape is not the shape of the model-serving you are used to.
+  </p>
+
+  <p>
+    This piece builds the function from the outside in, how a pile of atoms becomes an energy and
+    how the forces fall out, and then names the five properties of that computation that shape
+    everything you serve, speed up, or fine-tune. Where a comparison to transformers helps, it is
+    here in a line, and you can skip it.
+  </p>
+
+  <p>
+    The training labels come from density functional theory, accurate and slow at CPU-hours a
+    snapshot. The model is a fit to it, three to six orders of magnitude faster. That is the pitch.
+  </p>
+
+  <h2>Reading the atoms</h2>
+
+  <p>
+    Each atom starts as a lookup. Its atomic number (1 for hydrogen, 8 for oxygen, 79 for gold)
+    indexes a learned table with about a hundred rows, one per element, producing an initial feature
+    vector of shape <code>[N, k]</code>. That is the entire use of an atom's identity, and it carries
+    almost nothing: two carbon atoms are interchangeable. Everything that distinguishes one carbon
+    from another is in the positions, which are continuous and move every step. (If you know
+    transformers: the element embedding is the token embedding, but here identity is a hundred-way
+    choice and the signal lives in geometry, not the other way around.)
+  </p>
+
+  <h2>Locality: each atom sees only its neighbors</h2>
+
+  <p>
+    The total energy is a sum of per-atom contributions,
+  </p>
+
+  <pre><code>E = ε₁ + ε₂ + ... + ε_N</code></pre>
+
+  <p>
+    and each atom's contribution depends only on neighbors within a cutoff radius, 5 to 6 ångströms.
+    Interactions fall off fast with distance, so the atoms that set a carbon's energy sit a bond or
+    two away, not across the box. This is the bet that makes the whole thing cheap and scalable, and
+    it holds for neutral bulk matter. Ionic and interfacial systems carry real
+    electrostatics past any cutoff, and the closing section returns to them.
+  </p>
+
+  <figure class="afig" id="cutoff-fig">
+    <div class="afig-frame">
+      <svg viewBox="0 0 720 400" role="img" aria-label="A central atom with a cutoff sphere whose radius is set by a slider. Neighbors inside the sphere are joined to it by edges; atoms outside are faint. As the radius grows, the number of neighbors inside grows as the cube of the radius.">
+        <circle id="cut-circle" cx={CX} cy={CY} r={DEFAULT_RC * SCALE} class="s-acc f-wash" stroke-width="1" stroke-dasharray="3 4" />
+        <line id="cut-rline" x1={CX} y1={CY} x2={CX + DEFAULT_RC * SCALE} y2={CY} class="s-acc" stroke-width="1" stroke-dasharray="2 3" />
+        <text id="cut-rlabel" x={CX + (DEFAULT_RC * SCALE) / 2} y={CY - 8} class="t-xs t-acc" text-anchor="middle">rᶜ = {DEFAULT_RC.toFixed(1)} Å</text>
+        {NBRS.map((n) => (
+          <g class:list={["nbr", n.d > DEFAULT_RC && "out"]} data-d={n.d}>
+            <line x1={CX} y1={CY} x2={n.x} y2={n.y} />
+            <circle cx={n.x} cy={n.y} r="6" />
+          </g>
+        ))}
+        <circle cx={CX} cy={CY} r="9" class="f-acc" />
+      </svg>
+    </div>
+    <div class="fig-controls">
+      <span class="fig-ctl-label">cutoff</span>
+      <input type="range" min="2.5" max="8" step="0.1" value="6" class="fig-slider" aria-label="cutoff radius in ångströms" />
+      <span class="fig-readout" id="cut-readout">6.0 Å · ≈ 90 neighbors/atom · ≈ 450k edges</span>
+    </div>
+    <figcaption class="afig-cap"><b>Fig 1 · drag it</b> The cutoff fixes who interacts with whom, set by geometry rather than learned, and a neighbor-list pass writes the pairs as an <code>edge_index</code> of shape <code>[2, E]</code>. Neighbor count grows as the <em>cube</em> of the radius: at 6 Å, liquid water holds about 90 neighbors an atom, so a 5,000-atom box already carries ~450,000 directed edges. Every extra ångström of cutoff buys a lot more compute, which is why the choice is a real one.</figcaption>
+  </figure>
+
+  <script is:inline>
+    (function () {
+      var fig = document.getElementById("cutoff-fig");
+      if (!fig) return;
+      var CX = 250, CY = 190, SCALE = 16, DENS = 0.1, NATOMS = 5000;
+      var slider = fig.querySelector(".fig-slider");
+      var circle = fig.querySelector("#cut-circle");
+      var rline = fig.querySelector("#cut-rline");
+      var rlabel = fig.querySelector("#cut-rlabel");
+      var readout = fig.querySelector("#cut-readout");
+      var nbrs = Array.prototype.slice.call(fig.querySelectorAll(".nbr"));
+      function fmtEdges(e) {
+        return e >= 1e6 ? (e / 1e6).toFixed(1) + "M" : Math.round(e / 1000) + "k";
+      }
+      function update() {
+        var rA = parseFloat(slider.value);
+        var rpx = rA * SCALE;
+        circle.setAttribute("r", rpx);
+        rline.setAttribute("x2", CX + rpx);
+        rlabel.setAttribute("x", CX + rpx / 2);
+        rlabel.textContent = "rᶜ = " + rA.toFixed(1) + " Å";
+        nbrs.forEach(function (g) {
+          g.classList.toggle("out", parseFloat(g.getAttribute("data-d")) > rA);
+        });
+        var nn = Math.round((DENS * 4 / 3) * Math.PI * rA * rA * rA);
+        readout.textContent =
+          rA.toFixed(1) + " Å · ≈ " + nn + " neighbors/atom · ≈ " + fmtEdges(nn * NATOMS) + " edges";
+      }
+      slider.addEventListener("input", update);
+      update();
+    })();
+  </script>
+
+  <p>
+    The list is built cheaply. Measuring all <em>N</em>²/2 distances is quadratic; cell lists make
+    it linear by binning atoms into cutoff-wide cubes and searching only the 27-cube shell around
+    each atom. The output is an edge list, the adjacency of a graph, which any graph code already
+    knows how to hold.
+  </p>
+
+  <p>
+    Each edge then becomes features. A transformer tags every token with where it sits in the
+    sequence, its positional encoding, so the network can use order; the MLIP equivalent tags each
+    edge with the geometry between two atoms. Its length and its direction are handled separately.
+  </p>
+
+  <figure class="afig" id="edge-fig">
+    <div class="afig-frame">
+      <svg viewBox="0 0 720 380" role="img" aria-label="Top: a neighbor at an adjustable distance from the center atom, with a bank of eight radial basis functions whose heights respond to that distance, forming a soft one-hot. Bottom: the direction channel, spherical harmonics of order 0 through 3 with multiplicities 1, 3, 5, 7.">
+        <text x="60" y="30" class="t-s t-acc">length ‖r‖ → radial basis (drag the neighbor)</text>
+        <!-- distance ruler -->
+        <line x1={RBF_X0} y1="70" x2="455" y2="70" class="s-rule" stroke-width="1" />
+        <text x="455" y="60" class="t-xs t-lab" text-anchor="end">5 Å</text>
+        <circle cx={RBF_X0} cy="70" r="8" class="f-acc" />
+        <line id="rbf-guide" x1={RBF_NBRX} y1="78" x2={RBF_NBRX} y2={RBF_BASE} class="s-acc" stroke-width="1" stroke-dasharray="2 3" />
+        <circle id="rbf-nbr" cx={RBF_NBRX} cy="70" r="6.5" class="f-ink" />
+        <!-- bars -->
+        {RBF.map((b) => (
+          <rect class="rbf-bar" data-c={b.c} x={b.x - 15} y={RBF_BASE - b.h} width="30" height={b.h} />
+        ))}
+        <line x1="45" y1={RBF_BASE} x2="475" y2={RBF_BASE} class="s-ink" stroke-width="1" />
+        <text x="60" y={RBF_BASE + 18} class="t-xs t-lab">a soft one-hot over distance, then a small MLP → [E, 8]</text>
+
+        <line x1="40" y1="278" x2="680" y2="278" class="s-rule" stroke-width="0.75" stroke-dasharray="2 4" />
+
+        <!-- direction channel: static spherical-harmonics reference -->
+        <text x="60" y="308" class="t-s t-acc">direction r̂ → spherical harmonics</text>
+        <circle cx="90" cy="346" r="12" class="f-panel s-ink" stroke-width="1" />
+        <text x="90" y="372" class="t-xs t-lab" text-anchor="middle">l=0 · 1</text>
+        <g transform="translate(190,346)"><circle cx="0" cy="-11" r="8" class="f-acc" opacity="0.85"/><circle cx="0" cy="11" r="8" class="f-ink" opacity="0.55"/></g>
+        <text x="190" y="372" class="t-xs t-lab" text-anchor="middle">l=1 · 3</text>
+        <g transform="translate(290,346)" class="f-acc" opacity="0.8"><circle cx="-9" cy="-9" r="6"/><circle cx="9" cy="-9" r="6"/><circle cx="-9" cy="9" r="6"/><circle cx="9" cy="9" r="6"/></g>
+        <text x="290" y="372" class="t-xs t-lab" text-anchor="middle">l=2 · 5</text>
+        <g transform="translate(390,346)" class="f-acc" opacity="0.75"><circle cx="0" cy="-11" r="5"/><circle cx="-11" cy="-2" r="5"/><circle cx="11" cy="-2" r="5"/><circle cx="-6" cy="10" r="5"/><circle cx="6" cy="10" r="5"/></g>
+        <text x="390" y="372" class="t-xs t-lab" text-anchor="middle">l=3 · 7</text>
+        <text x="540" y="342" class="t-s t-ink">1+3+5+7 = 16</text>
+        <text x="540" y="360" class="t-xs t-lab">= (l_max+1)² per edge</text>
+      </svg>
+    </div>
+    <div class="fig-controls">
+      <span class="fig-ctl-label">distance</span>
+      <input type="range" min="0.3" max="5" step="0.05" value="2.1" class="fig-slider" aria-label="neighbor distance in ångströms" />
+      <span class="fig-readout" id="rbf-readout">2.1 Å · lights up the basis functions nearest that distance</span>
+    </div>
+    <figcaption class="afig-cap"><b>Fig 2 · drag it</b> An edge carries a length and a direction. The length is expanded over a bank of Gaussian basis functions: drag the neighbor and the ones nearest its distance light up, so "how far" becomes a soft one-hot the network can read without first learning to bin distances. The direction is evaluated on spherical harmonics, whose multiplicities run 1, 3, 5, 7 as the order climbs; the <code>l=1</code> triple is just the components of the unit vector. Everything the model knows about geometry enters here.</figcaption>
+  </figure>
+
+  <script is:inline>
+    (function () {
+      var fig = document.getElementById("edge-fig");
+      if (!fig) return;
+      var CUT = 5, X0 = 60, SCALE = 77, BASE = 245, MAXH = 140, GAMMA = (8 / 5) * (8 / 5);
+      var s = fig.querySelector(".fig-slider");
+      var nbr = fig.querySelector("#rbf-nbr");
+      var guide = fig.querySelector("#rbf-guide");
+      var bars = Array.prototype.slice.call(fig.querySelectorAll(".rbf-bar"));
+      var out = fig.querySelector("#rbf-readout");
+      function act(d, c) {
+        var e = 0.5 * (Math.cos((Math.PI * Math.min(d, CUT)) / CUT) + 1);
+        return Math.exp(-GAMMA * (d - c) * (d - c)) * e;
+      }
+      function up() {
+        var d = parseFloat(s.value), x = X0 + d * SCALE;
+        nbr.setAttribute("cx", x);
+        guide.setAttribute("x1", x); guide.setAttribute("x2", x);
+        bars.forEach(function (b) {
+          var h = act(d, parseFloat(b.getAttribute("data-c"))) * MAXH;
+          b.setAttribute("y", BASE - h); b.setAttribute("height", h);
+        });
+        out.textContent = d.toFixed(2) + " Å · lights up the basis functions nearest that distance";
+      }
+      s.addEventListener("input", up);
+      up();
+    })();
+  </script>
+
+  <h2>Message passing: atoms update from their neighbors</h2>
+
+  <p>
+    Each atom now has a starting feature vector and a list of neighbors. A message-passing block
+    updates every atom from those neighbors, and it burns most of the compute. One round has four
+    steps.
+  </p>
+
+  <figure class="afig">
+    <div class="afig-frame">
+      <svg viewBox="0 0 720 250" role="img" aria-label="One round of message passing: neighbors send messages along edges into a center atom, the messages are summed, and the center atom's feature vector is updated.">
+        <!-- graph -->
+        <g class="s-rule" stroke-width="1.2">
+          <line x1="150" y1="128" x2="70" y2="70" />
+          <line x1="150" y1="128" x2="80" y2="196" />
+          <line x1="150" y1="128" x2="238" y2="72" />
+          <line x1="150" y1="128" x2="228" y2="190" />
+        </g>
+        <g class="s-acc" stroke-width="1.6">
+          <line x1="78" y1="76" x2="138" y2="120" marker-end="url(#m3)" />
+          <line x1="88" y1="190" x2="140" y2="140" marker-end="url(#m3)" />
+          <line x1="230" y1="78" x2="162" y2="120" marker-end="url(#m3)" />
+          <line x1="220" y1="184" x2="162" y2="138" marker-end="url(#m3)" />
+        </g>
+        <g class="f-paper s-ink" stroke-width="1.4">
+          <circle cx="70" cy="70" r="8" /><circle cx="80" cy="196" r="8" />
+          <circle cx="238" cy="72" r="8" /><circle cx="228" cy="190" r="8" />
+        </g>
+        <circle cx="150" cy="128" r="10" class="f-acc" />
+        <text x="150" y="228" class="t-s t-lab" text-anchor="middle">4 neighbors → 1 center</text>
+
+        <!-- pipeline -->
+        <g transform="translate(316,0)">
+          <text x="0" y="60" class="t-s"><tspan class="t-acc">1 gather</tspan>  neighbor feats onto edges  [E, k]</text>
+          <text x="0" y="96" class="t-s"><tspan class="t-acc">2 tensor product</tspan>  feats ⊗ Yₗ, gated by radial  [E, k′]</text>
+          <text x="0" y="132" class="t-s"><tspan class="t-acc">3 scatter-add</tspan>  sum messages onto atom  [N, k′]</text>
+          <text x="0" y="168" class="t-s"><tspan class="t-acc">4 update</tspan>  per-atom MLP  [N, k]</text>
+          <line x1="0" y1="188" x2="392" y2="188" class="s-rule" stroke-width="1" />
+          <text x="0" y="208" class="t-xs t-lab">gather + scatter are the memory-traffic backbone</text>
+        </g>
+        <defs>
+          <marker id="m3" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8 z" class="f-acc" /></marker>
+        </defs>
+      </svg>
+    </div>
+    <figcaption class="afig-cap"><b>Fig 3</b> Edge-wise compute, aggregate, node-wise update. The sum at step 3 is not a stylistic choice. It keeps the result unchanged when you reorder an atom's neighbors, which it must be, since atoms have no order.</figcaption>
+  </figure>
+
+  <p>
+    Depth buys reach. After one round an atom has seen 6 Å
+    out. At the second round its neighbors are already carrying summaries of <em>their</em>
+    neighborhoods, so information arrives from 12 Å.
+  </p>
+
+  <figure class="afig">
+    <div class="afig-frame">
+      <svg viewBox="0 0 720 170" role="img" aria-label="A chain of atoms drawn three times. After each round of message passing, the accent-colored span of atoms the center has heard from grows one hop wider.">
+        <g>
+          <text x="120" y="34" class="t-s t-lab" text-anchor="middle">after 1 round · 6 Å</text>
+          <line x1="40" y1="86" x2="200" y2="86" class="s-rule" stroke-width="1" />
+          <line x1="96" y1="86" x2="144" y2="86" class="s-acc" stroke-width="2.6" />
+          <g class="f-ink"><circle cx="48" cy="86" r="4"/><circle cx="72" cy="86" r="4"/><circle cx="96" cy="86" r="4"/><circle cx="144" cy="86" r="4"/><circle cx="168" cy="86" r="4"/><circle cx="192" cy="86" r="4"/></g>
+          <circle cx="120" cy="86" r="5.5" class="f-acc" />
+        </g>
+        <g>
+          <text x="360" y="34" class="t-s t-lab" text-anchor="middle">after 2 rounds · 12 Å</text>
+          <line x1="280" y1="86" x2="440" y2="86" class="s-rule" stroke-width="1" />
+          <line x1="312" y1="86" x2="408" y2="86" class="s-acc" stroke-width="2.6" />
+          <g class="f-ink"><circle cx="288" cy="86" r="4"/><circle cx="312" cy="86" r="4"/><circle cx="336" cy="86" r="4"/><circle cx="384" cy="86" r="4"/><circle cx="408" cy="86" r="4"/><circle cx="432" cy="86" r="4"/></g>
+          <circle cx="360" cy="86" r="5.5" class="f-acc" />
+        </g>
+        <g>
+          <text x="600" y="34" class="t-s t-lab" text-anchor="middle">after 3 rounds · 18 Å</text>
+          <line x1="516" y1="86" x2="684" y2="86" class="s-rule" stroke-width="1" />
+          <line x1="528" y1="86" x2="672" y2="86" class="s-acc" stroke-width="2.6" />
+          <g class="f-ink"><circle cx="528" cy="86" r="4"/><circle cx="552" cy="86" r="4"/><circle cx="576" cy="86" r="4"/><circle cx="624" cy="86" r="4"/><circle cx="648" cy="86" r="4"/><circle cx="672" cy="86" r="4"/></g>
+          <circle cx="600" cy="86" r="5.5" class="f-acc" />
+        </g>
+        <text x="360" y="140" class="t-s t-ink" text-anchor="middle">receptive field = rounds × cutoff</text>
+      </svg>
+    </div>
+    <figcaption class="afig-cap"><b>Fig 4</b> The receptive field grows one hop a round. Notice that the model never draws an edge longer than the cutoff; range comes from stacking, not from reaching. This is also the multi-node cost, since a domain must exchange ghost atoms out to the full receptive field.</figcaption>
+  </figure>
+
+  <p>
+    The family tree is variations on this block, and it reads as a genealogy. SchNet (2017) sends
+    distances only, invariant scalars, no directions. NequIP answered its blind spot by making the
+    features equivariant, the property the third section takes up. MACE answered NequIP's cost: it builds
+    many-body products inside each layer, so one layer captures three and four atoms at once ("two
+    neighbors 104 degrees apart," a water molecule's H–O–H angle) and it stops at two layers.
+    Allegro drops message passing entirely; every atom's energy reads only its own neighborhood, at
+    one cutoff, no matter the depth. That looks like a ceiling. The multi-node section makes it the
+    selling point.
+  </p>
+
+  <h2>The readout: per-atom energies, summed</h2>
+
+  <p>
+    After the last block, the scalar (<code>l=0</code>) channels of each atom pass through a small
+    readout MLP to one number, that atom's energy. Sum over atoms for the total. The sum is not a
+    detail: it hard-codes extensivity, so two separated copies of a system have exactly twice the
+    energy. Averaging would break that. Summing cannot.
+  </p>
+
+  <figure class="afig">
+    <div class="afig-frame">
+      <svg viewBox="0 0 720 250" role="img" aria-label="A raw DFT energy drawn as a tall bar that is almost entirely per-element reference baseline, with a thin slice at the top marking the learned residual. A second bar on a mismatched baseline shows a silent constant offset.">
+        <!-- bar 1 -->
+        <rect x="120" y="40" width="90" height="150" class="f-panel s-rule" stroke-width="1" />
+        <rect x="120" y="40" width="90" height="20" class="f-acc" />
+        <text x="165" y="210" class="t-s t-lab" text-anchor="middle">model A</text>
+        <line x1="222" y1="40" x2="250" y2="40" class="s-acc" stroke-width="1" />
+        <text x="256" y="44" class="t-xs t-acc">learned residual (the chemistry)</text>
+        <line x1="222" y1="120" x2="250" y2="120" class="s-rule" stroke-width="1" />
+        <text x="256" y="124" class="t-xs t-lab">per-element reference energy</text>
+        <text x="256" y="138" class="t-xs t-lab">(isolated-atom baseline)</text>
+
+        <!-- bar 2 mismatched -->
+        <rect x="470" y="72" width="90" height="150" class="f-panel s-rule" stroke-width="1" />
+        <rect x="470" y="72" width="90" height="20" class="f-acc" />
+        <text x="515" y="210" style="display:none"></text>
+        <text x="515" y="242" class="t-s t-lab" text-anchor="middle">model B, other DFT recipe</text>
+        <line x1="470" y1="40" x2="470" y2="72" class="s-acc" stroke-width="1.4" stroke-dasharray="3 3" />
+        <text x="382" y="58" class="t-xs t-acc">silent</text>
+        <text x="382" y="72" class="t-xs t-acc">offset Δ</text>
+        <line x1="360" y1="40" x2="620" y2="40" class="s-rule" stroke-width="0.75" stroke-dasharray="2 4" />
+      </svg>
+    </div>
+    <figcaption class="afig-cap"><b>Fig 5</b> One number in the sum dwarfs the rest: each element's reference energy, roughly the atom alone in vacuum. The network only ever fits the thin slice on top. That baseline depends on the DFT recipe, so mixing a fine-tuning set computed at another level shifts every energy by a constant per element. Forces have zero gradient to a constant, so they look fine while every energy comparison is wrong. The fine-tuning piece has the fix.</figcaption>
+  </figure>
+
+  <p>
+    The training economics rhyme with model work you have seen. Labels cost DFT compute instead of
+    annotation, so the field pretrains big on pooled public data and fine-tunes on the niche. A
+    single-material potential runs 10⁵ to 10⁶ parameters. MACE-MP-0 medium is 4.7M. UMA-medium
+    reaches 1.4 billion parameters total but runs only about 50 million on any given structure. It
+    holds several sets of weights, its experts, and a small router picks which to use per input, so
+    total capacity grows without every parameter running every time. UMA chooses its experts once
+    per structure, from the dataset, task, charge, and spin, and blends them into one weight matrix
+    before the forward pass. It is trained across five FAIR datasets, roughly 500 million structures.
+  </p>
+
+  <h2>Forces come out of the backward pass</h2>
+
+  <p>
+    The forward pass produces the energy. A simulation wants the forces, and in most MLIPs the
+    forces are not a second output head. They are the gradient of the energy with respect to the
+    input positions, taken by autograd: run the network forward for the energy, then backward for
+    the force on every atom.
+  </p>
+
+  <figure class="afig">
+    <div class="afig-frame">
+      <svg viewBox="0 0 720 250" role="img" aria-label="Positions flow forward through the network to a single scalar energy; the forces come back out of a backward pass differentiating that scalar with respect to the positions. The whole thing repeats every molecular-dynamics step.">
+        <text x="70" y="96" class="t-s t-ink">positions</text>
+        <text x="70" y="114" class="t-xs t-lab">R  [N,3]</text>
+        <line x1="140" y1="100" x2="196" y2="100" class="s-ink" stroke-width="1.4" marker-end="url(#m6f)" />
+        <rect x="200" y="72" width="150" height="56" class="f-panel s-ink" stroke-width="1" />
+        <text x="275" y="98" class="t-s t-ink" text-anchor="middle">the network</text>
+        <text x="275" y="114" class="t-xs t-lab" text-anchor="middle">forward</text>
+        <line x1="354" y1="100" x2="410" y2="100" class="s-ink" stroke-width="1.4" marker-end="url(#m6f)" />
+        <text x="452" y="96" class="t-s t-ink" text-anchor="middle">E</text>
+        <text x="452" y="114" class="t-xs t-lab" text-anchor="middle">scalar</text>
+
+        <!-- backward -->
+        <path d="M452 128 C 452 180, 275 180, 275 134" fill="none" class="s-acc" stroke-width="1.8" marker-end="url(#m6b)" />
+        <text x="364" y="196" class="t-s t-acc" text-anchor="middle">backward: F = −∂E/∂R   [N,3]</text>
+
+        <!-- loop -->
+        <path d="M240 60 C 240 20, 500 20, 500 84" fill="none" class="s-rule" stroke-width="1.2" stroke-dasharray="3 3" marker-end="url(#m6g)" />
+        <text x="370" y="34" class="t-xs t-lab" text-anchor="middle">every MD step, a million times</text>
+
+        <defs>
+          <marker id="m6f" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8 z" class="f-ink" /></marker>
+          <marker id="m6b" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8 z" class="f-acc" /></marker>
+          <marker id="m6g" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8 z" fill="var(--rule)" /></marker>
+        </defs>
+      </svg>
+    </div>
+    <figcaption class="afig-cap"><b>Fig 6</b> Every production inference is a forward pass <em>and</em> a backward pass. There is no <code>torch.no_grad()</code>. Positions require gradients, the backward graph is built and traversed every step, and it holds the forward activations to differentiate through, so the memory high-water mark of "inference" is training-shaped.</figcaption>
+  </figure>
+
+  <p>
+    That completes the machine: atoms to a graph, features on the edges, a few rounds of message
+    passing, a per-atom energy summed to a scalar, and the forces as its gradient. Five properties
+    of that computation shape everything you build around it.
+  </p>
+
+  <h2>1 · Inference is a forward pass and a backward pass</h2>
+
+  <p>
+    Because the force is the gradient of the energy, every production call runs the network forward
+    for the energy and backward for the forces. There is no <code>torch.no_grad()</code>, and no
+    forward-only fast path to reach for. The backward graph is built and traversed on every step,
+    holding the forward activations to differentiate through, so the memory high-water mark of an
+    inference call looks like training rather than serving. A latency or memory estimate made for a
+    forward-only model of the same size will be low. Size for the backward pass.
+  </p>
+
+  <p>
+    Training pays for the gradient twice. The force is already a first derivative, so a loss on the
+    forces, backpropagated to the weights, differentiates a gradient: the double-backward path, at
+    roughly 2 to 3 times the memory and time of energy-only training. A fine-tuning job that OOMs at
+    a batch size that should fit is usually hitting this. The fine-tuning piece takes the rest of
+    that story.
+  </p>
+
+  <p>
+    Forces taken this way are worth the cost. A force read as the gradient of a scalar is
+    conservative: the work around any closed loop of positions is zero, so energy is conserved up to
+    integrator error. A direct force head skips the backward pass and predicts three numbers an atom
+    at about half the cost. Orb-v3 ships direct and conservative variants; released UMA and eSEN
+    train a direct head internally, then remove it and ship conservative. An arbitrary vector field
+    is not the gradient of anything, so its discrepancy acts like a hidden thermostat and the energy
+    drifts over a long run. I would keep conservative forces for any run you integrate past a few
+    picoseconds, and reach for a direct head only for single-point or short-relaxation throughput.
+    Your serving stack has to carry both.
+  </p>
+
+  <h2>2 · It runs in a loop, not a request stream</h2>
+
+  <p>
+    The model's output feeds its next input: forces move the atoms, the moved atoms are the next
+    call. Millions of calls in a row, each depending on the one before, and nothing between them but
+    a cheap position update. This looks like a workload made for caching, because the atoms barely
+    move. One femtosecond of thermal motion shifts an atom by thousandths of an ångström against a 5
+    Å cutoff, so the graph and the activations are nearly identical to last step's. The field mostly
+    does not cache it.
+  </p>
+
+  <p>
+    One amortization is universal and old: the neighbor list is built with a skin margin and reused
+    until an atom drifts half the skin, which spreads graph construction over many steps. Nothing
+    amortizes the network itself. The obstacle is real. Every atom moves every step, and the output
+    is a gradient, the quantity least tolerant of a stale approximation, since MD integrates force
+    error into drift. Whether an incremental scheme can beat honest recomputation is open. I would
+    not build a roadmap on it. What you can lean on is the reverse: throughput comes from running
+    many independent trajectories at once, never from making one trajectory's steps cheaper to chain.
+  </p>
+
+  <h2>3 · The hidden state carries geometry</h2>
+
+  <p>
+    In most networks a hidden state is an unstructured vector, and any layer that maps vectors to
+    vectors is fair game. An equivariant MLIP's hidden state is typed. Rotate the input molecule and
+    the internal features rotate in lockstep, so the predicted forces come out rotated by exactly the
+    same amount. The architecture enforces this. It is not learned from augmentation.
+  </p>
+
+  <figure class="afig" id="equiv-fig">
+    <div class="afig-frame">
+      <svg viewBox="0 0 720 350" role="img" aria-label="A molecule with force arrows on its atoms, next to a panel showing one atom's two features: a scalar and a vector. A slider rotates the molecule; the bonds, force arrows, and the vector feature all rotate rigidly with it, while the scalar feature never changes.">
+        <!-- molecule + forces, rotates about the center atom (200,190) -->
+        <g id="equiv-mol">
+          <g class="s-ink" stroke-width="1.6">
+            <line x1="200" y1="190" x2="140" y2="128" />
+            <line x1="200" y1="190" x2="272" y2="150" />
+            <line x1="200" y1="190" x2="196" y2="270" />
+          </g>
+          <g class="f-ink"><circle cx="140" cy="128" r="7" /><circle cx="272" cy="150" r="7" /><circle cx="196" cy="270" r="7" /></g>
+          <g class="s-acc" stroke-width="1.8">
+            <line x1="140" y1="128" x2="116" y2="102" marker-end="url(#eqf)" />
+            <line x1="272" y1="150" x2="304" y2="142" marker-end="url(#eqf)" />
+            <line x1="196" y1="270" x2="188" y2="302" marker-end="url(#eqf)" />
+          </g>
+          <circle cx="200" cy="190" r="9" class="f-acc" />
+        </g>
+        <text x="200" y="336" class="t-xs t-lab" text-anchor="middle">molecule + forces</text>
+
+        <!-- connector -->
+        <line x1="212" y1="190" x2="452" y2="190" class="s-rule" stroke-width="1" stroke-dasharray="2 3" />
+        <text x="332" y="182" class="t-xs t-lab" text-anchor="middle">atom i's features</text>
+
+        <!-- feature panel (fixed) -->
+        <rect x="456" y="96" width="244" height="216" fill="none" class="s-rule" stroke-width="1" />
+        <circle cx="512" cy="168" r="15" class="f-acc" />
+        <text x="540" y="162" class="t-xs t-ink">l=0 scalar = 0.62</text>
+        <text x="540" y="177" class="t-xs t-acc">invariant: never changes</text>
+        <g id="equiv-vec">
+          <line x1="512" y1="256" x2="560" y2="256" class="s-acc" stroke-width="2.6" marker-end="url(#eqf)" />
+        </g>
+        <text x="576" y="250" class="t-xs t-ink">l=1 vector</text>
+        <text x="576" y="265" class="t-xs t-acc">equivariant: rotates by θ</text>
+
+        <defs>
+          <marker id="eqf" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8 z" class="f-acc" /></marker>
+        </defs>
+      </svg>
+    </div>
+    <div class="fig-controls">
+      <span class="fig-ctl-label">rotate</span>
+      <input type="range" min="0" max="360" step="1" value="0" class="fig-slider" aria-label="rotation angle in degrees" />
+      <span class="fig-readout" id="equiv-readout">θ = 0° · scalar 0.62 (fixed) · vector (1.00, 0.00)</span>
+    </div>
+    <figcaption class="afig-cap"><b>Fig 7 · drag it</b> Rotate the molecule. Its bonds and its force arrows turn rigidly with it, and so does the <code>l=1</code> vector feature: both are <em>equivariant</em>. The <code>l=0</code> scalar feature does not change at all: it is <em>invariant</em>. That is what "typed" means. Each atom's feature is a bundle of these pieces, and combining two types into a third follows the fixed Clebsch–Gordan algebra. That tensor product, run over every edge, is the hot kernel cuEquivariance exists to fuse, and the only bilinear op that mixes geometry into features while keeping every channel's rotation type honest.</figcaption>
+  </figure>
+
+  <script is:inline>
+    (function () {
+      var fig = document.getElementById("equiv-fig");
+      if (!fig) return;
+      var s = fig.querySelector(".fig-slider");
+      var mol = fig.querySelector("#equiv-mol");
+      var vec = fig.querySelector("#equiv-vec");
+      var out = fig.querySelector("#equiv-readout");
+      function up() {
+        var d = parseFloat(s.value), r = (d * Math.PI) / 180;
+        mol.setAttribute("transform", "rotate(" + d + " 200 190)");
+        vec.setAttribute("transform", "rotate(" + d + " 512 256)");
+        out.textContent =
+          "θ = " + d + "° · scalar 0.62 (fixed) · vector (" +
+          Math.cos(r).toFixed(2) + ", " + Math.sin(r).toFixed(2) + ")";
+      }
+      s.addEventListener("input", up);
+      up();
+    })();
+  </script>
+
+  <p>
+    The consequence: you cannot drop in an arbitrary layer. LayerNorm across a vector's three
+    components breaks the rotation rule. An elementwise ReLU on them breaks it. Standard dropout
+    breaks it. Equivariant models put nonlinearities on scalar channels only and let scalars gate
+    the magnitudes of the higher pieces. If you build fusion passes, quantization, pruning, or
+    adapter injection, the typed structure is a correctness constraint, and violating it throws no
+    error. It ships a model whose forces silently depend on how the molecule happens to be oriented
+    in space.
+  </p>
+
+  <h2>4 · Tiny model, enormous input</h2>
+
+  <p>
+    Weight-loading bandwidth, the thing serving a large language model fights, is a non-issue here.
+    The whole model fits in a few tens of megabytes. Where the memory in one call actually goes is
+    the edges.
+  </p>
+
+  <figure class="afig">
+    <div class="afig-frame">
+      <svg viewBox="0 0 720 214" role="img" aria-label="A to-scale bar of the memory touched in one MLIP call on a 5,000-atom box. The model weights are about 19 megabytes, node activations about 3, and the per-edge activations about 205 megabytes per layer for two layers, dwarfing the weights. The edge activations are bracketed as held in memory for the backward pass.">
+        <text x="70" y="32" class="t-s t-ink">memory touched in one call · 5,000 atoms · k = 128 · E ≈ 400,000</text>
+
+        <!-- bracket over the edge segments -->
+        <text x="365" y="66" class="t-xs t-acc" text-anchor="middle">edge activations, held in memory for the backward pass</text>
+        <path d="M98 76 L98 88 M632 76 L632 88 M98 76 L632 76" fill="none" class="s-acc" stroke-width="1" />
+
+        <!-- to-scale bar: 1 MB ≈ 1.30 px -->
+        <rect x="70" y="96" width="25" height="40" class="f-ink" />
+        <rect x="95" y="96" width="3" height="40" fill="var(--ink-3)" />
+        <rect x="98" y="96" width="267" height="40" class="f-acc" />
+        <rect x="365" y="96" width="267" height="40" fill="var(--accent-ink)" />
+        <line x1="365" y1="96" x2="365" y2="136" stroke="#fff" stroke-width="1" />
+
+        <!-- leaders + labels -->
+        <text x="82" y="158" class="t-xs t-ink" text-anchor="middle">weights</text>
+        <text x="231" y="158" class="t-xs" fill="#fff" text-anchor="middle" style="opacity:0">x</text>
+        <text x="231" y="122" class="t-xs" fill="#fff" text-anchor="middle">layer 1</text>
+        <text x="498" y="122" class="t-xs" fill="#fff" text-anchor="middle">layer 2</text>
+
+        <!-- legend -->
+        <g class="t-xs">
+          <rect x="70" y="180" width="12" height="12" class="f-ink" /><text x="88" y="190" class="t-lab">model weights ≈ 19 MB (4.7M params)</text>
+          <rect x="330" y="180" width="12" height="12" fill="var(--ink-3)" /><text x="348" y="190" class="t-lab">node acts ≈ 3 MB</text>
+          <rect x="452" y="180" width="12" height="12" class="f-acc" /><text x="470" y="190" class="t-lab">edge acts ≈ 205 MB / layer</text>
+        </g>
+      </svg>
+    </div>
+    <figcaption class="afig-cap"><b>Fig 8</b> To scale, for one call on the water box. The model weights are the dark sliver on the left. Nearly all the memory is the per-edge activations, <code>[E, k]</code> tensors with <em>E</em> ≈ 400,000, one set per layer, and the call retains every set to run the backward pass for forces. So an MLIP is memory-bound on its edges rather than compute-bound on its weights, and the high-water mark of a plain inference call looks like training. At a few hundred atoms the GPU is instead launch-bound, spending its time starting the many small kernels rather than running them.</figcaption>
+  </figure>
+
+  <p>
+    So <code>torch.compile</code>, CUDA graphs, and kernel fusion matter more than raw FLOPs
+    suggest. Batching concatenates several systems into one big disconnected graph and tracks which
+    atom belongs to which. The dynamic shapes hurt most: atom count is fixed within a run, edge
+    count is not, and a shape that changes every few steps forces recompilation or graph recapture,
+    either of which can eat the whole speedup. Padding to a few bucket sizes fixes it. It is the same
+    game you play batching variable-length inputs, now per-step, inside a hot loop, forever.
+  </p>
+
+  <h2>5 · Correctness is physical, not a number</h2>
+
+  <p>
+    A low error on a held-out test set is necessary and not sufficient. The acceptance test is
+    behavioral: run constant-energy dynamics for millions of steps and watch the total energy.
+    Correlated force errors do not average out. They accumulate, and a simulation that slowly heats
+    itself is not slightly wrong. Sometimes it detonates, atoms flying apart mid-run.
+  </p>
+
+  <figure class="afig">
+    <div class="afig-frame">
+      <svg viewBox="0 0 720 230" role="img" aria-label="Total energy versus simulation time. A conservative force field holds a flat line. A direct-force model drifts steadily upward, and its static force error can be lower than the conservative model's.">
+        <line x1="80" y1="40" x2="80" y2="180" class="s-ink" stroke-width="1"/>
+        <line x1="80" y1="180" x2="660" y2="180" class="s-ink" stroke-width="1"/>
+        <text x="72" y="52" class="t-xs t-lab" text-anchor="end">E_total</text>
+        <text x="656" y="198" class="t-xs t-lab" text-anchor="end">simulation time →</text>
+        <!-- conservative flat -->
+        <path d="M80 120 L 660 120" fill="none" class="s-acc" stroke-width="2"/>
+        <text x="500" y="112" class="t-xs t-acc">conservative: flat = pass</text>
+        <!-- direct drift -->
+        <path d="M80 120 C 300 118, 440 96, 660 56" fill="none" class="s-ink" stroke-width="1.6" stroke-dasharray="4 3"/>
+        <text x="486" y="60" class="t-xs t-lab">direct-force: drifts, run heats</text>
+      </svg>
+    </div>
+    <figcaption class="afig-cap"><b>Fig 9</b> The flat line is the pass condition, and a static force MAE will not show it. A direct-force model can post a <em>lower</em> force error on a held-out set and still lose in deployment, because its errors do not integrate to zero. Any eval harness needs a short stability run.</figcaption>
+  </figure>
+
+  <p>
+    This is why the field runs fp32 and treats mixed precision warily. TF32 matmuls, on by default
+    since Ampere, inject the low-amplitude force noise long MD is sensitive to; turn them off before
+    you benchmark accuracy. Tight relaxations chasing force norms toward zero sometimes want fp64.
+  </p>
+
+  <h2>Two facts the five properties don't cover</h2>
+
+  <p>
+    Two more things will bite a team building both inference and fine-tuning tooling, and neither
+    falls out of the machine as drawn.
+  </p>
+
+  <p>
+    <strong>The inference fast path and the fine-tuning path conflict.</strong> Inference speed
+    comes from cuEquivariance's fused tensor-product kernels under <code>torch.compile</code> or
+    CUDA-graph capture. Force-label fine-tuning needs the double-backward, since you cannot train on
+    forces without differentiating a gradient. They do not compose: the fused, compiled path does
+    not support the second-order backward (NVIDIA's cuEquivariance issue #268), so the kernels that
+    make inference fast get dropped or run eager for fine-tuning. Stand up both against the same
+    checkpoints and you maintain two paths through the hot kernel.
+  </p>
+
+  <p>
+    <strong>Short-range MLIPs miss long-range electrostatics by default.</strong> The locality bet
+    loses where charge does not stay local. A 6 Å cutoff cannot see the Coulomb interaction between
+    two ions 20 Å apart, and for ionic or interfacial systems that is real physics. The
+    patches exist: latent Ewald summation, PME-style message passing carrying a long-range term
+    beside the short-range graph. UMA's total-charge and spin inputs let it condition on global
+    charge state, which is not the same as summing the electrostatics; a short-range backbone still
+    needs the long-range term bolted on to get an interface right.
+  </p>
+
+  <h2>What this means for the tools you build</h2>
+
+  <p>
+    <strong>Serving.</strong> The interfaces are the ASE <code>Calculator</code>
+    (<code>get_potential_energy</code>, <code>get_forces</code>) and LAMMPS pair styles, and the
+    workload is a hot loop, not a request stream. Latency per call is the metric. Steps cannot batch
+    across time, since each consumes the last one's output, so throughput comes from running many
+    simulations at once. Provision for forward and backward on every call, plus the direct-force
+    fallback for users who choose speed over conservation.
+  </p>
+
+  <p>
+    <strong>Multi-node.</strong> Big systems split across GPUs by spatial domain, and each domain
+    holds ghost copies of neighboring atoms out to the receptive field (Fig 4). Rounds times cutoff
+    sets the halo width, so more rounds means more communication. Strictly-local Allegro scales
+    across nodes where deep message-passers stall, which makes "how many rounds" an infrastructure
+    question, not only an accuracy one.
+  </p>
+
+  <p>
+    <strong>Speed.</strong> The wins are in kernels and shape discipline: fused equivariant tensor
+    products, bucket-padded compilation, neighbor-list tuning. The step-to-step almost-cache is
+    still unclaimed, with the obstacle from the loop section in its way. And the fast path fights the
+    training path, so budget for both.
+  </p>
+
+  <p>
+    That is the machine. Its five properties are why serving these models, speeding them up, and
+    fine-tuning them is a distinct engineering job and not a config change. The next two pieces are
+    that job.
+  </p>
+</Annex>

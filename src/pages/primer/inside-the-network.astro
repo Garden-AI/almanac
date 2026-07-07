@@ -1,6 +1,10 @@
 ---
 import Primer from '../../layouts/Primer.astro';
 import { url } from '../../lib/url';
+
+// Interactive receptive-field figure: one chain of atoms, spacing 44px, center at index 7.
+const RF_C = 7, RF_S = 44, RF_X0 = 60;
+const RF = Array.from({ length: 15 }, (_, i) => ({ i, x: RF_X0 + i * RF_S }));
 ---
 <Primer
   title="Inside the Network"
@@ -29,7 +33,7 @@ import { url } from '../../lib/url';
   <p>
     A neighborhood is, at bottom, the distances to the neighbors and the angles between them. So
     build numbers out of exactly those. Take a <strong>radial feature</strong>: pick a target
-    distance — say two ångströms (Å) — and, for each neighbor, score how close it sits to that
+    distance (say two ångströms, Å) and, for each neighbor, score how close it sits to that
     target, full marks if it lands right on it and fading to nothing as it moves away. Add those
     scores over all the neighbors. The result is one number that answers a single plain question:
     how many neighbors sit about two ångströms out? Pick a different target distance and you get
@@ -46,11 +50,10 @@ import { url } from '../../lib/url';
 
   <p>
     Each of these numbers is a sum over neighbors, so the order you list the neighbors in does not
-    matter — there is the permutation symmetry of Chapter 2, built in for free. And because the
+    matter: there is the permutation symmetry of Chapter 2, built in for free. And because the
     ingredients are distances and angles, sliding or turning the molecule leaves every number alone.
     The whole list is invariant by construction. These hand-built numbers have a name:
-    <strong>symmetry functions</strong>, or more loosely <strong>descriptors</strong> — a fixed
-    vector that describes the patch.
+    <strong>symmetry functions</strong>, or more loosely <strong>descriptors</strong>.
   </p>
 
   <p>
@@ -126,8 +129,8 @@ import { url } from '../../lib/url';
   <h2><span class="num">§ 2</span>The better answer: let the network learn its features</h2>
 
   <p>
-    Stop fixing the features by hand. Give every atom a vector of numbers — call it the atom's
-    <strong>feature vector</strong>, its private scratchpad — and let the network fill that scratchpad
+    Stop fixing the features by hand. Give every atom a vector of numbers (call it the atom's
+    <strong>feature vector</strong>, its private scratchpad) and let the network fill that scratchpad
     itself. At the start the scratchpad holds almost nothing: just the atom's element. The trick is
     how the scratchpads get filled in.
   </p>
@@ -135,10 +138,10 @@ import { url } from '../../lib/url';
   <p>
     They get filled by talking to neighbors. The process runs in <strong>rounds</strong>. In one
     round, every atom looks along each of its graph edges, takes a copy of that neighbor's
-    scratchpad, and shapes it according to the edge between them — how far the neighbor is, in which
+    scratchpad, and shapes it according to the edge between them: how far the neighbor is, in which
     direction. Each shaped copy is a <strong>message</strong>. The atom collects the messages from
-    all its neighbors and adds them together — a sum, so the order of the neighbors never matters,
-    the same permutation safety as before — and uses the total to update its own scratchpad. Every
+    all its neighbors and adds them together (a sum, so the order of the neighbors never matters,
+    the same permutation safety as before) and uses the total to update its own scratchpad. Every
     atom does this at once. This is <strong>message passing</strong>.
   </p>
 
@@ -194,10 +197,10 @@ import { url } from '../../lib/url';
 
   <p>
     The rounds buy something the cutoff alone cannot give: range. Think of it as gossip. After one
-    round, your scratchpad holds news from the atoms you talk to directly — the ones inside your
+    round, your scratchpad holds news from the atoms you talk to directly: the ones inside your
     cutoff. But those atoms have been talking too. After a second round, the news they pass you
     already carries what <em>their</em> neighbors told them, so you have heard, secondhand, from
-    atoms two edges away — atoms you never spoke to. After three rounds the gossip has reached you
+    atoms two edges away, atoms you never spoke to. After three rounds the gossip has reached you
     from three edges out. The number of rounds sets how far through the material an atom's energy can
     feel, the model's <strong>receptive field</strong>.
   </p>
@@ -205,40 +208,54 @@ import { url } from '../../lib/url';
   <aside class="sidenote">
     <span class="sn-label">Two ranges, not one</span>
     The cutoff and the receptive field are different knobs and it is easy to confuse them. The
-    <em>cutoff</em> decides who you talk to in a single round — your direct neighbors, a few
+    <em>cutoff</em> decides who you talk to in a single round: your direct neighbors, a few
     ångströms out. The <em>number of rounds</em> decides how many hops the gossip travels, and so
     how far the influence reaches in total. Three rounds with a five-ångström cutoff lets an atom
     feel structure roughly fifteen ångströms away, without ever drawing an edge that long.
   </aside>
 
-  <figure class="fig">
+  <figure class="fig" id="rf-fig">
     <div class="fig-frame">
-      <svg viewBox="0 0 720 200" role="img" aria-label="A chain of atoms shown three times; with each additional round of message passing, the shaded region of atoms the center has heard from grows one hop wider.">
-        <g class="strip-labels"><text x="120" y="34" text-anchor="middle" class="svg-small">after 1 round</text><text x="360" y="34" text-anchor="middle" class="svg-small">after 2 rounds</text><text x="600" y="34" text-anchor="middle" class="svg-small">after 3 rounds</text></g>
-
-        <g>
-          <line x1="36" y1="110" x2="204" y2="110" stroke="var(--rule)" stroke-width="1" />
-          <line x1="96" y1="110" x2="144" y2="110" stroke="var(--oxblood)" stroke-width="2.5" />
-          <g fill="var(--ink)"><circle cx="48" cy="110" r="4.5"/><circle cx="72" cy="110" r="4.5"/><circle cx="96" cy="110" r="4.5"/><circle cx="144" cy="110" r="4.5"/><circle cx="168" cy="110" r="4.5"/><circle cx="192" cy="110" r="4.5"/></g>
-          <circle cx="120" cy="110" r="6" fill="var(--oxblood)" />
-        </g>
-        <g>
-          <line x1="276" y1="110" x2="444" y2="110" stroke="var(--rule)" stroke-width="1" />
-          <line x1="312" y1="110" x2="408" y2="110" stroke="var(--oxblood)" stroke-width="2.5" />
-          <g fill="var(--ink)"><circle cx="288" cy="110" r="4.5"/><circle cx="312" cy="110" r="4.5"/><circle cx="336" cy="110" r="4.5"/><circle cx="384" cy="110" r="4.5"/><circle cx="408" cy="110" r="4.5"/><circle cx="432" cy="110" r="4.5"/></g>
-          <circle cx="360" cy="110" r="6" fill="var(--oxblood)" />
-        </g>
-        <g>
-          <line x1="516" y1="110" x2="684" y2="110" stroke="var(--rule)" stroke-width="1" />
-          <line x1="528" y1="110" x2="672" y2="110" stroke="var(--oxblood)" stroke-width="2.5" />
-          <g fill="var(--ink)"><circle cx="528" cy="110" r="4.5"/><circle cx="552" cy="110" r="4.5"/><circle cx="576" cy="110" r="4.5"/><circle cx="624" cy="110" r="4.5"/><circle cx="648" cy="110" r="4.5"/><circle cx="672" cy="110" r="4.5"/></g>
-          <circle cx="600" cy="110" r="6" fill="var(--oxblood)" />
-        </g>
-        <text x="360" y="172" text-anchor="middle" class="svg-small">the oxblood span is what the center atom has heard from</text>
+      <svg viewBox="0 0 720 190" role="img" aria-label="One chain of atoms with the center highlighted. A slider sets the number of message-passing rounds; the oxblood span of atoms the center has heard from grows one hop wider per round.">
+        <line x1="60" y1="96" x2="676" y2="96" stroke="var(--rule)" stroke-width="1" />
+        <line id="rf-span" x1="192" y1="96" x2="544" y2="96" stroke="var(--oxblood)" stroke-width="2.5" />
+        {RF.map((a) => (
+          <circle class="rf-atom" data-i={a.i} cx={a.x} cy="96" r={a.i === RF_C ? 6.5 : 4.5} fill="var(--oxblood)" />
+        ))}
+        <text x="368" y="150" text-anchor="middle" class="svg-small">the oxblood span is what the center atom has heard from</text>
       </svg>
     </div>
-    <figcaption><span class="fig-num">Fig. 3</span>The receptive field grows one hop per round. The same chain of atoms is drawn three times; the oxblood span marks how far news has reached the center atom.</figcaption>
+    <div class="fig-controls">
+      <span class="fig-ctl-label">rounds</span>
+      <input type="range" min="1" max="5" step="1" value="3" class="fig-slider" aria-label="number of message-passing rounds" />
+      <span class="fig-readout" id="rf-readout">3 rounds · reach 3 × 5 Å = 15 Å</span>
+    </div>
+    <figcaption><span class="fig-num">Fig. 3 · drag it</span>The receptive field grows one hop per round. Each round, news travels one more atom outward, so after <em>L</em> rounds the center has heard from everything within <em>L</em> cutoffs. That is how a model with a five-ångström cutoff can feel structure fifteen ångströms away, without ever drawing an edge that long.</figcaption>
   </figure>
+
+  <script is:inline>
+    (function () {
+      var fig = document.getElementById("rf-fig");
+      if (!fig) return;
+      var C = 7, S = 44, X0 = 60, CUT = 5;
+      var s = fig.querySelector(".fig-slider");
+      var span = fig.querySelector("#rf-span");
+      var atoms = Array.prototype.slice.call(fig.querySelectorAll(".rf-atom"));
+      var out = fig.querySelector("#rf-readout");
+      function up() {
+        var L = parseInt(s.value, 10);
+        span.setAttribute("x1", X0 + (C - L) * S);
+        span.setAttribute("x2", X0 + (C + L) * S);
+        atoms.forEach(function (a) {
+          var inr = Math.abs(parseInt(a.getAttribute("data-i"), 10) - C) <= L;
+          a.setAttribute("fill", inr ? "var(--oxblood)" : "var(--ink)");
+        });
+        out.textContent = L + " round" + (L === 1 ? "" : "s") + " · reach " + L + " × 5 Å = " + L * CUT + " Å";
+      }
+      s.addEventListener("input", up);
+      up();
+    })();
+  </script>
 
   <h2><span class="num">§ 3</span>What the messages carry</h2>
 
@@ -253,8 +270,8 @@ import { url } from '../../lib/url';
   <p>
     Distance-only messages have the same blind spot the hand-built descriptors had before angles
     were added. Look at a central atom with two neighbors, each the same distance out, and swing
-    the angle between them from wide to narrow. Every message the center receives is unchanged —
-    this neighbor at 2.1 Å, that neighbor at 2.1 Å — yet the arrangement has changed, and so has
+    the angle between them from wide to narrow. Every message the center receives is unchanged
+    (this neighbor at 2.1 Å, that neighbor at 2.1 Å), yet the arrangement has changed, and so has
     its energy. A model that hears only distances reads the two as identical.
   </p>
 
@@ -291,37 +308,37 @@ import { url } from '../../lib/url';
     There are two ways to fix this. The first is to put the missing geometry back in by hand: feed
     angles to the messages, the way the hand-built descriptors did. Models in the
     <strong>DimeNet</strong> and <strong>GemNet</strong> line do this, sending messages that carry
-    angle information as well as distance. The features are still scalars — still invariant — but now
+    angle information as well as distance. The features are still scalars (still invariant), but now
     they encode shape, not just spacing.
   </p>
 
   <p>
     The second way is deeper. Let the scratchpads themselves hold directional things. Instead of
     attaching a plain number to each neighbor, attach a little arrow that points along the bond. An
-    arrow records direction, not just spacing. Beyond the arrow come richer directional patterns —
-    two lobes, four lobes, finer and finer — with the arrow as the coarsest member of the family.
-    These building blocks are the <strong>spherical harmonics</strong>, the same objects physics
-    uses to describe atomic orbitals and angular momentum.
-    Their defining property is the one we need: when the molecule turns, they turn rigidly with it —
-    they are <strong>equivariant</strong>, the same word Chapter 2 used for forces. Rotation now lives
+    arrow records direction, not just spacing. Beyond the arrow come richer directional patterns
+    (two lobes, four lobes, finer and finer), with the arrow as the coarsest member of the family.
+    These building blocks are the <strong>spherical harmonics</strong>. Physics uses the same objects
+    to describe atomic orbitals and angular momentum.
+    Their defining property is the one we need: when the molecule turns, they turn rigidly with it.
+    They are <strong>equivariant</strong>, the same word Chapter 2 used for forces. Rotation now lives
     <em>inside</em> the network's hidden layers, not only at its input and output. Models in the
     <strong>NequIP</strong>, <strong>MACE</strong>, and <strong>Allegro</strong> family work this way.
   </p>
 
   <aside class="sidenote">
     <span class="sn-label">What equivariance buys</span>
-    Not correctness — Chapter 2 showed that an invariant energy, differentiated, gives equivariant
+    Not correctness. Chapter 2 showed that an invariant energy, differentiated, gives equivariant
     forces for free, and SchNet and DimeNet, whose insides are entirely invariant, get their forces
     exactly this way. The payoff is <em>efficiency</em>: a network that already speaks the language
     of rotation does not have to learn it from examples, and so learns the rest from far fewer of
     them. NequIP reported matching the accuracy of earlier invariant models with a small fraction of
-    the training data they needed — on some benchmarks a thousandth as many examples.
+    the training data they needed, on some benchmarks a thousandth as many examples.
   </aside>
 
   <p>
     Depth is not the only route to expressiveness. MACE packs more into each round instead of
-    stacking rounds: its messages mix pairs and triples of neighbors at once — <strong>higher body
-    order</strong>, in the field's vocabulary — so about two rounds do what plainer models need five
+    stacking rounds: its messages mix pairs and triples of neighbors at once (<strong>higher body
+    order</strong>, in the field's vocabulary), so about two rounds do what plainer models need five
     or six for.
   </p>
 
@@ -336,7 +353,7 @@ import { url } from '../../lib/url';
   <p>
     The machine now has its shape: rounds of messages, features plain or directional, a readout
     that sums per-atom energies. A shape is not yet a model. Inside every shaping and updating step
-    sit adjustable numbers — thousands to millions of them, the <strong>weights</strong> — and
+    sit adjustable numbers (thousands to millions of them, the <strong>weights</strong>), and
     nothing so far has said how they get their values. They are set by example — and the examples
     have to come from somewhere.
   </p>

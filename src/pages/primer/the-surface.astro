@@ -2,6 +2,21 @@
 import Primer from '../../layouts/Primer.astro';
 import Term from '../../components/Term.astro';
 import { url } from '../../lib/url';
+
+// Interactive two-atom curve: a Lennard-Jones energy in reduced units (min at r=1, depth 1),
+// sampled at build time. The reader drags the separation; the marker, force arrow, and atoms
+// are recomputed in the browser from the same formula.
+const LJ = { XMIN: 112, XMAX: 682, RLO: 0.86, RHI: 2.62, YBASE: 250, YTOP: 46, ELO: -1.15, EHI: 1.15, R0: 1.6 };
+const ljX = (r: number) => LJ.XMIN + ((r - LJ.RLO) / (LJ.RHI - LJ.RLO)) * (LJ.XMAX - LJ.XMIN);
+const ljE = (r: number) => Math.pow(1 / r, 12) - 2 * Math.pow(1 / r, 6);
+const ljY = (e: number) =>
+  LJ.YBASE + ((Math.max(LJ.ELO, Math.min(LJ.EHI, e)) - LJ.ELO) / (LJ.EHI - LJ.ELO)) * (LJ.YTOP - LJ.YBASE);
+const ljPts = Array.from({ length: 161 }, (_, i) => {
+  const r = LJ.RLO + ((LJ.RHI - LJ.RLO) * i) / 160;
+  return ljX(r).toFixed(1) + ' ' + ljY(ljE(r)).toFixed(1);
+});
+const LJ_CURVE = 'M ' + ljPts.join(' L ');
+const LJ0 = { x: +ljX(LJ.R0).toFixed(1), y: +ljY(ljE(LJ.R0)).toFixed(1), xmin: +ljX(1).toFixed(1) };
 ---
 <Primer
   title="The Surface Beneath Everything"
@@ -26,32 +41,75 @@ import { url } from '../../lib/url';
     settled separation; up to a plateau on the right, where the two stop noticing each other.
   </p>
 
-  <figure class="fig">
+  <figure class="fig" id="lj-fig">
     <div class="fig-frame">
-      <svg viewBox="0 0 720 300" role="img" aria-label="Energy of two atoms versus the distance between them: a steep wall when too close, a valley at the settled separation, a plateau when far apart.">
+      <svg viewBox="0 0 720 300" role="img" aria-label="Energy of two atoms versus the distance between them, with a slider that sets the distance. A marker rides the curve and a force arrow points downhill toward the valley: a steep wall when too close, a valley at the settled separation, a plateau when far apart.">
         <line x1="70" y1="28" x2="70" y2="252" stroke="var(--ink)" stroke-width="1" />
         <line x1="70" y1="252" x2="694" y2="252" stroke="var(--ink)" stroke-width="1" />
         <text transform="rotate(-90 22 140)" x="22" y="140" text-anchor="middle" class="svg-label">energy of the pair</text>
         <text x="690" y="274" text-anchor="end" class="svg-serif-it">distance between the two atoms →</text>
 
-        <path d="M 104 44 C 144 180, 214 214, 252 214 C 330 214, 384 172, 462 160 C 542 151, 620 150, 688 150"
-              fill="none" stroke="var(--oxblood)" stroke-width="2" />
+        <path d={LJ_CURVE} fill="none" stroke="var(--oxblood)" stroke-width="2" />
 
-        <circle cx="252" cy="214" r="3.4" fill="var(--ink)" />
-        <text x="252" y="236" text-anchor="middle" class="svg-serif-it">the separation they settle into</text>
-        <text x="120" y="62" class="svg-small">too close to bear</text>
-        <text x="688" y="142" text-anchor="end" class="svg-serif-it">far enough to ignore each other</text>
+        <line x1={LJ0.xmin} y1="248" x2={LJ0.xmin} y2="256" stroke="var(--ink)" stroke-width="1" />
+        <text x={LJ0.xmin} y="270" text-anchor="middle" class="svg-small">settles here</text>
+        <text x="126" y="62" class="svg-small">too close to bear</text>
 
-        <text x="312" y="98" class="svg-serif-it">the slope here is the force</text>
-        <line x1="398" y1="110" x2="380" y2="176" stroke="var(--ink)" stroke-width="1.4" marker-end="url(#f1)" />
+        <!-- the two atoms, at the current separation -->
+        <text x="596" y="46" text-anchor="middle" class="svg-small">the two atoms</text>
+        <circle cx="556" cy="70" r="9" fill="var(--oxblood)" />
+        <circle id="lj-atomR" cx="601" cy="70" r="9" fill="var(--oxblood)" />
+
+        <!-- guide, force, marker (positions set by the script) -->
+        <line id="lj-guide" x1={LJ0.x} y1={LJ0.y} x2={LJ0.x} y2="252" stroke="var(--ink-3)" stroke-width="1" stroke-dasharray="2 3" />
+        <line id="lj-force" x1={LJ0.x} y1={LJ0.y} x2={LJ0.x - 20} y2={LJ0.y} stroke="var(--oxblood)" stroke-width="1.8" marker-end="url(#ljf)" />
+        <text id="lj-flabel" x={LJ0.x - 10} y={LJ0.y - 14} text-anchor="middle" class="svg-serif-it">force: pulls them together</text>
+        <circle id="lj-dot" cx={LJ0.x} cy={LJ0.y} r="5.5" fill="var(--ink)" />
 
         <defs>
-          <marker id="f1" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8 z" fill="var(--ink)" /></marker>
+          <marker id="ljf" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8 z" fill="var(--oxblood)" /></marker>
         </defs>
       </svg>
     </div>
-    <figcaption><span class="fig-num">Fig. 1</span>Two atoms, one dial. Turn the dial to set their separation; read the gauge to get the energy of the pair. The curve's two features — the valley, and the slope everywhere else — are the subject of everything that follows.</figcaption>
+    <div class="fig-controls">
+      <span class="fig-ctl-label">distance</span>
+      <input type="range" min="0.86" max="2.62" step="0.01" value="1.6" class="fig-slider" aria-label="distance between the two atoms" />
+      <span class="fig-readout" id="lj-readout">energy −0.07 · pulling together</span>
+    </div>
+    <figcaption><span class="fig-num">Fig. 1 · drag it</span>Two atoms, one dial. Drag the distance and the marker rides the energy curve; the oxblood arrow is the force, always pointing downhill toward the valley. On the steep left wall the force is a hard shove apart; past the valley it is a gentle pull together; at the valley floor it vanishes. The curve's two features, the valley and the slope everywhere else, are the subject of everything that follows.</figcaption>
   </figure>
+
+  <script is:inline>
+    (function () {
+      var fig = document.getElementById("lj-fig");
+      if (!fig) return;
+      var XMIN = 112, XMAX = 682, RLO = 0.86, RHI = 2.62, YBASE = 250, YTOP = 46, ELO = -1.15, EHI = 1.15;
+      function X(r) { return XMIN + ((r - RLO) / (RHI - RLO)) * (XMAX - XMIN); }
+      function E(r) { return Math.pow(1 / r, 12) - 2 * Math.pow(1 / r, 6); }
+      function Y(e) { return YBASE + ((Math.max(ELO, Math.min(EHI, e)) - ELO) / (EHI - ELO)) * (YTOP - YBASE); }
+      var s = fig.querySelector(".fig-slider");
+      var dot = fig.querySelector("#lj-dot"), guide = fig.querySelector("#lj-guide");
+      var force = fig.querySelector("#lj-force"), flabel = fig.querySelector("#lj-flabel");
+      var atomR = fig.querySelector("#lj-atomR"), out = fig.querySelector("#lj-readout");
+      function up() {
+        var r = parseFloat(s.value), x = X(r), e = E(r), y = Y(e);
+        var F = 12 / Math.pow(r, 13) - 12 / Math.pow(r, 7); // −dE/dr
+        dot.setAttribute("cx", x); dot.setAttribute("cy", y);
+        guide.setAttribute("x1", x); guide.setAttribute("x2", x); guide.setAttribute("y1", y);
+        var near = Math.abs(F) < 0.03, dir = F >= 0 ? 1 : -1;
+        var len = (Math.min(Math.abs(F), 1.2) / 1.2) * 50 + 6;
+        force.setAttribute("x1", x); force.setAttribute("y1", y);
+        force.setAttribute("x2", x + dir * len); force.setAttribute("y2", y);
+        force.style.opacity = near ? "0.25" : "1";
+        flabel.setAttribute("x", x + dir * (len / 2)); flabel.setAttribute("y", y - 14);
+        flabel.textContent = near ? "no force: the valley floor" : dir < 0 ? "force: pulls them together" : "force: pushes them apart";
+        atomR.setAttribute("cx", 556 + 18 + r * 17);
+        out.textContent = "distance " + r.toFixed(2) + " · energy " + e.toFixed(2) + " · " + (near ? "no force" : dir < 0 ? "pulling together" : "pushing apart");
+      }
+      s.addEventListener("input", up);
+      up();
+    })();
+  </script>
 
   <p>
     That curve holds the two facts everything else stands on. The valley is where the pair wants to be; a
@@ -73,10 +131,10 @@ import { url } from '../../lib/url';
 
   <p>
     Add all the dials you like; the gauge still reads <strong>one number</strong>, a single energy
-    for the whole arrangement. The dials are the input — one axis per coordinate of every atom. The
-    energy is the output — one scalar. The landscape is that one number plotted over the space of
+    for the whole arrangement. The dials are the input: one axis per coordinate of every atom. The
+    energy is the output: one scalar. The landscape is that one number plotted over the space of
     all dial settings, the way a map plots a single altitude over a field. Our field has thousands
-    of axes instead of two. Many numbers in, one number out — which is all the notation
+    of axes instead of two. Many numbers in, one number out. That is all the notation
     <em>E</em>(<em>R</em>) means: the energy <em>E</em> as a function of <em>R</em>, the whole list of
     every atom's coordinates. Hand it <em>R</em>, and it returns a single number.
   </p>
@@ -84,7 +142,7 @@ import { url } from '../../lib/url';
   <p>
     That landscape is the <strong><Term gloss="<b>Potential energy surface (PES).</b> The energy of a set of atoms as a function of where every atom sits — one number per arrangement. The landscape this whole primer is about.">potential energy surface</Term></strong>. Almost everything atomistic
     simulation does is move on it. Roll downhill until the slope vanishes and you have relaxed a
-    structure — found a valley floor. Let the atoms wander with momentum and temperature and you are
+    structure, found a valley floor. Let the atoms wander with momentum and temperature and you are
     running molecular dynamics. Measure the curve of a valley floor and you have the vibrations.
     Find the lowest pass between two valleys and you have a chemical reaction, with its height
     setting the rate. Each needs only what the two-atom bowl gave us: the energy at a point, and the
@@ -114,21 +172,21 @@ import { url } from '../../lib/url';
               fill="none" stroke="var(--ink)" stroke-width="1" stroke-dasharray="3 4" />
       </svg>
     </div>
-    <figcaption><span class="fig-num">Fig. 2</span>The same bowl, in thousands of dimensions. We can draw only one winding path through it — the page holds two dimensions, not thousands — but every feature is real. Each valley is a stable arrangement; the lowest pass between two valleys is a reaction; the slope everywhere is the force.</figcaption>
+    <figcaption><span class="fig-num">Fig. 2</span>The same bowl, in thousands of dimensions. We can draw only one winding path through it (the page holds two dimensions, not thousands), but every feature is real. Each valley is a stable arrangement; the lowest pass between two valleys is a reaction; the slope everywhere is the force.</figcaption>
   </figure>
 
   <h2><span class="num">§ 2</span>What the gauge measures</h2>
 
   <p>
-    The gauge reads an energy — the total energy of this one fixed arrangement of atoms. What sets
+    The gauge reads an energy: the total energy of this one fixed arrangement of atoms. What sets
     that number? Why does one arrangement come out low and another high?
   </p>
 
   <p>
-    An atom is a nucleus — a small, heavy, positive core — surrounded by electrons. So the energy
+    An atom is a nucleus (a small, heavy, positive core) surrounded by electrons. So the energy
     splits in two: <em>E</em> = <em>E</em><sub>nuclei</sub> + <em>E</em><sub>electrons</sub>. The
-    first term is the nuclei pushing each other apart — they are all positive, and like charges
-    repel — and it is plain electrostatics, a number you could work out by hand from where the nuclei
+    first term is the nuclei pushing each other apart; they are all positive, and like charges
+    repel. It is plain electrostatics, a number you could work out by hand from where the nuclei
     sit. The second term, the electrons, is the hard part. They are the
     glue: shared between nuclei, they hold the arrangement together, and where they go decides
     almost everything about the energy.
@@ -136,19 +194,19 @@ import { url } from '../../lib/url';
 
   <p>
     Electrons are not pinned in place. Given where the nuclei are, they spread into whatever
-    arrangement is lowest in energy, and because they are light — a proton outweighs one about 1836
-    to one — they fall into it almost the instant the nuclei move. So we can hold the nuclei still
+    arrangement is lowest in energy, and because they are light (a proton outweighs one about 1836
+    to one), they fall into it almost the instant the nuclei move. So we can hold the nuclei still
     and ask a question with a single answer: with these nuclei frozen here, what is the lowest
     energy the electrons can reach?
   </p>
 
   <p>
-    That lowest electron energy already counts the pull between the electrons and the nuclei — it is
+    That lowest electron energy already counts the pull between the electrons and the nuclei: it is
     the energy of electrons living in the field of these fixed nuclei. Add the one piece it leaves
     out, the nuclei's own repulsion, and you have the total: the height of the surface at this one
     geometry, and only there. Freezing the nuclei to make the electron question well-posed is the
-    <strong><Term gloss="<b>Born–Oppenheimer approximation.</b> Because nuclei are thousands of times heavier than electrons, freeze the nuclei in place, let the electrons settle to their lowest-energy arrangement, and read that off as the energy of the geometry.">Born–Oppenheimer approximation</Term></strong>. (It can fail where two electron arrangements
-    tie — a conical intersection — but across most of chemistry one surface holds, and it is the
+    <strong><Term gloss="<b>Born–Oppenheimer approximation.</b> Because nuclei are thousands of times heavier than electrons, freeze the nuclei in place, let the electrons settle to their lowest-energy arrangement, and read that off as the energy of the geometry.">Born–Oppenheimer approximation</Term></strong>. (It can fail at a conical intersection, where
+    two electron arrangements tie, but across most of chemistry one surface holds, and it is the
     surface a model learns.)
   </p>
 
@@ -176,13 +234,13 @@ import { url } from '../../lib/url';
         <text x="596" y="134" text-anchor="middle" class="svg-serif-it">the height at this geometry</text>
       </svg>
     </div>
-    <figcaption><span class="fig-num">Fig. 3</span>What the gauge measures. The nuclei are thousands of times heavier than the electrons, so we hold them still, let the electrons fall to their lowest-energy arrangement, and read the result. That reading — plus the bare nuclei's repulsion — is the height of the surface at this one geometry.</figcaption>
+    <figcaption><span class="fig-num">Fig. 3</span>What the gauge measures. The nuclei are thousands of times heavier than the electrons, so we hold them still, let the electrons fall to their lowest-energy arrangement, and read the result. That reading, plus the bare nuclei's repulsion, is the height of the surface at this one geometry.</figcaption>
   </figure>
 
   <p>
     Finding that lowest electron energy is the expensive step. The electrons repel one another and
     tangle together quantum-mechanically; solving for where they settle is a real many-body problem.
-    <strong><Term gloss="<b>Density functional theory (DFT).</b> The standard, expensive method for the electron problem. It returns one energy (and the forces) for one frozen arrangement, and it supplies almost all of an MLIP's training data.">Density functional theory</Term></strong> — DFT — is the standard method that makes it doable,
+    <strong><Term gloss="<b>Density functional theory (DFT).</b> The standard, expensive method for the electron problem. It returns one energy (and the forces) for one frozen arrangement, and it supplies almost all of an MLIP's training data.">Density functional theory</Term></strong>, or DFT, is the standard method that makes it doable,
     and it produced very nearly all the training data behind the models in this almanac. Doable is
     not cheap. One DFT reading of one arrangement takes minutes to hours, and the cost climbs
     steeply with the number of electrons. Each calculation yields one point on the surface.
@@ -190,7 +248,7 @@ import { url } from '../../lib/url';
 
   <aside class="sidenote">
     <span class="sn-label">One reading, concretely</span>
-    <p>What a DFT program takes in is mostly the arrangement, plus a few choices — here, the eight-atom cubic cell of silicon:</p>
+    <p>What a DFT program takes in is mostly the arrangement, plus a few choices. Here, the eight-atom cubic cell of silicon:</p>
     <div class="cmd">in   8 Si atoms,
      5.43 Å cube,
      repeating
@@ -205,7 +263,7 @@ out  energy ≈ −43 eV,
 
   <aside class="sidenote">
     <span class="sn-label">Forces come almost free</span>
-    You might think the force costs even more than the energy — that to get the slope you must track
+    You might think the force costs even more than the energy, that to get the slope you must track
     how the whole electron cloud shifts as a nucleus moves. You don't. Because the electrons have
     already settled to their lowest energy, that shifting term cancels, and the force on a nucleus is
     just the plain electrostatic pull of the settled electron cloud and the other nuclei. The slope
@@ -226,14 +284,14 @@ out  energy ≈ −43 eV,
     <strong>There are far too many readings to take.</strong> You might hope to read the gauge once
     at every arrangement and store the answers in a table. So count the arrangements. Ten atoms in
     three dimensions is thirty dials; allow each dial only ten coarse settings and the table needs
-    10<sup>30</sup> entries — more than the atoms in your body. Ten atoms is nothing; real
+    10<sup>30</sup> entries, more than the atoms in your body. Ten atoms is nothing; real
     simulations want thousands. The table could never be built, by anyone, on any machine.
   </p>
 
   <p>
     The two compound. To watch a crack spread through a solid, a film grow on a battery electrode, or
     a catalyst cycle through reaction after reaction, you step the atoms forward in tiny time-steps
-    and read the gauge at every step — millions of slow readings, across thousands or millions of
+    and read the gauge at every step: millions of slow readings, across thousands or millions of
     atoms. You will never get there one DFT calculation at a time.
   </p>
 
@@ -241,7 +299,7 @@ out  energy ≈ −43 eV,
 
   <p>
     The escape is already in your calculator. Press the sine button and sin 31° appears at once. The
-    calculator did not look it up in a stored table — there are infinitely many angles — and it did
+    calculator did not look it up in a stored table (there are infinitely many angles), and it did
     not recompute sine from its definition the slow way. It evaluated a short formula that someone
     long ago fit to the true sine curve, a handful of numbers that reproduce it to more decimal
     places than you will ever need. The expensive work happened once, when the formula was built;
@@ -251,7 +309,7 @@ out  energy ≈ −43 eV,
   <p>
     A machine-learned interatomic potential plays the same trick on the potential energy surface,
     with DFT in the role of the slow honest computation. Pay for DFT readings at a few thousand
-    well-chosen arrangements — slow, but a few thousand, not 10<sup>30</sup>. Fit a flexible function
+    well-chosen arrangements: slow, but a few thousand, not 10<sup>30</sup>. Fit a flexible function
     through them. From then on, asking that function for an energy takes milliseconds, not hours. That
     function is the MLIP.
   </p>
@@ -259,7 +317,7 @@ out  energy ≈ −43 eV,
   <p>
     Both problems give way. Evaluating the fit anywhere is cheap, so <em>each reading is slow</em> no
     longer bites. And the fit was built from only a few thousand sampled arrangements, so we never
-    had to face <em>too many readings to take</em> — we sampled a handful and let the function cover
+    had to face <em>too many readings to take</em>: we sampled a handful and let the function cover
     the rest.
   </p>
 
@@ -307,30 +365,30 @@ out  energy ≈ −43 eV,
         </defs>
       </svg>
     </div>
-    <figcaption><span class="fig-num">Fig. 4</span>The escape. Each black dot is one arrangement someone paid for in DFT — a slow, trustworthy reading. The oxblood curve is the potential, fit to thread the dots. A few thousand readings; the potential fills in the rest.</figcaption>
+    <figcaption><span class="fig-num">Fig. 4</span>The escape. Each black dot is one arrangement someone paid for in DFT: a slow, trustworthy reading. The oxblood curve is the potential, fit to thread the dots. A few thousand readings; the potential fills in the rest.</figcaption>
   </figure>
 
   <p>
     Two things to carry forward. First, nearly every such model computes its forces as the exact
-    slope of its own energy — the rule <em>F</em> = −∇<em>E</em> applied to the model itself, not a
+    slope of its own energy: the rule <em>F</em> = −∇<em>E</em> applied to the model itself, not a
     second quantity figured on the side. A model's energies and forces can never contradict each
     other, which matters the moment you step the atoms forward in time.
   </p>
 
   <p>
-    Second, the accuracy — and here the calculator analogy breaks. We know the true sine on its own
+    Second, the accuracy. Here the calculator analogy breaks. We know the true sine on its own
     terms: we can compute it to any precision and check the formula against it at any angle, so its
     error is bounded everywhere and can always be made smaller. An MLIP has no such anchor. The
     surface it fits is the very thing too expensive to evaluate, so it cannot be checked everywhere.
-    Near the arrangements it trained on, it is excellent. Far from them — an exotic bond, a pressure
-    no training structure ever saw — it can be wrong, and it will not warn you. There is no precision
+    Near the arrangements it trained on, it is excellent. Far from them (an exotic bond, a pressure
+    no training structure ever saw), it can be wrong, and it will not warn you. There is no precision
     dial; the remedy is to feed it more DFT where it is weak, and knowing where it is weak is its own
     hard problem.
   </p>
 
   <p>
     And even at its best, an MLIP cannot beat its teacher. It learned DFT, so it inherits DFT's
-    mistakes: where the reference gets a bond wrong, the model gets it wrong too — confidently, and a
+    mistakes: where the reference gets a bond wrong, the model gets it wrong too, confidently, and a
     million times faster. DFT is not reality, only a good approximation to it; the model is an
     approximation to that.
   </p>
@@ -338,7 +396,7 @@ out  energy ≈ −43 eV,
   <p>
     And the electrons? Having done their work in the training data, they never appear in the
     finished model. Which leaves the word we have leaned on without earning it: <em>fit</em>. We keep
-    saying the model is fit to the surface and built from local pieces — but how does a function take
+    saying the model is fit to the surface and built from local pieces, but how does a function take
     a list of atomic positions and hand back one energy, cheaply, while honoring that locality? That
     is where we turn next.
   </p>

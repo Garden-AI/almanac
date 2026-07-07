@@ -1,0 +1,113 @@
+---
+import '../../styles/annex.css';
+import { url } from '../../lib/url';
+
+// The "Open in Colab" button reads the notebook from GitHub. It resolves once
+// this notebook is committed to the branch below. Flip to 'main' after merge.
+const REPO = 'Garden-AI/almanac';
+const NOTEBOOK_BRANCH = 'main';
+const NOTEBOOK_PATH = 'notebooks/nanopotential.ipynb';
+const colabUrl = `https://colab.research.google.com/github/${REPO}/blob/${NOTEBOOK_BRANCH}/${NOTEBOOK_PATH}`;
+const downloadUrl = url('/annex/nanopotential.ipynb');
+const plotUrl = url('/annex/nanopotential-md-energy.png');
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Builder's Annex · Garden's Almanac</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/png" sizes="64x64" href={url('/favicon.png')} />
+    <meta name="robots" content="noindex" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Space+Grotesk:wght@500;700&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <main class="annex">
+      <div class="annex-topbar">
+        <a href={url('/')}>← Almanac</a>
+        <span class="brand"><b>Garden's Almanac</b> · Builder's Annex</span>
+        <span>for engineers</span>
+      </div>
+
+      <section class="hero">
+        <p class="hero-eyebrow">Garden's Almanac · Builder's Annex</p>
+        <h1>Matter models, from the serving side.</h1>
+        <div class="sig">
+<span class="c"># an MLIP is a function of the atoms</span><br />
+energy <span class="op">=</span> model(Z, positions, cell)      <span class="c"># one scalar, forward pass</span><br />
+forces <span class="op">=</span> <span class="k">-∂</span>energy<span class="k">/∂</span>positions        <span class="a">← every inference is a backward pass</span>
+        </div>
+        <p class="hero-dek">
+          The Almanac explains <em>what</em> these models are. This annex is for the people building
+          around them: serving them, speeding them up, fine-tuning them. It assumes PyTorch,
+          autograd, and a GPU, and not much chemistry. Transformer ideas get explained where they
+          come up. Four pieces, in reading order.
+        </p>
+      </section>
+
+      <div class="steps">
+        <a class="step" href={url('/annex/the-machine')}>
+          <span class="step-num">01 · understand</span>
+          <h2>The Machine</h2>
+          <p>
+            How a pile of atoms becomes an energy and a force, and the five properties of that
+            computation that shape everything you serve, speed up, or fine-tune.
+          </p>
+          <span class="go">read →</span>
+        </a>
+
+        <div class="step step--notebook">
+          <span class="step-num">02 · run it</span>
+          <h2>nanoPotential</h2>
+          <img class="plot" src={plotUrl} alt="Energy over a constant-energy MD run: potential and kinetic energy trade in anti-phase while total energy stays flat." />
+          <p>
+            A ~150-line MLIP in one file of plain PyTorch. It trains, runs molecular dynamics, and
+            conserves energy. The plot is a real run. Open it and change things.
+          </p>
+          <div class="run-actions">
+            <a class="btn btn--primary" href={colabUrl}>▶ Open in Colab</a>
+            <a class="btn btn--ghost" href={downloadUrl} download>↓ Download .ipynb</a>
+          </div>
+        </div>
+
+        <a class="step" href={url('/annex/the-performance')}>
+          <span class="step-num">03 · make it fast</span>
+          <h2>Where the Time Goes</h2>
+          <p>
+            The cost profile of one MLIP call, and the developments that move it: fused kernels,
+            compilation, direct-force heads, strict locality. Which one matters depends on the run.
+          </p>
+          <span class="go">read →</span>
+        </a>
+
+        <a class="step" href={url('/annex/the-fine-tuning-problem')}>
+          <span class="step-num">04 · adapt it</span>
+          <h2>The Fine-Tuning Problem</h2>
+          <p>
+            Why fine-tuning an MLIP is its own problem: labels on a hidden baseline, second-order
+            autograd that fights the fast path, and validation that is dynamical, not a number.
+          </p>
+          <span class="go">read →</span>
+        </a>
+      </div>
+
+      <p class="hero-dek" style="max-width:64ch;">
+        You don't need the main Almanac to read these. Its
+        {' '}<a href={url('/primer/')}>primer</a> covers the underlying physics if you want it.
+      </p>
+
+      <footer class="annex-foot">
+        <p>
+          The <a href={url('/')}>Garden's Almanac</a> proper catalogs the models, datasets, and
+          clusters. This annex is its engineering companion. Supported by
+          {' '}<a href="https://www.nsf.gov/awardsearch/showAward?AWD_ID=2209892">NSF Award #2209892</a>.
+        </p>
+      </footer>
+    </main>
+  </body>
+</html>

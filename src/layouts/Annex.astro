@@ -1,0 +1,72 @@
+---
+import '../styles/annex.css';
+import { url } from '../lib/url';
+
+// Works both as a Markdown-page layout (props arrive under `frontmatter`)
+// and when rendered directly from an .astro file (props at top level).
+const fm = (Astro.props.frontmatter ?? Astro.props) as Record<string, any>;
+const {
+  title,
+  eyebrow = "Builder's Annex",
+  dek,
+  piece,
+  prevHref, prevLabel,
+  nextHref, nextLabel,
+} = fm;
+
+const annexHome = url('/annex/');
+const almanacHome = url('/');
+const running = piece ? `Annex · ${piece}` : "Builder's Annex";
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>{title} — Builder's Annex · Garden's Almanac</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/png" sizes="64x64" href={url('/favicon.png')} />
+    <meta name="robots" content="noindex" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Space+Grotesk:wght@500;700&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <main class="annex">
+      <div class="annex-topbar">
+        <a href={annexHome}>← Annex</a>
+        <span class="brand"><b>Garden's Almanac</b> · Builder's Annex</span>
+        <span>{running}</span>
+      </div>
+
+      <header class="doc-head">
+        {eyebrow && <p class="doc-eyebrow">{eyebrow}</p>}
+        <h1>{title}</h1>
+        {dek && <p class="doc-dek">{dek}</p>}
+      </header>
+
+      <article class="doc-body">
+        <slot />
+      </article>
+
+      <nav class="doc-nav" aria-label="Annex navigation">
+        {prevHref
+          ? <a class="prev" href={url(prevHref)}><span class="dir">← Back</span>{prevLabel}</a>
+          : <a class="prev" href={annexHome}><span class="dir">←</span>Annex home</a>}
+        {nextHref
+          ? <a class="next" href={url(nextHref)}><span class="dir">Next →</span>{nextLabel}</a>
+          : <a class="next" href={annexHome}><span class="dir">→</span>Annex home</a>}
+      </nav>
+
+      <footer class="annex-foot">
+        <p>
+          The <a href={almanacHome}>Garden's Almanac</a> proper catalogs the models, datasets,
+          and clusters. This annex is its engineering companion. Supported by
+          {' '}<a href="https://www.nsf.gov/awardsearch/showAward?AWD_ID=2209892">NSF Award #2209892</a>.
+        </p>
+      </footer>
+    </main>
+  </body>
+</html>

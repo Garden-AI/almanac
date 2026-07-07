@@ -5,22 +5,22 @@ import { url } from '../../lib/url';
 <Primer
   title="Atoms as a Graph"
   eyebrow="A Primer on Matter Models · Chapter Two"
-  deck="How do you hand a pile of atoms to a function at all? Two ideas — locality and symmetry — turn the question into something a machine can learn."
+  deck="How do you hand a pile of atoms to a function at all? Two ideas, locality and symmetry, turn the question into something a machine can learn."
   running="Ch. 2 — Atoms as a Graph"
   prev={{ href: url('/primer/the-surface'), label: 'The Surface Beneath Everything' }}
   next={{ href: url('/primer/inside-the-network'), label: 'Inside the Network' }}
 >
   <p class="lead">
     You have a function to build. It eats an arrangement of atoms and returns one energy. The
-    obvious way to hand it the atoms is to give it their coordinates — a long list of (x, y, z)
-    triples, one per atom — and train a network to turn that list into the energy.
+    obvious way to hand it the atoms is to give it their coordinates: a long list of (x, y, z)
+    triples, one per atom. Train a network to turn that list into the energy.
   </p>
 
   <p>
     It fails at once. Pick the whole molecule up and set it down a step to the left. Every coordinate
     in the list changes; the energy does not. Turn the molecule forty degrees. Every coordinate
-    changes; the energy does not. Swap the labels on two identical atoms — what was atom 5 is now
-    atom 12 — and once more every number moves while the energy sits still. A network fed raw
+    changes; the energy does not. Swap the labels on two identical atoms, so what was atom 5 is now
+    atom 12, and once more every number moves while the energy sits still. A network fed raw
     coordinates would have to learn by brute force that all these different-looking lists mean one
     energy. It is like grading an essay from the pixel positions of the ink: nudge the page and the
     meaning you learned is gone.
@@ -30,7 +30,7 @@ import { url } from '../../lib/url';
     Three changes, then, must leave the energy untouched: sliding the whole system (a
     <strong>translation</strong>), turning it (a <strong>rotation</strong>), and relabeling identical
     atoms (a <strong>permutation</strong>). A change that leaves the energy untouched is called a
-    <strong>symmetry</strong> of it — these are the energy's three. A description that already obeys
+    <strong>symmetry</strong> of it, and these are the energy's three. A description that already obeys
     all three is worth far more than one the network must learn to ignore. The rest of this chapter
     builds that description out of two ideas: <strong>locality</strong> and <strong>symmetry</strong>.
   </p>
@@ -101,7 +101,7 @@ import { url } from '../../lib/url';
 
   <p>
     The payoff is <strong>reach</strong>. Because the rule for ε<sub>i</sub> is the same for every
-    atom of a given element and looks only at a local patch — the atoms inside its cutoff — you can
+    atom of a given element and looks only at a local patch, you can
     learn it on small arrangements and apply it to enormous ones: train on a hundred atoms, run on a
     million, no retraining. It also settles the puzzle Chapter 1 left open: the model learns
     patches, never whole arrangements, and a few thousand small structures hold the same handful of
@@ -109,9 +109,9 @@ import { url } from '../../lib/url';
   </p>
 
   <p>
-    Locality is an approximation, and on its face a drastic one — an atom's world, cut off at a
-    radius. In practice the energy it discards beyond a few ångströms (Å) — an ångström is about an
-    atom's width — usually amounts to a few thousandths of an electron-volt (eV) per atom in
+    Locality is an approximation, and on its face a drastic one: an atom's world, cut off at a
+    radius. In practice the energy it discards beyond a few ångströms (Å, about an
+    atom's width) usually amounts to a few thousandths of an electron-volt (eV) per atom in
     well-behaved systems, negligible against the eV-scale energies that make and break bonds. But
     not every system is well-behaved. Pull an electron off one end of a long molecule and the energy
     shifts at the far end, past any cutoff; there the local picture goes blind. Chapter 6 returns to
@@ -121,8 +121,8 @@ import { url } from '../../lib/url';
   <h2><span class="num">§ 2</span>The cutoff, made smooth</h2>
 
   <p>
-    The cutoff needs one piece of care. If a neighborhood simply stopped at a hard edge — inside
-    counts, outside does not — then an atom drifting across that edge would pop in and out of the
+    The cutoff needs one piece of care. If a neighborhood simply stopped at a hard edge (inside
+    counts, outside does not), then an atom drifting across that edge would pop in and out of the
     sum, and the energy would jump. Forces are slopes of the energy; a jump in the energy is an
     infinite force. That would wreck any simulation in a single step.
   </p>
@@ -130,58 +130,80 @@ import { url } from '../../lib/url';
   <p>
     So the boundary is a dimmer, not a switch. Each neighbor's contribution is multiplied by a
     <strong>cutoff function</strong> that fades to zero as the neighbor reaches the cutoff radius
-    <em>r</em><sub>c</sub> — full weight up close, then easing off so gently that it arrives at zero
+    <em>r</em><sub>c</sub>: full weight up close, then easing off so gently that it arrives at zero
     with zero slope, no kink. An atom drifting across the boundary weighs nothing there and crosses
-    smoothly, so neither the energy nor the force — itself a slope — ever jumps. The cutoffs are
+    smoothly, so neither the energy nor the force (itself a slope) ever jumps. The cutoffs are
     small: five or six ångströms, far enough to take in an atom's nearest neighbors and the ring or
     two beyond.
   </p>
 
-  <figure class="fig">
+  <figure class="fig" id="cut2-fig">
     <div class="fig-frame">
-      <svg viewBox="0 0 720 280" role="img" aria-label="A central atom with a cutoff sphere: neighbors inside are connected to it, neighbors outside are not, and a cutoff function fades smoothly to zero slope at the radius.">
-        <circle cx="200" cy="150" r="120" fill="none" stroke="var(--oxblood)" stroke-width="1" />
-        <text x="200" y="24" text-anchor="middle" class="svg-small">cutoff radius rᶜ ≈ 5 Å</text>
+      <svg viewBox="0 0 720 300" role="img" aria-label="A central atom with a cutoff sphere whose radius is set by a slider. Neighbors inside the sphere are joined to it by edges whose weight fades smoothly to zero at the boundary; neighbors outside are faint and unconnected. An inset shows the cutoff weight easing to zero with zero slope.">
+        <circle id="cut2-circle" cx="200" cy="150" r="120" fill="none" stroke="var(--oxblood)" stroke-width="1" stroke-dasharray="3 4" />
+        <text id="cut2-rlabel" x="200" y="24" text-anchor="middle" class="svg-small">cutoff radius rᶜ = 5.0 Å</text>
 
-        <g stroke="var(--rule)" stroke-width="1">
-          <line x1="200" y1="150" x2="140" y2="110" />
-          <line x1="200" y1="150" x2="250" y2="110" />
-          <line x1="200" y1="150" x2="160" y2="205" />
-          <line x1="200" y1="150" x2="270" y2="180" />
-          <line x1="200" y1="150" x2="130" y2="180" />
-        </g>
-        <g fill="var(--ink)">
-          <circle cx="140" cy="110" r="6" />
-          <circle cx="250" cy="110" r="6" />
-          <circle cx="160" cy="205" r="6" />
-          <circle cx="270" cy="180" r="6" />
-          <circle cx="130" cy="180" r="6" />
-        </g>
+        <g class="nb2"><line class="nb2-edge" x1="200" y1="150" x2="152" y2="122" stroke="var(--ink-3)" stroke-width="1.4" /><circle class="nb2-node" cx="152" cy="122" r="6" fill="var(--ink)" /></g>
+        <g class="nb2"><line class="nb2-edge" x1="200" y1="150" x2="256" y2="120" stroke="var(--ink-3)" stroke-width="1.4" /><circle class="nb2-node" cx="256" cy="120" r="6" fill="var(--ink)" /></g>
+        <g class="nb2"><line class="nb2-edge" x1="200" y1="150" x2="162" y2="206" stroke="var(--ink-3)" stroke-width="1.4" /><circle class="nb2-node" cx="162" cy="206" r="6" fill="var(--ink)" /></g>
+        <g class="nb2"><line class="nb2-edge" x1="200" y1="150" x2="272" y2="182" stroke="var(--ink-3)" stroke-width="1.4" /><circle class="nb2-node" cx="272" cy="182" r="6" fill="var(--ink)" /></g>
+        <g class="nb2"><line class="nb2-edge" x1="200" y1="150" x2="128" y2="180" stroke="var(--ink-3)" stroke-width="1.4" /><circle class="nb2-node" cx="128" cy="180" r="6" fill="var(--ink)" /></g>
+        <g class="nb2"><line class="nb2-edge" x1="200" y1="150" x2="300" y2="150" stroke="var(--ink-3)" stroke-width="1.4" /><circle class="nb2-node" cx="300" cy="150" r="6" fill="var(--ink)" /></g>
+        <g class="nb2"><line class="nb2-edge" x1="200" y1="150" x2="206" y2="262" stroke="var(--ink-3)" stroke-width="1.4" /><circle class="nb2-node" cx="206" cy="262" r="6" fill="var(--ink)" /></g>
+        <g class="nb2"><line class="nb2-edge" x1="200" y1="150" x2="326" y2="206" stroke="var(--ink-3)" stroke-width="1.4" /><circle class="nb2-node" cx="326" cy="206" r="6" fill="var(--ink)" /></g>
+
         <circle cx="200" cy="150" r="8" fill="var(--oxblood)" />
 
-        <circle cx="316" cy="150" r="6" fill="var(--ink)" opacity="0.4" />
-        <text x="322" y="170" class="svg-small" opacity="0.7">at the edge: weight ≈ 0</text>
-
-        <g fill="none" stroke="var(--ink-3)" stroke-width="1.2">
-          <circle cx="360" cy="84" r="6" />
-          <circle cx="372" cy="214" r="6" />
-          <circle cx="318" cy="250" r="6" />
-        </g>
-        <text x="372" y="234" class="svg-small">outside: ignored</text>
-
-        <!-- inset: cutoff function, flat at both ends -->
-        <line x1="478" y1="64" x2="478" y2="214" stroke="var(--ink)" stroke-width="0.75" />
-        <line x1="478" y1="214" x2="694" y2="214" stroke="var(--ink)" stroke-width="0.75" />
-        <text x="472" y="74" text-anchor="end" class="svg-small">weight</text>
-        <text x="472" y="86" text-anchor="end" class="svg-small">1</text>
-        <text x="694" y="232" text-anchor="end" class="svg-serif-it">distance →</text>
-        <path d="M 482 82 C 560 82, 600 212, 656 212 L 690 212" fill="none" stroke="var(--oxblood)" stroke-width="2" />
-        <line x1="656" y1="210" x2="656" y2="218" stroke="var(--ink)" stroke-width="0.75" />
-        <text x="656" y="230" text-anchor="middle" class="svg-small">rᶜ</text>
+        <!-- inset: the cutoff weight, easing to zero with zero slope -->
+        <line x1="486" y1="70" x2="486" y2="214" stroke="var(--ink)" stroke-width="0.75" />
+        <line x1="486" y1="214" x2="694" y2="214" stroke="var(--ink)" stroke-width="0.75" />
+        <text x="480" y="80" text-anchor="end" class="svg-small">weight</text>
+        <text x="694" y="232" text-anchor="end" class="svg-serif-it">a neighbor's distance →</text>
+        <path d="M 490 84 C 566 84, 604 212, 660 212 L 690 212" fill="none" stroke="var(--oxblood)" stroke-width="2" />
+        <line x1="660" y1="208" x2="660" y2="216" stroke="var(--ink)" stroke-width="0.75" />
+        <text x="666" y="200" text-anchor="start" class="svg-small">rᶜ</text>
+        <text x="590" y="256" text-anchor="middle" class="svg-small">no cliff: it reaches zero with zero slope</text>
       </svg>
     </div>
-    <figcaption><span class="fig-num">Fig. 2</span>An atom's cutoff. Neighbors inside the radius count toward its energy; atoms outside are ignored. The weight does not drop off a cliff at <em>r</em><sub>c</sub> — it eases to zero with zero slope (inset), so an atom crossing the boundary never makes the energy or the force jump.</figcaption>
+    <div class="fig-controls">
+      <span class="fig-ctl-label">cutoff</span>
+      <input type="range" min="2.5" max="5.9" step="0.05" value="5" class="fig-slider" aria-label="cutoff radius in ångströms" />
+      <span class="fig-readout" id="cut2-readout">rᶜ = 5.0 Å · 7 neighbors in range</span>
+    </div>
+    <figcaption><span class="fig-num">Fig. 2 · drag it</span>An atom's cutoff. Neighbors inside the radius count toward its energy; atoms outside are ignored. Drag the radius and watch each edge fade as its neighbor nears the boundary: the weight does not drop off a cliff, it eases to zero with zero slope (inset), so an atom crossing the boundary never makes the energy or the force jump.</figcaption>
   </figure>
+
+  <script is:inline>
+    (function () {
+      var fig = document.getElementById("cut2-fig");
+      if (!fig) return;
+      var CX = 200, CY = 150, PXPERA = 24;
+      var s = fig.querySelector(".fig-slider");
+      var circle = fig.querySelector("#cut2-circle");
+      var rlabel = fig.querySelector("#cut2-rlabel");
+      var readout = fig.querySelector("#cut2-readout");
+      var nbs = Array.prototype.slice.call(fig.querySelectorAll(".nb2"));
+      function up() {
+        var rc = parseFloat(s.value);
+        circle.setAttribute("r", rc * PXPERA);
+        rlabel.textContent = "cutoff radius rᶜ = " + rc.toFixed(1) + " Å";
+        var count = 0;
+        nbs.forEach(function (g) {
+          var node = g.querySelector(".nb2-node"), edge = g.querySelector(".nb2-edge");
+          var dx = node.getAttribute("cx") - CX, dy = node.getAttribute("cy") - CY;
+          var d = Math.sqrt(dx * dx + dy * dy) / PXPERA;
+          var w = d < rc ? 0.5 * (Math.cos((Math.PI * d) / rc) + 1) : 0;
+          edge.style.opacity = w;
+          node.setAttribute("fill", d < rc ? "var(--ink)" : "var(--ink-3)");
+          node.style.opacity = d < rc ? 1 : 0.35;
+          if (d < rc) count++;
+        });
+        readout.textContent = "rᶜ = " + rc.toFixed(1) + " Å · " + count + " neighbor" + (count === 1 ? "" : "s") + " in range";
+      }
+      s.addEventListener("input", up);
+      up();
+    })();
+  </script>
 
   <h2><span class="num">§ 3</span>Atoms as a graph</h2>
 
@@ -191,8 +213,8 @@ import { url } from '../../lib/url';
     <strong>graph</strong> — and it is exactly the data structure the machinery of the next chapter
     runs on. The same neighborhood can be drawn as the ball-and-stick picture a chemist sketches, or
     as this graph of nodes and edges, or as a plain table of the distances between every pair. They
-    carry the same information; the graph is the form the model works in — a map of who-is-near-whom,
-    not who-is-bonded-to-whom.
+    carry the same information; the graph is the form the model works in, a map of who-is-near-whom
+    rather than who-is-bonded-to-whom.
   </p>
 
   <figure class="fig">
@@ -233,7 +255,7 @@ import { url } from '../../lib/url';
         <text x="640" y="152" class="svg-small">cutoff, not a bond</text>
       </svg>
     </div>
-    <figcaption><span class="fig-num">Fig. 3</span>The same group of atoms as a molecule and as a graph (and, just as well, as a table of pairwise distances). One caution: an edge means "within the cutoff," not "chemically bonded." The cutoff runs several bond lengths, so an atom is joined to many neighbors it shares no bond with — the oxblood edge here is one of them.</figcaption>
+    <figcaption><span class="fig-num">Fig. 3</span>The same group of atoms as a molecule and as a graph (and, just as well, as a table of pairwise distances). One caution: an edge means "within the cutoff," not "chemically bonded." The cutoff runs several bond lengths, so an atom is joined to many neighbors it shares no bond with; the oxblood edge here is one of them.</figcaption>
   </figure>
 
   <h2><span class="num">§ 4</span>Describing a patch without coordinates</h2>
@@ -249,8 +271,8 @@ import { url } from '../../lib/url';
   </p>
 
   <p>
-    Distances, angles, and species still do not pin a neighborhood down completely — that takes a
-    little more, and supplying it is part of the network's job next chapter — but they are the
+    Distances, angles, and species still do not pin a neighborhood down completely; that takes a
+    little more, and supplying it is part of the network's job next chapter. But they are the
     backbone of every description that follows.
   </p>
 
@@ -267,60 +289,58 @@ import { url } from '../../lib/url';
     molecule and every force arrow turns rigidly with it, keeping its grip on each atom. A quantity
     that turns along with the system is <strong>equivariant</strong>. In symbols, rotate the whole
     system by a rotation <em>R</em> and the energy <em>E</em> is unchanged, while each force
-    <em>f</em> becomes <em>R f</em> — turned by the same <em>R</em>.
+    <em>f</em> becomes <em>R f</em>, turned by the same <em>R</em>.
   </p>
 
-  <figure class="fig">
+  <figure class="fig" id="eq2-fig">
     <div class="fig-frame">
-      <svg viewBox="0 0 720 280" role="img" aria-label="A molecule with force arrows on its atoms, and the same molecule rotated: the force arrows rotate with it while the energy reading is unchanged.">
-        <g stroke="var(--ink)" stroke-width="2">
-          <line x1="130" y1="170" x2="210" y2="170" />
-          <line x1="130" y1="170" x2="170" y2="100" />
-          <line x1="210" y1="170" x2="170" y2="100" />
+      <svg viewBox="0 0 720 260" role="img" aria-label="A triangular molecule with a force arrow on each atom, and a slider that rotates it. As it turns, every force arrow turns rigidly with it, while the energy reading stays the same.">
+        <g id="eq2-mol">
+          <g stroke="var(--ink)" stroke-width="2">
+            <line x1="322" y1="188" x2="398" y2="188" />
+            <line x1="322" y1="188" x2="360" y2="112" />
+            <line x1="398" y1="188" x2="360" y2="112" />
+          </g>
+          <g fill="var(--ink)">
+            <circle cx="322" cy="188" r="8" /><circle cx="398" cy="188" r="8" /><circle cx="360" cy="112" r="8" />
+          </g>
+          <g stroke="var(--oxblood)" stroke-width="1.6">
+            <line x1="322" y1="188" x2="300" y2="206" marker-end="url(#frc)" />
+            <line x1="398" y1="188" x2="420" y2="206" marker-end="url(#frc)" />
+            <line x1="360" y1="112" x2="360" y2="84" marker-end="url(#frc)" />
+          </g>
         </g>
-        <g fill="var(--ink)">
-          <circle cx="130" cy="170" r="8" />
-          <circle cx="210" cy="170" r="8" />
-          <circle cx="170" cy="100" r="8" />
-        </g>
-        <g stroke="var(--oxblood)" stroke-width="1.6">
-          <line x1="130" y1="170" x2="113" y2="190" marker-end="url(#frc)" />
-          <line x1="210" y1="170" x2="227" y2="190" marker-end="url(#frc)" />
-          <line x1="170" y1="100" x2="170" y2="76" marker-end="url(#frc)" />
-        </g>
-        <text x="170" y="238" text-anchor="middle" class="svg-serif-it">E = −4.21 eV</text>
-
-        <line x1="300" y1="150" x2="396" y2="150" stroke="var(--ink)" stroke-width="1.2" marker-end="url(#rot)" />
-        <text x="348" y="140" text-anchor="middle" class="svg-small">rotate</text>
-
-        <g stroke="var(--ink)" stroke-width="2">
-          <line x1="497" y1="140" x2="558" y2="191" />
-          <line x1="497" y1="140" x2="572" y2="112" />
-          <line x1="558" y1="191" x2="572" y2="112" />
-        </g>
-        <g fill="var(--ink)">
-          <circle cx="497" cy="140" r="8" />
-          <circle cx="558" cy="191" r="8" />
-          <circle cx="572" cy="112" r="8" />
-        </g>
-        <g stroke="var(--oxblood)" stroke-width="1.6">
-          <line x1="497" y1="140" x2="474" y2="144" marker-end="url(#frc)" />
-          <line x1="558" y1="191" x2="558" y2="214" marker-end="url(#frc)" />
-          <line x1="572" y1="112" x2="586" y2="95" marker-end="url(#frc)" />
-        </g>
-        <text x="535" y="245" text-anchor="middle" class="svg-serif-it">E = −4.21 eV</text>
-
+        <text x="360" y="240" text-anchor="middle" class="svg-serif-it">E = −4.21 eV, at every angle</text>
         <defs>
           <marker id="frc" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8 z" fill="var(--oxblood)" /></marker>
-          <marker id="rot" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 z" fill="var(--ink)" /></marker>
         </defs>
       </svg>
     </div>
-    <figcaption><span class="fig-num">Fig. 4</span>Same molecule, rotated. The energy reading is identical — invariant — while every force arrow has turned with the molecule — equivariant.</figcaption>
+    <div class="fig-controls">
+      <span class="fig-ctl-label">rotate</span>
+      <input type="range" min="0" max="360" step="1" value="0" class="fig-slider" aria-label="rotation angle in degrees" />
+      <span class="fig-readout" id="eq2-readout">θ = 0° · E unchanged · forces turn with it</span>
+    </div>
+    <figcaption><span class="fig-num">Fig. 4 · drag it</span>Rotate the molecule. The energy reading never budges: it is <strong>invariant</strong>. Every force arrow turns rigidly with the molecule: the forces are <strong>equivariant</strong>. Get the energy's symmetry right and the forces' comes free, because the force is the energy's slope.</figcaption>
   </figure>
 
+  <script is:inline>
+    (function () {
+      var fig = document.getElementById("eq2-fig");
+      if (!fig) return;
+      var s = fig.querySelector(".fig-slider"), mol = fig.querySelector("#eq2-mol"), out = fig.querySelector("#eq2-readout");
+      function up() {
+        var d = parseFloat(s.value);
+        mol.setAttribute("transform", "rotate(" + d + " 360 155)");
+        out.textContent = "θ = " + d + "° · E unchanged · forces turn with it";
+      }
+      s.addEventListener("input", up);
+      up();
+    })();
+  </script>
+
   <p>
-    Because the force is the slope of the energy — <em>F</em> = −∇<em>E</em> — a properly invariant
+    Because the force is the slope of the energy (<em>F</em> = −∇<em>E</em>), a properly invariant
     energy yields properly equivariant forces the instant you differentiate it. Get the energy's
     symmetry right and the forces' comes free. Whether to let rotation live <em>inside</em> the
     network's hidden workings, not only at its input and output, is the heart of the next chapter.

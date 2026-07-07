@@ -1,6 +1,22 @@
 ---
 import Primer from '../../layouts/Primer.astro';
 import { url } from '../../lib/url';
+
+// Interactive relaxation figure: a tilted double-well E(x) = (x²−1)² + 0.35x, sampled at build time.
+// Minima near x ≈ −1.05 (deeper) and x ≈ 0.96 (shallower); the reader drops a ball and it rolls to
+// whichever valley is nearest, not always the deepest.
+const RX = { XMIN: 92, XMAX: 680, XLO: -1.55, XHI: 1.45, YB: 214, YT: 46, ELO: -0.5, EHI: 1.8, X0: 0.55 };
+const rxX = (x: number) => RX.XMIN + ((x - RX.XLO) / (RX.XHI - RX.XLO)) * (RX.XMAX - RX.XMIN);
+const rxE = (x: number) => Math.pow(x * x - 1, 2) + 0.35 * x;
+const rxY = (e: number) =>
+  RX.YB + ((Math.max(RX.ELO, Math.min(RX.EHI, e)) - RX.ELO) / (RX.EHI - RX.ELO)) * (RX.YT - RX.YB);
+const rxPts = Array.from({ length: 161 }, (_, i) => {
+  const x = RX.XLO + ((RX.XHI - RX.XLO) * i) / 160;
+  return rxX(x).toFixed(1) + ' ' + rxY(rxE(x)).toFixed(1);
+});
+const RX_CURVE = 'M ' + rxPts.join(' L ');
+const RX0 = { x: +rxX(RX.X0).toFixed(1), y: +rxY(rxE(RX.X0)).toFixed(1) };
+const RX_LEFT = +rxX(-1.05).toFixed(1), RX_RIGHT = +rxX(0.96).toFixed(1);
 ---
 <Primer
   title="At Inference Time"
@@ -19,8 +35,8 @@ import { url } from '../../lib/url';
   <h2><span class="num">§ 1</span>Relaxation: roll downhill until the forces vanish</h2>
 
   <p>
-    Start with the simplest thing you can ask. You have a guessed arrangement of atoms — a candidate
-    crystal, a molecule sketched by hand, a defect dropped into a lattice — and you want the stable
+    Start with the simplest thing you can ask. You have a guessed arrangement of atoms (a candidate
+    crystal, a molecule sketched by hand, a defect dropped into a lattice), and you want the stable
     version of it: the arrangement nature would actually settle into. On the landscape, "stable" means
     a valley floor. Nudge any atom and the energy goes up; that is what makes it a resting place.
   </p>
@@ -34,38 +50,85 @@ import { url } from '../../lib/url';
     arrangement it lands on is the relaxed structure.
   </p>
 
-  <figure class="fig">
+  <figure class="fig" id="relax-fig">
     <div class="fig-frame">
-      <svg viewBox="0 0 720 250" role="img" aria-label="A ball on the energy landscape rolling down a slope into a valley floor, with force arrows that shrink to nothing at the bottom.">
-        <path d="M 60 70 C 200 40, 260 210, 380 210 C 500 210, 560 90, 660 110" fill="none" stroke="var(--ink)" stroke-width="1.5" />
-        <text x="60" y="58" class="svg-small">energy</text>
+      <svg viewBox="0 0 720 250" role="img" aria-label="A double-valley energy landscape. Drag a slider to place a ball, release, and it rolls downhill into whichever valley is nearest, which is not always the deeper one.">
+        <text x="60" y="40" class="svg-small">energy</text>
+        <path d={RX_CURVE} fill="none" stroke="var(--ink)" stroke-width="1.5" />
+        <line x1={RX_LEFT} y1="212" x2={RX_LEFT} y2="220" stroke="var(--ink-3)" stroke-width="1" />
+        <text x={RX_LEFT} y="234" text-anchor="middle" class="svg-small">deeper valley</text>
+        <line x1={RX_RIGHT} y1="150" x2={RX_RIGHT} y2="158" stroke="var(--ink-3)" stroke-width="1" />
+        <text x={RX_RIGHT} y="128" text-anchor="middle" class="svg-small">shallower valley</text>
 
-        <circle cx="118" cy="78" r="9" fill="none" stroke="var(--ink-3)" stroke-width="1.4" />
-        <line x1="118" y1="92" x2="150" y2="120" stroke="var(--oxblood)" stroke-width="1.6" marker-end="url(#ch6arrA)" />
-
-        <circle cx="250" cy="150" r="9" fill="none" stroke="var(--ink-3)" stroke-width="1.4" />
-        <line x1="258" y1="162" x2="290" y2="186" stroke="var(--oxblood)" stroke-width="1.6" marker-end="url(#ch6arrA)" />
-
-        <circle cx="335" cy="201" r="9" fill="none" stroke="var(--ink-3)" stroke-width="1.4" />
-        <line x1="346" y1="206" x2="366" y2="209" stroke="var(--oxblood)" stroke-width="1.4" marker-end="url(#ch6arrA)" />
-
-        <circle cx="382" cy="201" r="10" fill="var(--oxblood)" />
-        <text x="382" y="234" text-anchor="middle" class="svg-small">forces ≈ 0 : the valley floor</text>
+        <line id="relax-force" x1={RX0.x} y1={RX0.y} x2={RX0.x - 22} y2={RX0.y} stroke="var(--oxblood)" stroke-width="1.6" marker-end="url(#relaxArr)" />
+        <circle id="relax-ball" cx={RX0.x} cy={RX0.y} r="9" fill="var(--oxblood)" />
 
         <defs>
-          <marker id="ch6arrA" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 z" fill="var(--oxblood)"/></marker>
+          <marker id="relaxArr" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 z" fill="var(--oxblood)"/></marker>
         </defs>
       </svg>
     </div>
-    <figcaption><span class="fig-num">Fig. 1</span>Relaxation. From a guessed arrangement, step in the direction the forces point — downhill — until the forces shrink to nothing at a valley floor. That floor is the stable structure.</figcaption>
+    <div class="fig-controls">
+      <span class="fig-ctl-label">start</span>
+      <input type="range" min="-1.55" max="1.45" step="0.01" value="0.55" class="fig-slider" aria-label="starting position of the ball" />
+      <span class="fig-readout" id="relax-readout">drag to place, release to let it roll</span>
+    </div>
+    <figcaption><span class="fig-num">Fig. 1 · drag it</span>Relaxation. Place the ball and release it: it steps in the direction the force points, downhill, until the force shrinks to nothing at a valley floor. That floor is the relaxed structure. Notice it settles into whichever valley it started nearest, which is not always the deeper one. Finding the lowest valley of all is a separate, harder search.</figcaption>
   </figure>
+
+  <script is:inline>
+    (function () {
+      var fig = document.getElementById("relax-fig");
+      if (!fig) return;
+      var XMIN = 92, XMAX = 680, XLO = -1.55, XHI = 1.45, YB = 214, YT = 46, ELO = -0.5, EHI = 1.8;
+      function X(x) { return XMIN + ((x - XLO) / (XHI - XLO)) * (XMAX - XMIN); }
+      function E(x) { return Math.pow(x * x - 1, 2) + 0.35 * x; }
+      function Y(e) { return YB + ((Math.max(ELO, Math.min(EHI, e)) - ELO) / (EHI - ELO)) * (YT - YB); }
+      function slope(x) { return 4 * x * x * x - 4 * x + 0.35; } // dE/dx
+      var s = fig.querySelector(".fig-slider");
+      var ball = fig.querySelector("#relax-ball"), force = fig.querySelector("#relax-force");
+      var out = fig.querySelector("#relax-readout");
+      var raf = null;
+      function place(x, rolling) {
+        var px = X(x), py = Y(E(x));
+        ball.setAttribute("cx", px); ball.setAttribute("cy", py);
+        var g = slope(x), near = Math.abs(g) < 0.01;
+        var dir = g > 0 ? -1 : 1, len = Math.min(Math.abs(g), 2) / 2 * 34 + 6;
+        force.setAttribute("x1", px); force.setAttribute("y1", py);
+        force.setAttribute("x2", px + dir * len); force.setAttribute("y2", py);
+        force.style.opacity = near ? "0" : "1";
+        if (!rolling) out.textContent = "start x = " + x.toFixed(2) + " · release to let it roll";
+      }
+      function roll(x) {
+        if (raf) cancelAnimationFrame(raf);
+        function frame() {
+          for (var k = 0; k < 4; k++) {
+            var g = slope(x), dx = -0.03 * g;
+            if (dx > 0.05) dx = 0.05; if (dx < -0.05) dx = -0.05;
+            x += dx;
+            if (Math.abs(slope(x)) < 0.004) break;
+          }
+          place(x, true);
+          if (Math.abs(slope(x)) > 0.004) { raf = requestAnimationFrame(frame); }
+          else {
+            var deep = x < 0;
+            out.textContent = "settled in the " + (deep ? "deeper (left)" : "shallower (right)") + " valley — the nearest one, not always the deepest";
+          }
+        }
+        frame();
+      }
+      s.addEventListener("input", function () { if (raf) cancelAnimationFrame(raf); place(parseFloat(s.value), false); });
+      s.addEventListener("change", function () { roll(parseFloat(s.value)); });
+      place(parseFloat(s.value), false);
+    })();
+  </script>
 
   <p>
     With DFT this was painful: every step needs a fresh energy and forces, every reading takes hours,
     and a relaxation can run for dozens of steps. With a potential each reading is milliseconds, so the
     whole walk finishes in a moment. And once one structure is cheap, a thousand are cheap. You can
-    relax thousands of candidate arrangements and keep the ones that settle lowest — the practical
-    engine behind screening new materials.
+    relax thousands of candidate arrangements and keep the ones that settle lowest. That is the engine
+    behind screening new materials.
   </p>
 
   <aside class="sidenote">
@@ -87,7 +150,7 @@ import { url } from '../../lib/url';
   <p>
     The loop is short. Take the current positions and read the force on every atom. A force is a push,
     and a push makes a mass accelerate — heavier atoms respond less, lighter ones more. Over one very
-    short slice of time — a femtosecond, a millionth of a billionth of a second — the forces set how
+    short slice of time (a femtosecond, a millionth of a billionth of a second) the forces set how
     each velocity changes, and the velocities set how each position changes. Call that slice one
     <strong>time-step</strong>. Step it forward and you have a new arrangement, a sliver of time
     later. Read the forces there and repeat. Step and repeat, step and repeat — this is
@@ -138,8 +201,8 @@ import { url } from '../../lib/url';
   </p>
 
   <p>
-    One piece is missing. Left alone, the loop holds total energy nearly constant — what it cannot do is
-    fix the temperature. To run at, say, room
+    One piece is missing. Left alone, the loop holds total energy nearly constant, but it leaves the
+    temperature free to drift. To run at, say, room
     temperature, you attach a <strong>thermostat</strong>: a small adjustment, applied each step, that
     gently nudges the atoms' speeds up or down to hold the average kinetic energy at the value
     corresponding to the target temperature. Set the thermostat to 300 kelvin and the simulation runs as
@@ -149,8 +212,8 @@ import { url } from '../../lib/url';
   <p>
     With that, you can watch processes, not just resting structures. Heat a crystal past its melting
     point and see the lattice give way to a liquid. Track a single atom wandering through a solid over
-    time — <strong>diffusion</strong>. Pull on a slab until a <strong>crack</strong> starts — a line of
-    broken bonds — and watch that line advance one bond at a time as the front reaches each atom. Press
+    time — <strong>diffusion</strong>. Pull on a slab until a <strong>crack</strong> starts (a line of
+    broken bonds) and watch that line advance one bond at a time as the front reaches each atom. Press
     two materials together and watch the interface between them settle.
   </p>
 
@@ -158,8 +221,8 @@ import { url } from '../../lib/url';
 
   <p>
     The landscape's local shape holds more than resting places and trajectories. Sit at a valley floor
-    and ask how steeply the walls rise. That curvature — how fast the force grows as you push an
-    atom off the bottom — sets how the atoms vibrate, the phonons; from the vibrations follow heat
+    and ask how steeply the walls rise. That curvature (how fast the force grows as you push an
+    atom off the bottom) sets how the atoms vibrate — the phonons; from the vibrations follow heat
     capacity and, for sufficiently anharmonic materials, thermal expansion. Squeeze the whole box a
     little and watch the energy climb: how stiffly it resists gives the elastic constants, the
     material's springiness. All of it is the landscape's local shape, sampled with cheap evaluations
@@ -171,10 +234,10 @@ import { url } from '../../lib/url';
     between them, and the height of the lowest pass sets how fast the reaction goes — the
     <strong>reaction barrier</strong>. Finding that pass is its own small search, the
     <strong>nudged elastic band</strong>. String a chain of intermediate arrangements between the
-    two valleys, like beads, and pull every bead downhill. Springs between neighboring beads —
-    bookkeeping forces, not physical ones — keep the chain from sliding into either valley, so it
-    settles draped over the ridge, through the lowest pass. And a <strong>free energy</strong> — the
-    quantity that decides which phase or arrangement is stable at a given temperature — is not read
+    two valleys, like beads, and pull every bead downhill. Springs between neighboring beads
+    (bookkeeping forces, not physical ones) keep the chain from sliding into either valley, so it
+    settles draped over the ridge, through the lowest pass. And a <strong>free energy</strong>, the
+    quantity that decides which phase or arrangement is stable at a given temperature, is not read
     at one point but averaged over a stretch of dynamics at that temperature. Every one of these
     leans on the same cheap evaluation; that is what makes them practical.
   </p>
@@ -183,7 +246,7 @@ import { url } from '../../lib/url';
 
   <p>
     Mature simulation tools already know how to relax a structure, run dynamics, compute phonons — the
-    whole catalog above. What they do not contain is the
+    whole catalog above. The one thing they lack is the
     physics. They expect to be handed something that, given the current positions, returns the energy and
     the forces. They call that something a <strong>calculator</strong>, and they ask it the same question
     every step.
@@ -205,8 +268,8 @@ relax(atoms)                          # tool calls the model each step
 run_dynamics(atoms, temperature=300)  # so does this — same slot</div>
 
   <p>
-    Installing a potential on a cluster — the right
-    Python environment, the matching dependencies, the weights — is fiddly, and doing it once per model
+    Installing a potential on a cluster (the right
+    Python environment, the matching dependencies, the weights) is fiddly, and doing it once per model
     per machine is the kind of friction that keeps people from trying a second model.
     <strong>Rootstock</strong>, the backend behind these pages, pre-installs many potentials on shared HPC
     clusters and serves each through exactly this drop-in calculator interface. You pick a checkpoint, point
@@ -266,7 +329,7 @@ run_dynamics(atoms, temperature=300)  # so does this — same slot</div>
   <p>
     Two habits guard against it. Keep the simulation in-distribution — run it on the kinds of systems the
     model was trained for, and be wary when it strays. And where a model offers an <strong>uncertainty
-    estimate</strong> — a flag it raises when an arrangement looks unfamiliar — watch that flag and stop, or
+    estimate</strong> (a flag it raises when an arrangement looks unfamiliar), watch that flag and stop, or
     fetch real DFT for the strange region, before the drift compounds.
   </p>
 

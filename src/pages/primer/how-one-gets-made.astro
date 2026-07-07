@@ -21,12 +21,12 @@ import { url } from '../../lib/url';
   <h2><span class="num">§ 1</span>The data: a set of correct answers</h2>
 
   <p>
-    The correct answers come from DFT — the slow, expensive method of Chapter 1 that solves for the
+    The correct answers come from DFT, the slow, expensive method of Chapter 1 that solves for the
     electrons and reads off one energy. Each answer is a snapshot: a particular arrangement of atoms,
     frozen in place, labeled with the energy DFT computes for it and with the <strong>force</strong>
-    on every atom — the slope of the energy along each direction, which DFT can also report. For a
+    on every atom, the slope of the energy along each direction, which DFT can also report. For a
     crystal, where the atoms sit in a repeating box, the snapshot carries one thing more: the
-    <strong>stress</strong> — the way the energy changes when the repeating box is squeezed or
+    <strong>stress</strong>, the way the energy changes when the repeating box is squeezed or
     stretched. Energy, forces, stress — that is one labeled example.
   </p>
 
@@ -38,7 +38,7 @@ import { url } from '../../lib/url';
 
   <p>
     Which snapshots, though? This is the question that decides whether the model is any good. The
-    obvious snapshots are the comfortable ones — atoms at rest, every bond at its settled length,
+    obvious snapshots are the comfortable ones: atoms at rest, every bond at its settled length,
     every structure relaxed to a valley floor of the energy landscape from Chapter 1. They are easy
     to generate and easy for DFT to converge on.
   </p>
@@ -49,15 +49,15 @@ import { url } from '../../lib/url';
     the middle of a reaction, driven up the steep walls of the landscape toward the passes that
     separate one valley from the next. The model has never seen those walls, so the walls it draws
     come out too gentle: the force that should shove two crowded atoms apart is too weak, and they
-    drift closer than any real material would allow. This failure mode has a name — the model has
-    gone <strong>soft</strong> — and it is systematic, always toward too-little resistance, because
+    drift closer than any real material would allow. This failure mode has a name: the model has
+    gone <strong>soft</strong>. And it is systematic, always toward too-little resistance, because
     the fit was anchored only where resistance was low.
   </p>
 
   <p>
     So the rule for the data is one word: <strong>representative</strong>. The set must cover the
-    arrangements the model will actually meet at run time, and that means the uncomfortable ones —
-    compressed bonds, broken bonds, half-formed bonds, atoms at the top of a pass — must be in the
+    arrangements the model will actually meet at run time, and that means the uncomfortable ones
+    (compressed bonds, broken bonds, half-formed bonds, atoms at the top of a pass) must be in the
     training set too, not just the valley floors. You teach the walls by visiting the walls.
   </p>
 
@@ -102,7 +102,7 @@ import { url } from '../../lib/url';
 
   <p>
     "Tune the weights until the outputs match the labels" needs a precise meaning of <em>match</em>. The
-    procedure needs a single number it can drive toward zero — a score for how wrong the model
+    procedure needs a single number it can drive toward zero: a score for how wrong the model
     currently is, summed over every snapshot in the training set. That number is the
     <strong>loss</strong>. Training is the act of nudging the weights, over and over, in whatever
     direction lowers the loss, until it stops dropping.
@@ -127,8 +127,8 @@ import { url } from '../../lib/url';
 
   <div class="aside"><span class="aside-label">The loss, in words</span>
     loss = (energy error) + <em>w</em><sub>F</sub> · (force error) + <em>w</em><sub>S</sub> · (stress
-    error). Each error is a typical-sized gap between model and DFT — usually a root-mean-square, the
-    everyday "average gap" — and the weights <em>w</em><sub>F</sub> and <em>w</em><sub>S</sub> set how
+    error). Each error is a typical-sized gap between model and DFT (usually a root-mean-square, the
+    everyday "average gap"), and the weights <em>w</em><sub>F</sub> and <em>w</em><sub>S</sub> set how
     loudly forces and stress count against energies. Because getting the slopes right is what keeps a
     simulation honest, the force weight is set high; forces are not an afterthought to the energy fit,
     they are most of it.
@@ -138,31 +138,31 @@ import { url } from '../../lib/url';
 
   <p>
     You do not know in advance which arrangements the model will meet. The atoms a simulation wanders
-    into depend on the model that is driving the simulation — which does not exist yet. You need the model to find out which data you
+    into depend on the model that is driving the simulation, which does not exist yet. You need the model to find out which data you
     need, and you need the data to build the model. Each waits on the other.
   </p>
 
   <p>
-    The way out is to bootstrap, in a loop. Start with a rough model trained on whatever data you have
-    — a small, easy set, valley floors and a little more. It is not good, but it runs. Set it running
+    The way out is to bootstrap, in a loop. Start with a rough model trained on whatever data you have:
+    a small, easy set, valley floors and a little more. It is not good, but it runs. Set it running
     a simulation and watch where it goes. The instant it wanders into territory unlike anything it was
-    trained on, it is <strong>extrapolating</strong> — guessing past the edge of what it knows — and
+    trained on, it is <strong>extrapolating</strong>, guessing past the edge of what it knows, and
     Chapter 1 said what that means: wrong, with no warning. The trick is to make it warn you anyway.
   </p>
 
   <p>
-    One common trick — not the only one, but the clearest to explain — is a <strong>committee</strong>.
+    One common trick (not the only one, but the clearest to explain) is a <strong>committee</strong>.
     Train not one rough model but several, each on the same data but started from different random
     starting weights, so they end up slightly different. Where
-    the data is dense, all of them learned the same answer and they agree. Where the data is thin —
-    exactly the arrangements you are missing — they have nothing to pin them down, so they drift apart
+    the data is dense, all of them learned the same answer and they agree. Where the data is thin
+    (exactly the arrangements you are missing), they have nothing to pin them down, so they drift apart
     and start to disagree. Their disagreement is a usable signal: it flags, atom by atom and step by
     step, precisely where the model is guessing.
   </p>
 
   <p>
-    Now the loop closes. Wherever the committee disagrees, stop and call DFT — the slow, correct
-    method — on that exact arrangement, and only there. Add the new labeled snapshots to the
+    Now the loop closes. Wherever the committee disagrees, stop and call DFT on that exact
+    arrangement, and only there. Add the new labeled snapshots to the
     training set. Retrain. The committee now agrees in the place it used to disagree, runs further
     before it next gets lost, and flags the next gap. Repeat until it stops getting lost.
   </p>
@@ -210,15 +210,15 @@ import { url } from '../../lib/url';
   <h2><span class="num">§ 4</span>Foundation models: one fit for much of chemistry</h2>
 
   <p>
-    Everything so far describes building one potential for one system — a particular alloy, a
+    Everything so far describes building one potential for one system: a particular alloy, a
     particular molecule. Run the loop, get a model that knows that system, and stop. The newer
     approach drops the "one system" part, and it is the approach this Almanac exists to catalog.
     Train one large model on an enormous, deliberately diverse
-    pile of data — millions of arrangements spanning much of the periodic table — and you get a
+    pile of data (millions of arrangements spanning much of the periodic table), and you get a
     <strong>foundation model</strong> (also called a universal potential): a single fit you can pull
     off the shelf and apply to a system it was never specifically built for. For many uses it is good
     enough straight away. Where you need more accuracy on one system, you
-    <strong>fine-tune</strong> — take the big pre-trained model and nudge its weights with a small
+    <strong>fine-tune</strong>: take the big pre-trained model and nudge its weights with a small
     helping of system-specific data, far less than training from scratch would take.
   </p>
 
@@ -240,25 +240,25 @@ import { url } from '../../lib/url';
         <tr><td>OC20</td><td>Catalysis, adsorbates on surfaces</td><td>RPBE</td><td>~265M single points</td></tr>
       </tbody>
     </table>
-    <figcaption><span class="fig-num">Fig. 3</span>A sample of the large public training sets behind today's foundation models. The "DFT level" column names the <em>functional</em> — the particular approximation DFT uses — that each set was computed with; the +U suffix adds a correction for transition-metal <em>d</em> electrons, and VASP and ORCA name the programs that ran the calculations. Among the crystal datasets, OMat24 holds roughly twenty times more calculations than the others combined.</figcaption>
+    <figcaption><span class="fig-num">Fig. 3</span>A sample of the large public training sets behind today's foundation models. The "DFT level" column names the <em>functional</em> (the particular approximation DFT uses) that each set was computed with; the +U suffix adds a correction for transition-metal <em>d</em> electrons, and VASP and ORCA name the programs that ran the calculations. Among the crystal datasets, OMat24 holds roughly twenty times more calculations than the others combined.</figcaption>
   </figure>
 
   <p>
-    Some models go further and train across several of these at once. UMA — Universal Models for
-    Atoms — is fit jointly over five such datasets, on the order of half a billion arrangements in
-    total, using an architecture that lets different parts of the network specialize — catalysis in
-    one region, bulk crystals in another — without one domain drowning out the others.
+    Some models go further and train across several of these at once. UMA (Universal Models for
+    Atoms) is fit jointly over five such datasets, on the order of half a billion arrangements in
+    total, using an architecture that lets different parts of the network specialize (catalysis in
+    one region, bulk crystals in another) without one domain drowning out the others.
   </p>
 
   <p>
     There is a seam under the word "universal," and it is the DFT level. A foundation model stitches
-    together datasets computed with different, inconsistent recipes — PBE here, RPBE there, a hybrid
+    together datasets computed with different, inconsistent recipes: PBE here, RPBE there, a hybrid
     functional somewhere else. These do not agree with each other; the same arrangement carries a
     slightly different "correct" energy depending on which recipe labeled it. Models like UMA cope
-    by being told, as one more input, which recipe labeled each snapshot — so they learn several
+    by being told, as one more input, which recipe labeled each snapshot, so they learn several
     closely related surfaces rather than an average of contradicting ones. But the seam does not
-    vanish. Ask a question that crosses recipes — a molecule meeting a crystal, each labeled at a
-    different level — and the join between surfaces is real even when it is small. The model
+    vanish. Ask a question that crosses recipes (a molecule meeting a crystal, each labeled at a
+    different level) and the join between surfaces is real even when it is small. The model
     inherits not one DFT's mistakes, as Chapter 1 put it, but several DFTs' mistakes, each on its
     own patch.
   </p>
@@ -273,18 +273,18 @@ import { url } from '../../lib/url';
   </p>
 
   <p>
-    The reason is that the error is measured on frozen snapshots — single, static arrangements scored
+    The reason is that the error is measured on frozen snapshots: single, static arrangements scored
     one at a time. A real simulation is not static. It takes thousands or millions of tiny steps, and
     at each step the model's small error feeds into where the atoms go next, which sets the next
     arrangement the model must score, which it scores with another small error. The errors compound.
     A model with an enviable static error can still, run forward in time, drift into arrangements its
-    fit handles badly, feed itself worse and worse inputs, and blow up — atoms flying apart, or a
+    fit handles badly, feed itself worse and worse inputs, and blow up: atoms flying apart, or a
     crystal that should sit solid quietly melting on screen.
   </p>
 
   <p>
     So the real test is dynamic. Run the model forward for a long simulation and ask whether it stays
-    <strong>stable</strong> — no explosions, no spurious melting — and whether it reproduces physical
+    <strong>stable</strong> (no explosions, no spurious melting) and whether it reproduces physical
     properties already known from experiment or from full DFT: the right melting point, the right
     stiffness, the right spacing between atoms in the crystal. A model that runs stable and matches
     those properties is trustworthy in a way a static error number cannot confirm.
