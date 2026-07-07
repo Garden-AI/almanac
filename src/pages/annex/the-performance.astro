@@ -1,0 +1,251 @@
+---
+import Annex from '../../layouts/Annex.astro';
+---
+<Annex
+  title="Where the Time Goes"
+  piece="03"
+  eyebrow="Builder's Annex · 03 · Performance"
+  dek="One MLIP call has a characteristic cost profile, and it is not the one you tune an LLM for. Where the time goes, and the developments the field uses to move it."
+  prevHref="/annex/the-machine"
+  prevLabel="The Machine"
+  nextHref="/annex/the-fine-tuning-problem"
+  nextLabel="The Fine-Tuning Problem"
+>
+  <p>
+    You serve an MLIP through one of two sockets. In Python it is the ASE <code>Calculator</code>: an
+    object with <code>get_potential_energy</code> and <code>get_forces</code>, attached to an
+    <code>Atoms</code> object, which is why Rootstock can serve every family behind one interface.
+    For large parallel runs it is a LAMMPS pair style, where LAMMPS owns the atoms and the
+    parallelism and calls the model as a plugin. Either way the caller is a loop, not a person, and
+    it runs the model millions of times in a row. The number that matters is per-call latency inside
+    that loop. Throughput on independent requests flatters the hardware and tells an MD user nothing.
+  </p>
+
+  <p>
+    So the whole game is one call, run a million times. Look at where its time goes.
+  </p>
+
+  <h2>The cost of one call</h2>
+
+  <p>
+    A call is a pure function from atoms to one energy, with the forces its gradient (that is the
+    subject of the previous piece). The wall-clock breaks into five pieces, and only two of them are
+    the network.
+  </p>
+
+  <p>
+    <strong>Neighbor list.</strong> Atoms interact directly only within a cutoff radius, 5 to 6
+    ångströms in practice, so before anything else something must find each atom's neighbors inside
+    that radius, typically 20 to 80 of them. Comparing every atom against every other scales with
+    the square of the count; binning atoms into a grid and checking only adjacent cells scales
+    linearly. The list is not rebuilt every step: pad the cutoff with a margin called the skin, and
+    the list stays valid until some atom has moved half the skin distance. Amortized over steps it
+    is cheap. Rebuild it every step by accident and you lose half your step budget, which is a
+    common way to do exactly that.
+  </p>
+
+  <p>
+    <strong>Graph assembly.</strong> The neighbor list becomes a graph: atoms are nodes, neighbor
+    pairs are edges, stored as two integer tensors of source and destination indices plus a per-edge
+    shift vector recording which periodic image the neighbor sits in. Pure bookkeeping, but it runs
+    every step and it crosses the CPU-to-GPU boundary.
+  </p>
+
+  <p>
+    <strong>Forward pass.</strong> One shape, across every family. Each atom's atomic number indexes
+    an embedding table of about 100 rows, a vocabulary that feels like a rounding error after
+    transformer vocabularies. Each edge is described by its length, expanded in a radial basis (a
+    soft one-hot over distance), and its direction, expanded in spherical harmonics (a basis over
+    orientations, and the reason these models respect rotation). Then a handful of interaction
+    blocks, two to six rather than dozens, in which each atom gathers messages from its neighbors:
+    tensor products combine the edge's directional features with the neighbor's features, small
+    matrix multiplies mix channels, and a scatter-add sums the messages into the atom's new state. A
+    small readout maps each atom's state to a per-atom energy, and a sum over atoms gives the scalar.
+    SchNet uses distances only; NequIP carries directional features through the blocks; MACE builds
+    higher-body-order products and so needs only about two blocks; EquiformerV2 and eSEN put
+    attention inside each neighborhood. The skeleton is identical.
+  </p>
+
+  <p>
+    <strong>Backward pass.</strong> Autograd from the energy back to the positions gives the forces,
+    at roughly the cost of the forward.
+  </p>
+
+  <p>
+    <strong>Integration.</strong> Updating positions and velocities is a handful of vector
+    operations. Ignore it.
+  </p>
+
+  <p>
+    Notice below that backward costs about as much as forward, and that the bookkeeping segments
+    barely move when you optimize.
+  </p>
+
+  <figure class="afig">
+    <div class="afig-frame">
+      <svg viewBox="0 0 720 240" role="img" aria-label="Stacked wall-time bars for one MD step at about 1,000 atoms. The top bar shows neighbor list, graph assembly, forward, backward, and integration. The bottom bar, after bucketing and fused kernels, has shorter forward and backward segments while the bookkeeping segments are unchanged.">
+        <!-- legend -->
+        <g class="t-xs t-lab">
+          <rect x="120" y="30" width="12" height="12" fill="var(--rule)"/><text x="138" y="40">neighbor list</text>
+          <rect x="228" y="30" width="12" height="12" fill="var(--ink-3)"/><text x="246" y="40">graph asm</text>
+          <rect x="330" y="30" width="12" height="12" class="f-acc"/><text x="348" y="40">forward</text>
+          <rect x="418" y="30" width="12" height="12" fill="var(--accent-ink)"/><text x="436" y="40">backward</text>
+          <rect x="516" y="30" width="12" height="12" fill="var(--ink-3)"/><text x="534" y="40">integration</text>
+        </g>
+        <!-- before bar -->
+        <text x="30" y="98" class="t-s t-ink">as written</text>
+        <g>
+          <rect x="120" y="80" width="22" height="30" fill="var(--rule)"/>
+          <rect x="142" y="80" width="40" height="30" fill="var(--ink-3)"/>
+          <rect x="182" y="80" width="210" height="30" class="f-acc"/>
+          <rect x="392" y="80" width="210" height="30" fill="var(--accent-ink)"/>
+          <rect x="602" y="80" width="16" height="30" fill="var(--ink-3)"/>
+        </g>
+        <!-- after bar -->
+        <text x="30" y="168" class="t-s t-ink">bucketed +</text>
+        <text x="30" y="184" class="t-s t-ink">fused</text>
+        <g>
+          <rect x="120" y="150" width="22" height="30" fill="var(--rule)"/>
+          <rect x="142" y="150" width="40" height="30" fill="var(--ink-3)"/>
+          <rect x="182" y="150" width="120" height="30" class="f-acc"/>
+          <rect x="302" y="150" width="120" height="30" fill="var(--accent-ink)"/>
+          <rect x="422" y="150" width="16" height="30" fill="var(--ink-3)"/>
+        </g>
+        <text x="120" y="214" class="t-xs t-lab">bookkeeping unchanged; the fast path cuts compute, and backward ≈ forward</text>
+      </svg>
+    </div>
+    <figcaption class="afig-cap"><b>Fig 2</b> One MD step at ~1,000 atoms on a single GPU. Backward costs about as much as forward, because it is a full differentiation of the network. Bucketing and fused kernels shrink the compute bands; the neighbor-list and graph bands do not move, because they were never the arithmetic.</figcaption>
+  </figure>
+
+  <p>
+    This is not a transformer's cost profile. A transformer forward is a few enormous matrix
+    multiplies and the GPU stays busy. An MLIP forward is scatters, gathers, and many small matrix
+    multiplies, because the tensors are sized by atoms and edges instead of by a 4,096-wide hidden
+    dimension. Bespoke models run a hundred thousand to a million parameters; MACE-MP-0 medium is
+    4.7 million; most foundation checkpoints stay under a hundred million active, though UMA-medium
+    reaches 1.4 billion total with about 50 million active per structure. At a few hundred atoms the
+    GPU spends much of each step idle, waiting for the CPU to launch the next tiny kernel. Memory
+    traffic on the edges and kernel-launch overhead, not matmul throughput, are what a fast MLIP
+    stack fights.
+  </p>
+
+  <h2>The developments that move it</h2>
+
+  <p>
+    Six techniques do most of the work in production, each aimed at one part of that profile. None is
+    a free win; each trades something, and which ones matter depends on whether you are running one
+    long trajectory, a farm of short relaxations, or a billion atoms across nodes.
+  </p>
+
+  <p>
+    <strong>Batch independent structures.</strong> Graphs compose block-diagonally.
+    Concatenate the atoms of many structures into one tensor, offset each structure's edge indices,
+    keep a vector recording which structure each atom belongs to, and one forward pass evaluates them
+    all. Kernel launches amortize, and the small matrix multiplies become big ones. A relaxation farm
+    of ten thousand candidate crystals, each stepping downhill, is the ideal customer. A single long
+    MD trajectory is the worst: step one million and one depends on step one million, so it cannot
+    batch with itself. Establish this asymmetry first about any workload you are handed to speed up.
+  </p>
+
+  <p>
+    <strong>Stop recompiling.</strong> <code>torch.compile</code> and CUDA graphs assume
+    fixed tensor shapes, but the edge count changes every step as atoms drift in and out of each
+    other's cutoff spheres. Naively every step is a new shape and a recompile, and the optimized path
+    runs slower than eager. Pad to shape buckets: round the atom and edge counts up to the next of a
+    handful of preset sizes, mask the padding, and the whole run compiles five times instead of once
+    per step. The padding wastes a few percent of arithmetic, and the bucket cache earns it back many
+    times over.
+  </p>
+
+  <p>
+    <strong>Fuse the hot kernel.</strong> The tensor product at the heart of the
+    equivariant families is the Clebsch-Gordan product, which combines directional edge features with
+    node features without breaking rotational symmetry. It decomposes into a swarm of tiny multiplies,
+    one per allowed combination of angular channels, and in plain PyTorch that swarm is a swarm of
+    kernel launches. Fused implementations do it in a few kernels; NVIDIA's cuEquivariance is the one
+    to know. On NequIP- and MACE-shaped models this is often the single largest win at
+    medium-to-large atom counts. At small counts, killing kernel-launch overhead with CUDA graphs
+    matters more.
+  </p>
+
+  <p>
+    <strong>Pick precision by conservation, not static error.</strong> The default is
+    float32. TF32 speeds up the matrix multiplies but injects noise into the forces, and the metric
+    that catches the damage is not force error on a held-out set: it is whether the total energy of a
+    closed simulation drifts over a million steps. Forces slightly inconsistent with the energy act
+    like a hidden heater or refrigerator, invisible in any single step and ruinous over a trajectory.
+    I'd keep TF32 off for anything that integrates past about 100 picoseconds, and step tight
+    relaxations and vibrational-property runs up to float64. Treat precision as a per-workload knob
+    whose acceptance test is the energy-drift curve, and set it in the request, not the global config.
+  </p>
+
+  <p>
+    <strong>Predict forces directly.</strong> Some models add a head that emits forces
+    and skips the backward pass, roughly halving the step. Orb-v3 ships direct and conservative
+    variants side by side; UMA and eSEN train a direct head internally but release conservative
+    checkpoints only, so check what a family actually ships before you expose the option. The price
+    is that predicted forces are no longer exactly the gradient of the predicted energy, nothing
+    enforces energy conservation, and long MD drifts. For relaxations and high-throughput screening,
+    where each structure gets a short burst of calls and nobody integrates for a nanosecond, direct
+    forces are close to free. For long dynamics they are a liability. Expose the choice per workload
+    rather than baking a default.
+  </p>
+
+  <p>
+    <strong>Strict locality for scale-out.</strong> Message passing widens what an atom
+    sees: after each interaction block, information has traveled one more cutoff. Four blocks at 6
+    ångströms means every atom's energy depends on atoms 24 ångströms away. On one GPU that costs
+    nothing. Across nodes it is the whole bill. Domain decomposition, which is how LAMMPS
+    parallelizes, gives each rank a spatial region plus a halo of ghost atoms copied from neighboring
+    ranks, and the halo must be as thick as the receptive field. Thick halos mean each rank spends
+    its time shipping copies instead of computing. Allegro is built strictly local: every atom's
+    energy contribution depends only on its own one-cutoff neighborhood, regardless of depth, so its
+    halos stay thin and it scales across many nodes. For a billion-atom run, reach for Allegro before
+    any deep message-passing model. The model choice is the systems choice.
+  </p>
+
+  <figure class="afig">
+    <div class="afig-frame">
+      <svg viewBox="0 0 720 260" role="img" aria-label="Two rank regions under domain decomposition. The left, a four-block message-passing model, has a thick ghost-atom halo four cutoffs deep, so most drawn atoms are communicated copies. The right, Allegro, has a thin one-cutoff halo.">
+        <!-- left: thick halo -->
+        <text x="180" y="34" class="t-s t-lab" text-anchor="middle">4-block message passing</text>
+        <rect x="70" y="52" width="220" height="180" class="f-wash s-acc" stroke-width="1" stroke-dasharray="3 3"/>
+        <rect x="130" y="112" width="100" height="60" class="f-paper s-ink" stroke-width="1.2"/>
+        <text x="180" y="146" class="t-xs t-ink" text-anchor="middle">owned</text>
+        <text x="180" y="252" class="t-xs t-acc" text-anchor="middle">halo = 4 × cutoff (mostly copies)</text>
+
+        <line x1="360" y1="44" x2="360" y2="240" class="s-rule" stroke-width="1"/>
+
+        <!-- right: thin halo -->
+        <text x="540" y="34" class="t-s t-lab" text-anchor="middle">Allegro, strictly local</text>
+        <rect x="446" y="92" width="188" height="100" class="f-wash s-acc" stroke-width="1" stroke-dasharray="3 3"/>
+        <rect x="466" y="112" width="148" height="60" class="f-paper s-ink" stroke-width="1.2"/>
+        <text x="540" y="146" class="t-xs t-ink" text-anchor="middle">owned</text>
+        <text x="540" y="252" class="t-xs t-acc" text-anchor="middle">halo = 1 × cutoff (thin rim)</text>
+      </svg>
+    </div>
+    <figcaption class="afig-cap"><b>Fig 3</b> Domain decomposition copies a halo of ghost atoms as thick as the receptive field. Four message-passing blocks at 6 Å demand a 24 Å halo, so most of a rank's traffic is atoms it does not own. Allegro's one-cutoff receptive field keeps the rim thin, which is why it scales where deep message-passers stall.</figcaption>
+  </figure>
+
+  <p>
+    Which of these matters is set by the workload, not by taste. A single long trajectory cannot
+    batch with itself, so its only wins are fused kernels, compilation, and precision; a farm of
+    short relaxations lives or dies on batching. Direct-force heads pay off for screening and
+    relaxation and quietly ruin long dynamics. Strict locality is a scale-out decision made at
+    model-selection time, before any of the others apply. For a billion-atom run I would pick Allegro
+    and a thin halo over any deep message-passer, and eat the locality ceiling.
+  </p>
+
+  <p>
+    Three operational facts sit under all of it. First, someone owns the neighbor list: behind an ASE
+    calculator the model builds its own, under LAMMPS the host builds it and hands it over, and
+    getting that wrong either builds the list twice or runs the host's cutoff against the model's,
+    corrupting forces at the boundary without crashing. Second, a family name is not a model. Loading
+    code changes defaults between releases, so pin the triple of family, code version, and checkpoint
+    and treat it as one immutable artifact, which is exactly what a Rootstock environment is. Third,
+    batching is a correctness surface, not just a throughput one: concatenated graphs must offset each
+    structure's edge indices, and a wrong offset leaks forces between structures while the energies,
+    being sums, still look plausible. A batched-versus-single parity test in CI is the only thing that
+    catches it.
+  </p>
+</Annex>

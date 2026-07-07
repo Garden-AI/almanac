@@ -15,7 +15,7 @@ const plotUrl = url('/annex/nanopotential-md-energy.png');
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>Builder's Annex — Garden's Almanac</title>
+    <title>Builder's Annex · Garden's Almanac</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="icon" type="image/png" sizes="64x64" href={url('/favicon.png')} />
     <meta name="robots" content="noindex" />
@@ -44,9 +44,9 @@ forces <span class="op">=</span> <span class="k">-∂</span>energy<span class="k
         </div>
         <p class="hero-dek">
           The Almanac explains <em>what</em> these models are. This annex is for the team building
-          around them — serving them on clusters, speeding up inference, making fine-tuning easy.
-          It assumes you know PyTorch, transformers, and autograd, and not much chemistry. Three
-          pieces, in reading order.
+          around them: serving them on clusters, speeding up inference, making fine-tuning easy. It
+          assumes you know PyTorch, autograd, and a GPU, and not much chemistry. Transformer ideas
+          get explained where they come up. Four pieces, in reading order.
         </p>
       </section>
 
@@ -55,9 +55,8 @@ forces <span class="op">=</span> <span class="k">-∂</span>energy<span class="k
           <span class="step-num">01 · understand</span>
           <h2>The Machine</h2>
           <p>
-            An MLIP mapped onto the transformer stack you already run — atoms as tokens, cutoffs
-            as attention windows — and the five places the analogy breaks, each one an
-            infrastructure consequence.
+            How a pile of atoms becomes an energy and a force, and the five properties of that
+            computation that shape everything you serve, speed up, or fine-tune.
           </p>
           <span class="go">read →</span>
         </a>
@@ -67,8 +66,8 @@ forces <span class="op">=</span> <span class="k">-∂</span>energy<span class="k
           <h2>nanoPotential</h2>
           <img class="plot" src={plotUrl} alt="Energy over a constant-energy MD run: potential and kinetic energy trade in anti-phase while total energy stays flat." />
           <p>
-            A ~150-line MLIP in one file of plain PyTorch. Trains, runs molecular dynamics, and
-            conserves energy — the plot is a real run. Open it and change things.
+            A ~150-line MLIP in one file of plain PyTorch. It trains, runs molecular dynamics, and
+            conserves energy. The plot is a real run. Open it and change things.
           </p>
           <div class="run-actions">
             <a class="btn btn--primary" href={colabUrl}>▶ Open in Colab</a>
@@ -76,20 +75,29 @@ forces <span class="op">=</span> <span class="k">-∂</span>energy<span class="k
           </div>
         </div>
 
-        <a class="step" href={url('/annex/the-two-jobs')}>
-          <span class="step-num">03 · build for it</span>
-          <h2>The Two Jobs</h2>
+        <a class="step" href={url('/annex/the-performance')}>
+          <span class="step-num">03 · make it fast</span>
+          <h2>Where the Time Goes</h2>
           <p>
-            The build spec: the latency budget of one MD step and six speed levers; the anatomy of
-            a fine-tune and where it silently fails; and a gotcha ledger that doubles as a test
-            plan.
+            The cost profile of one MLIP call, and the developments that move it: fused kernels,
+            compilation, direct-force heads, strict locality. Which one matters depends on the run.
+          </p>
+          <span class="go">read →</span>
+        </a>
+
+        <a class="step" href={url('/annex/the-fine-tuning-problem')}>
+          <span class="step-num">04 · adapt it</span>
+          <h2>The Fine-Tuning Problem</h2>
+          <p>
+            Why fine-tuning an MLIP is its own problem: labels on a hidden baseline, second-order
+            autograd that fights the fast path, and validation that is dynamical, not a number.
           </p>
           <span class="go">read →</span>
         </a>
       </div>
 
       <p class="hero-dek" style="max-width:64ch;">
-        Self-contained — you don't need the main Almanac to read these, though its
+        Self-contained. You don't need the main Almanac to read these, though its
         {' '}<a href={url('/primer/')}>primer</a> covers the physics if you want it. The register is
         deliberately the engineer's, not the book's.
       </p>

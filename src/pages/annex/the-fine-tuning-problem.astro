@@ -1,0 +1,317 @@
+---
+import Annex from '../../layouts/Annex.astro';
+---
+<Annex
+  title="The Fine-Tuning Problem"
+  piece="04"
+  eyebrow="Builder's Annex · 04 · Fine-tuning"
+  dek="Fine-tuning an MLIP wears the clothes of an ordinary fine-tune. Three physical facts break the analogy, and the tooling that handles them is about two years old."
+  prevHref="/annex/the-performance"
+  prevLabel="Where the Time Goes"
+>
+  <p>
+    A user shows up with a foundation checkpoint and a folder of DFT snapshots. The checkpoint is
+    UMA-medium or MACE-MP-0, a general-purpose potential trained on most of the periodic table. The
+    folder holds a few hundred to a few thousand labeled structures of one system they actually care
+    about: a quaternary alloy, an aluminosilicate zeolite, a supported catalyst under reaction
+    conditions. The foundation model is decent on their system and not good enough. They want good
+    enough.
+  </p>
+
+  <p>
+    The mechanics look like any fine-tune you have shipped. Load the pretrained weights, pick a small
+    learning rate, run gradient descent on a loss that compares predicted energies and forces to the
+    DFT labels, freeze the early layers or don't. If you have fine-tuned a vision backbone or a
+    language model, the muscle memory transfers.
+  </p>
+
+  <p>
+    Three physical facts break the analogy. The labels are not what they appear to be. The force loss
+    makes the autograd graph second-order, which collides with the exact kernels that make these
+    models fast to serve. And the thing you optimize, held-out error on snapshots, is not the thing
+    you need, which is a stable trajectory. Each has grown its own small body of tooling over the
+    last two years, some of it good, most of it young.
+  </p>
+
+  <h2>Problem 1: the labels sit on a hidden baseline</h2>
+
+  <p>
+    A DFT total energy is a big number. A modest supercell of a transition-metal oxide might come
+    back from the DFT code at roughly &minus;1000 eV. Almost none of that number is chemistry. It is
+    the sum of per-element isolated-atom energies: the energy each atom would have sitting alone in a
+    vacuum, which for a heavy element is hundreds of eV of core and valence structure that never
+    changes when you move the atom around inside a solid. The part that responds to geometry, the
+    part a potential exists to predict, is the remainder after you subtract that baseline. For a
+    &minus;1000 eV cell, the baseline is around &minus;995 eV and the binding remainder is around
+    &minus;5 eV.
+  </p>
+
+  <p>
+    Every MLIP handles this by subtracting a fixed per-element reference before training. You pass in
+    a table, one energy per element, and the model only ever sees and predicts the small remainder.
+    This is load-bearing, not a preprocessing nicety: made to regress the raw &minus;1000 eV
+    directly, the 0.5% of the signal that carries the physics would drown under the 99.5% that is
+    constant per composition.
+  </p>
+
+  <p>
+    Here is the trap. Those per-element references are not universal constants. They are outputs of a
+    specific DFT recipe: the exchange-correlation functional (PBE, PBEsol, r²SCAN), the
+    pseudopotentials, the plane-wave cutoff, the code and its defaults. Change the recipe and every
+    isolated-atom energy shifts. The foundation model baked in the references from its pretraining
+    recipe. If your user computed their 800 snapshots with a different functional, or the same
+    functional in a different code with different pseudopotentials, every one of their total energies
+    is offset from the model's expectation by a constant that depends only on composition.
+  </p>
+
+  <p>
+    The offset is per-element and rigid. A structure with 12 aluminum and 24 oxygen atoms is wrong by
+    12 times the aluminum reference error plus 24 times the oxygen reference error, exactly, for
+    every such structure. Forces are blind to it: a force is the negative gradient of energy with
+    respect to position, the gradient of a constant is zero, so a per-composition energy offset
+    contributes nothing to any force. Your force MAE comes back beautiful. Your energy error on any
+    single fixed composition also looks fine once the model absorbs the offset into its bias. The
+    failure surfaces only when you compare energies across compositions: formation energies, defect
+    energies, adsorption energies, anything that subtracts the energy of one composition from
+    another. Those are silently, systematically wrong, and they are usually the exact quantities the
+    user is fine-tuning to get.
+  </p>
+
+  <figure class="afig">
+    <div class="afig-frame">
+      <svg viewBox="0 0 720 250" role="img" aria-label="Three panels. Left: a to-scale energy bar where the per-element baseline is 995 of a 1000 eV total and the learned binding remainder is a 5 eV sliver. Middle: predicted-versus-reference energy under a mismatched recipe, points sitting on lines parallel to the diagonal, offset by composition. Right: the force scatter for the same model, sitting cleanly on the diagonal.">
+        <!-- Panel A: to-scale bar -->
+        <text x="95" y="28" class="t-xs t-lab" text-anchor="middle">one structure's energy</text>
+        <line x1="60" y1="44" x2="60" y2="214" class="s-ink" stroke-width="1" />
+        <text x="54" y="48" class="t-xs t-lab" text-anchor="end">0</text>
+        <text x="54" y="214" class="t-xs t-lab" text-anchor="end">−1000</text>
+        <rect x="70" y="46" width="52" height="3" class="f-acc" />
+        <rect x="70" y="49" width="52" height="160" class="f-panel s-rule" stroke-width="1" />
+        <line x1="122" y1="47" x2="150" y2="40" class="s-acc" stroke-width="1" />
+        <text x="152" y="38" class="t-xs t-acc">binding ≈ −5 eV</text>
+        <text x="152" y="51" class="t-xs t-lab">(0.5%, the physics)</text>
+        <line x1="122" y1="130" x2="150" y2="130" class="s-rule" stroke-width="1" />
+        <text x="152" y="127" class="t-xs t-lab">isolated-atom</text>
+        <text x="152" y="140" class="t-xs t-lab">baseline ≈ −995 eV</text>
+
+        <line x1="330" y1="40" x2="330" y2="220" class="s-rule" stroke-width="0.75" />
+
+        <!-- Panel B: energy pred vs ref, offset lines -->
+        <text x="410" y="28" class="t-xs t-lab" text-anchor="middle">energy: rigid per-composition offset</text>
+        <line x1="352" y1="210" x2="352" y2="46" class="s-ink" stroke-width="1" />
+        <line x1="352" y1="210" x2="470" y2="210" class="s-ink" stroke-width="1" />
+        <text x="346" y="130" class="t-xs t-lab" text-anchor="end" transform="rotate(-90 346 130)">pred</text>
+        <text x="411" y="226" class="t-xs t-lab" text-anchor="middle">reference</text>
+        <line x1="356" y1="206" x2="466" y2="56" stroke="var(--ink-3)" stroke-width="1" stroke-dasharray="3 3" />
+        <text x="452" y="70" class="t-xs t-lab">y=x</text>
+        <!-- offset clusters -->
+        <g class="f-acc">
+          <circle cx="368" cy="176" r="3"/><circle cx="380" cy="160" r="3"/><circle cx="374" cy="168" r="3"/>
+          <circle cx="404" cy="128" r="3"/><circle cx="416" cy="112" r="3"/><circle cx="410" cy="120" r="3"/>
+          <circle cx="440" cy="86" r="3"/><circle cx="452" cy="70" r="3"/><circle cx="446" cy="78" r="3"/>
+        </g>
+        <line x1="360" y1="184" x2="462" y2="45" class="s-acc" stroke-width="0.75" stroke-dasharray="1 3" opacity="0.6"/>
+
+        <line x1="500" y1="40" x2="500" y2="220" class="s-rule" stroke-width="0.75" />
+
+        <!-- Panel C: force pred vs ref, on diagonal -->
+        <text x="606" y="28" class="t-xs t-lab" text-anchor="middle">force: unaffected</text>
+        <line x1="524" y1="210" x2="524" y2="46" class="s-ink" stroke-width="1" />
+        <line x1="524" y1="210" x2="690" y2="210" class="s-ink" stroke-width="1" />
+        <text x="518" y="130" class="t-xs t-lab" text-anchor="end" transform="rotate(-90 518 130)">pred</text>
+        <text x="607" y="226" class="t-xs t-lab" text-anchor="middle">reference</text>
+        <line x1="528" y1="206" x2="686" y2="52" stroke="var(--ink-3)" stroke-width="1" stroke-dasharray="3 3" />
+        <g class="f-ink">
+          <circle cx="546" cy="190" r="3"/><circle cx="574" cy="162" r="3"/><circle cx="600" cy="138" r="3"/>
+          <circle cx="558" cy="176" r="3"/><circle cx="620" cy="118" r="3"/><circle cx="648" cy="90" r="3"/>
+          <circle cx="666" cy="72" r="3"/><circle cx="588" cy="150" r="3"/><circle cx="634" cy="104" r="3"/>
+        </g>
+      </svg>
+    </div>
+    <figcaption class="afig-cap"><b>Fig 1</b> The learned signal (left, accent) is a 0.5% sliver on a near-constant baseline. Fine-tune on labels from another DFT recipe and every energy shifts by a rigid per-element constant: in the middle panel the points ride lines <em>parallel</em> to <code>y=x</code>, clustered by composition, a bias and not noise. The force scatter (right) for the same broken model sits clean on the diagonal, which is why force metrics never catch it. Fix: refit the per-element references to the user's data by linear least-squares before training.</figcaption>
+  </figure>
+
+  <p>
+    The fix is cheap and belongs in the tooling, not in a documentation note the user will skip.
+    Before training, refit the per-element references to the user's data by linear least-squares:
+    build the matrix of element counts per structure, solve for the per-element energies that best
+    explain the user's total energies, use those as the new references. It is a linear regression
+    with as many unknowns as distinct elements, solvable in milliseconds. Do it and the offset
+    vanishes into the references where it belongs; skip it and you ship a model that reports perfect
+    forces and lies about every phase boundary.
+  </p>
+
+  <h2>Problem 2: force training is second-order autograd</h2>
+
+  <p>
+    The force is already a derivative. The model computes an energy, and autograd differentiates it
+    with respect to the input positions to get forces, inside the forward pass a user never sees. Put
+    a loss on those forces and backpropagate it to the weights and you are differentiating a quantity
+    that is itself a gradient. The backward pass traverses the graph a second time. This is
+    double-backward, and PyTorch supports it, but it costs: roughly 2 to 3 times the memory and
+    wall-clock of an energy-only step, because the intermediate activations of the first derivative
+    all have to be retained and differentiated again. The blow-up is on activations, not weights, so
+    it scales with batch size and cutoff radius rather than model size. You manage it by shrinking the
+    batch.
+  </p>
+
+  <p>
+    The sharper problem is that double-backward fights the fast path. The kernels that make these
+    models fast, NVIDIA's cuEquivariance fused equivariant operations plus <code>torch.compile</code>
+    and CUDA-graph capture, are built and tested for the forward pass and the first backward, the
+    operations you run when serving. They do not currently support double-backward. The relevant
+    cuEquivariance issue, #268, is exactly this. So a force-label fine-tune either drops those kernels
+    or runs them eager, and your fine-tuning code path diverges from your serving code path right
+    here. The card you serve on, tuned for compiled throughput, is not the card you want for
+    fine-tuning, which needs headroom for the doubled activation memory and eager execution.
+    Fine-tuning wants the bigger GPU and a different software stack on it. Budget for two tiers.
+  </p>
+
+  <p>
+    A related wrinkle sits on the model side. Some potentials are conservative: forces are the true
+    gradient of the energy, which is what makes double-backward necessary and what guarantees energy
+    conservation in MD. Others predict forces from a separate head, directly, dodging the second
+    derivative at inference. Orb-v3 ships both variants. The released UMA and eSEN checkpoints are
+    conservative-only, trained with a direct head as a scaffold that was removed before release. If a
+    user's checkpoint is conservative, force fine-tuning is double-backward, with no eager-versus-fused
+    choice to make about it.
+  </p>
+
+  <h2>Problem 3: "did it work" is dynamical, not a static number</h2>
+
+  <p>
+    Low energy and force error on held-out snapshots is necessary. It is not sufficient, and the gap
+    between the two is where most fine-tuned potentials fail in production.
+  </p>
+
+  <p>
+    A static test set samples the configurations the DFT happened to compute. A molecular dynamics
+    trajectory samples the configurations the potential's own energy landscape leads it into, which
+    include rare, high-force, near-pathological geometries a held-out set of relaxed or lightly
+    perturbed structures barely touches. A model can have 20 meV/Å force MAE on the test set and
+    still place a spurious low-energy basin somewhere the test set never looked. In MD the trajectory
+    finds that basin. The solid melts at 300 K, or the energy drifts upward over 100 ps until the run
+    explodes, or a bond quietly dissociates that should never break. Randomly distributed pointwise
+    errors average out; errors that are systematically wrong in the configurations a trajectory
+    dwells in do not, and static metrics cannot tell you which kind you have.
+  </p>
+
+  <figure class="afig">
+    <div class="afig-frame">
+      <svg viewBox="0 0 720 230" role="img" aria-label="Left: a bar chart of held-out force MAE for two models, both around 20 meV per ångström, visually equal. Right: total energy versus time over a 200-picosecond constant-energy run. Model A holds a flat line; model B holds for about 40 picoseconds, then drifts upward and spikes into a blow-up.">
+        <!-- left: MAE bars -->
+        <text x="150" y="30" class="t-xs t-lab" text-anchor="middle">held-out force MAE — both pass</text>
+        <line x1="70" y1="52" x2="70" y2="188" class="s-ink" stroke-width="1" />
+        <line x1="70" y1="188" x2="250" y2="188" class="s-ink" stroke-width="1" />
+        <text x="64" y="120" class="t-xs t-lab" text-anchor="end" transform="rotate(-90 64 120)">meV/Å</text>
+        <rect x="104" y="96" width="48" height="92" class="f-acc" />
+        <rect x="176" y="90" width="48" height="98" fill="var(--accent-ink)" />
+        <text x="128" y="204" class="t-xs t-lab" text-anchor="middle">model A</text>
+        <text x="200" y="204" class="t-xs t-lab" text-anchor="middle">model B</text>
+        <text x="128" y="88" class="t-xs t-lab" text-anchor="middle">19</text>
+        <text x="200" y="82" class="t-xs t-lab" text-anchor="middle">21</text>
+
+        <line x1="330" y1="44" x2="330" y2="200" class="s-rule" stroke-width="0.75" />
+
+        <!-- right: E vs time -->
+        <text x="520" y="30" class="t-xs t-lab" text-anchor="middle">200 ps constant-energy run</text>
+        <line x1="370" y1="52" x2="370" y2="188" class="s-ink" stroke-width="1" />
+        <line x1="370" y1="188" x2="700" y2="188" class="s-ink" stroke-width="1" />
+        <text x="364" y="120" class="t-xs t-lab" text-anchor="end" transform="rotate(-90 364 120)">E_total</text>
+        <text x="700" y="204" class="t-xs t-lab" text-anchor="end">time →</text>
+        <path d="M372 150 L700 150" fill="none" class="s-acc" stroke-width="2" />
+        <text x="560" y="143" class="t-xs t-acc">A: flat = pass</text>
+        <path d="M372 150 C 470 150, 505 146, 540 132 C 580 116, 610 96, 636 60 L 646 56" fill="none" class="s-ink" stroke-width="1.6" stroke-dasharray="4 3" />
+        <text x="470" y="176" class="t-xs t-lab">B: holds, then drifts and blows up</text>
+      </svg>
+    </div>
+    <figcaption class="afig-cap"><b>Fig 2</b> Two models with the same held-out force MAE, opposite verdicts. The static grade (left) cannot separate them. The constant-energy trajectory (right) does: A holds a flat total energy, B drifts after ~40 ps and spikes into a blow-up. The right panel is the one that decides deployment.</figcaption>
+  </figure>
+
+  <p>
+    So the acceptance test is a simulation, not a scalar. Run MD from the fine-tuned model. Confirm
+    it is stable: no explosion, no monotonic energy drift in a constant-energy run over a meaningful
+    horizon. Then confirm it reproduces a number the user already trusts from experiment or the
+    reference method: a lattice constant, a bulk density, a radial-distribution-function peak, a
+    melting-point bracket. That reproduction is the artifact that certifies the fine-tune. A loss
+    curve certifies that optimization happened. I would not accept a fine-tuned potential into
+    anything downstream without the MD report.
+  </p>
+
+  <h2>Catastrophic forgetting and replay</h2>
+
+  <p>
+    Fine-tune a general potential hard enough on 500 snapshots of one zeolite and it gets very good
+    at that zeolite and measurably worse at everything else. The weights that encoded broad chemistry
+    drift toward the narrow distribution you are hammering them with. This is ordinary catastrophic
+    forgetting, and it bites here because the broad chemistry you are eroding is the entire reason you
+    started from a foundation model.
+  </p>
+
+  <p>
+    The fix is replay: mix a slice of the original pretraining distribution back into the fine-tuning
+    batches so the optimizer keeps paying rent on general chemistry while it specializes. MACE's
+    fine-tuning path does this by default, replaying a slice of its MPtrj pretraining set alongside
+    the user's structures. The mixing ratio is a knob, and defaulting it on is the right call,
+    because a user fine-tuning on one zeolite is not thinking about the silicon chemistry they are
+    about to forget.
+  </p>
+
+  <h2>Where the field is developing</h2>
+
+  <p>
+    The foundation-model-plus-fine-tune paradigm for interatomic potentials is about two years old.
+    Before it, you trained a potential from scratch on your system, every time. UMA was trained
+    across five FAIR chemistry datasets totaling roughly 500M structures; MACE-MP-0 was released as a
+    pretrained base to build on. The user no longer buys the whole model. They buy the last mile, a
+    few hundred structures of specialization on top of a backbone that already knows what a metal is.
+    That shift is what makes any of this a fine-tuning problem at all.
+  </p>
+
+  <p>
+    The multi-recipe question, several DFT recipes served from one backbone, has one interesting
+    production answer so far. UMA-medium is 1.4B total parameters but activates only about 50M per
+    structure through a Mixture of Linear Experts. A lightweight router reads the structure's dataset,
+    task, total charge, and spin and produces mixing weights over a set of expert weight matrices.
+    The experts are linear, so the router collapses them into a single effective weight matrix before
+    the forward pass runs, and the forward is then a normal dense model at ~50M active parameters with
+    no per-layer routing overhead. For infrastructure that has to serve users on different DFT recipes
+    from shared weights, that is the shape of the answer: condition the backbone on the recipe rather
+    than fork a checkpoint per recipe.
+  </p>
+
+  <p>
+    LoRA is conspicuously rare in this corner, and the reason is diagnostic. LoRA earns its keep when
+    parameter memory is the binding constraint, when the base is tens of billions of parameters and
+    full-rank updates are unaffordable to store or optimize. These models are 5M to 1.4B parameters
+    and the active forward is small. Parameter memory is not what hurts. Second-order autograd is, and
+    it hurts on the activation graph, not the weight count. A LoRA adapter on the linear and
+    tensor-product weights would reduce the number of trained parameters and do nothing about the
+    double-backward cost that dominates force-label fine-tuning. You would carry LoRA's complexity and
+    keep the bill you were trying to cut. Until someone finds an adapter that shrinks the
+    second-derivative graph rather than the parameter set, low-rank tricks are solving the problem
+    these models do not have.
+  </p>
+
+  <h2>What I would build</h2>
+
+  <p>
+    Fine-tune the smallest foundation checkpoint that passes the dynamical acceptance test. A larger
+    backbone buys extra static accuracy that reliably fails to survive contact with MD, and it costs
+    you double-backward memory the whole way. Start small, escalate only when the MD report demands
+    it.
+  </p>
+
+  <p>
+    Automate the three things users get wrong on their own: refit the per-element references by
+    least-squares before every run, check recipe consistency and warn loudly on a detected offset,
+    turn replay on by default with a sane mixing ratio. These are not user decisions. They are
+    correctness invariants, and every one of them is invisible in the loss curve.
+  </p>
+
+  <p>
+    And make the acceptance artifact an MD run. A fine-tune that ships with a stable 200 ps trajectory
+    and a reproduced lattice constant is a fine-tune. A fine-tune that ships with a loss curve is a
+    hope.
+  </p>
+</Annex>

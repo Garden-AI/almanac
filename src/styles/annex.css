@@ -137,7 +137,7 @@ a:hover { text-decoration: underline; text-underline-offset: 2px; }
   margin: 2.4rem 0 3rem;
 }
 @media (min-width: 780px) {
-  .steps { grid-template-columns: 1fr 1fr 1fr; }
+  .steps { grid-template-columns: 1fr 1fr; }
 }
 .step {
   display: flex;
@@ -319,6 +319,76 @@ a.step:hover h2 { color: var(--accent-ink); }
 .doc-body tbody td:first-child { color: var(--ink-2); }
 
 .doc-body hr { border: none; border-top: 1px solid var(--rule); margin: 2.2rem 0; }
+
+/* ---- figures (the annex's primary exposition channel) ------------------- */
+
+.afig {
+  margin: 2.4rem 0;
+  /* figures break out past the prose measure so their labels stay legible */
+  width: min(780px, 94vw);
+}
+.afig-frame {
+  border: 1px solid var(--rule);
+  background: #fff;
+  padding: 1.2rem 1.2rem 0.5rem;
+  overflow-x: auto;
+}
+.afig svg { display: block; width: 100%; height: auto; }
+.afig-cap {
+  font-size: 14.5px;
+  line-height: 1.55;
+  color: var(--ink-2);
+  margin: 0.8rem 0 0;
+  max-width: 74ch;
+}
+.afig-cap b { font-family: var(--mono); font-size: 12px; letter-spacing: 0.04em; color: var(--accent); text-transform: uppercase; }
+.afig-cap em { font-style: italic; color: var(--ink); }
+
+/* SVG text + stroke vocabulary, shared across figures */
+.afig text { font-family: var(--mono); fill: var(--ink-2); }
+.afig .t-s   { font-size: 13px; }
+.afig .t-xs  { font-size: 11.5px; }
+.afig .t-lab { fill: var(--ink-3); }
+.afig .t-acc { fill: var(--accent); }
+.afig .t-ink { fill: var(--ink); }
+.afig .s-rule { stroke: var(--rule); }
+.afig .s-ink  { stroke: var(--ink); }
+.afig .s-acc  { stroke: var(--accent); }
+.afig .f-ink  { fill: var(--ink); }
+.afig .f-acc  { fill: var(--accent); }
+.afig .f-paper { fill: #fff; }
+.afig .f-wash { fill: var(--accent-wash); }
+.afig .f-panel { fill: var(--panel); }
+
+/* interactive-figure neighbor toggling + slider controls */
+.afig .nbr line { stroke: var(--rule); stroke-width: 1.1; }
+.afig .nbr circle { fill: var(--ink); }
+.afig .nbr.out line { visibility: hidden; }
+.afig .nbr.out circle { fill: var(--ink-3); opacity: 0.35; }
+.fig-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  margin: 0.85rem 0 0;
+  flex-wrap: wrap;
+}
+.fig-ctl-label {
+  font-family: var(--mono);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-3);
+}
+.fig-slider { flex: 1 1 200px; max-width: 300px; accent-color: var(--accent); cursor: pointer; }
+.fig-readout { font-family: var(--mono); font-size: 13px; color: var(--accent); }
+
+/* a directive callout line the prose uses to point at a figure */
+.seefig {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--accent);
+  letter-spacing: 0.02em;
+}
 
 /* inline "run it" callout usable inside a doc */
 .runbar {
