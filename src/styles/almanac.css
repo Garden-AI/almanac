@@ -379,3 +379,11 @@ a.ink-link:hover { background: rgba(122, 31, 31, 0.06); }
   color: var(--ink-2);
   margin: 14px 0 0;
 }
+
+/* ── Unlisted clusters ──────────────────────────────────────────────────
+   Elements tied to an `unlisted` cluster (see content.config.ts) carry
+   .am-unlisted at build time. They stay in the DOM — the live-refresh
+   scripts still update them — but only display once the viewer has
+   unlocked unlisted clusters (?gotigers=true; the pre-paint script in
+   Page.astro sets .gotigers on <html>). */
+html:not(.gotigers) .am-unlisted { display: none !important; }

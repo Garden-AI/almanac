@@ -69,7 +69,11 @@ for (const c of allClusters) {
     (cp) => findVerification(dump, c.id, cp.id) !== null,
   );
 }
-const anyPresence = Object.values(clusterHasPresence).some(Boolean);
+// Unlisted clusters don't count toward "anyone has this" — the egg-off
+// baseline. The live script re-derives this with the viewer's unlock state.
+const anyPresence = allClusters.some(
+  (c) => !c.data.unlisted && clusterHasPresence[c.id],
+);
 
 // Environments section: the verbatim env file Rootstock installs for this
 // model, one tab per installed cluster (matrix order). Build-time seed only —
@@ -78,13 +82,20 @@ const anyPresence = Object.values(clusterHasPresence).some(Boolean);
 // client what it needs to recompute against live data (cluster order + the
 // model's checkpoint ids).
 const checkpointIds = model.data.checkpoints.map((cp) => cp.id);
+// Env-file tabs: the build seed excludes unlisted clusters (egg-off baseline);
+// the client re-derives the tab set from `envConfig`, filtering by the
+// viewer's unlock state — so unlocked viewers gain those tabs on live refresh.
 const envFiles = envFilesForModel(
   dump,
-  allClusters.map((c) => ({ id: c.id, name: c.data.name })),
+  allClusters.filter((c) => !c.data.unlisted).map((c) => ({ id: c.id, name: c.data.name })),
   checkpointIds,
 );
 const envConfig = {
-  clusters: allClusters.map((c) => ({ id: c.id, name: c.data.name })),
+  clusters: allClusters.map((c) => ({
+    id: c.id,
+    name: c.data.name,
+    unlisted: c.data.unlisted ?? false,
+  })),
   checkpoints: checkpointIds,
 };
 // JSON embedded in <script type="application/json"> — neutralize any `<` so a
@@ -207,7 +218,7 @@ const notesHtml = model.data.notes ? marked.parse(model.data.notes) : null;
             <th style="width: 80px; text-align: right;">Params</th>
             {allClusters.map((c) => (
               <th
-                class:list={["am-mx-col", !clusterHasPresence[c.id] && "am-hidden"]}
+                class:list={["am-mx-col", !clusterHasPresence[c.id] && "am-hidden", c.data.unlisted && "am-unlisted"]}
                 data-rs-col={c.id}
                 style="width: 84px; text-align: center;"
               >
@@ -227,7 +238,7 @@ const notesHtml = model.data.notes ? marked.parse(model.data.notes) : null;
               </td>
               {cells.map((cell) => (
                 <td
-                  class:list={["am-mx-col", !clusterHasPresence[cell.cluster.id] && "am-hidden"]}
+                  class:list={["am-mx-col", !clusterHasPresence[cell.cluster.id] && "am-hidden", cell.cluster.data.unlisted && "am-unlisted"]}
                   style="text-align: center;"
                   data-rs-col={cell.cluster.id}
                   data-rs-cell={`${cell.cluster.id}:${checkpoint.id}`}
@@ -473,6 +484,16 @@ const notesHtml = model.data.notes ? marked.parse(model.data.notes) : null;
     type ModelEnvFile,
   } from '../../lib/rootstock';
 
+  // Unlisted clusters count toward presence only for unlocked viewers
+  // (html.gotigers, set pre-paint by Page.astro).
+  const gotigers = document.documentElement.classList.contains('gotigers');
+  const unlistedCols = new Set(
+    Array.from(document.querySelectorAll<HTMLElement>('th[data-rs-col].am-unlisted')).map(
+      (el) => el.dataset.rsCol!,
+    ),
+  );
+  const counted = (cluster: string) => gotigers || !unlistedCols.has(cluster);
+
   loadLiveDump()
     .then((dump) => {
       const clusterHasPresence: Record<string, boolean> = {};
@@ -488,7 +509,9 @@ const notesHtml = model.data.notes ? marked.parse(model.data.notes) : null;
         const cluster = el.dataset.rsCol!;
         el.classList.toggle('am-hidden', !clusterHasPresence[cluster]);
       });
-      const anyPresence = Object.values(clusterHasPresence).some(Boolean);
+      const anyPresence = Object.entries(clusterHasPresence).some(
+        ([cluster, present]) => present && counted(cluster),
+      );
       document.querySelectorAll<HTMLElement>('[data-rs-legend]').forEach((el) => {
         el.classList.toggle('am-hidden', !anyPresence);
       });
@@ -511,7 +534,14 @@ const notesHtml = model.data.notes ? marked.parse(model.data.notes) : null;
 
     const readJson = <T,>(sel: string): T =>
       JSON.parse(section.querySelector(sel)!.textContent || 'null') as T;
-    const config = readJson<{ clusters: { id: string; name: string }[]; checkpoints: string[] }>('[data-env-config]');
+    const config = readJson<{
+      clusters: { id: string; name: string; unlisted?: boolean }[];
+      checkpoints: string[];
+    }>('[data-env-config]');
+    // Same unlock rule as the matrix: unlisted clusters get env tabs only
+    // for unlocked viewers.
+    const eggOn = document.documentElement.classList.contains('gotigers');
+    const tabClusters = config.clusters.filter((c) => eggOn || !c.unlisted);
 
     const tabsEl = section.querySelector<HTMLElement>('[data-env-tabs]')!;
     const blockEl = section.querySelector<HTMLElement>('[data-env-block]')!;
@@ -574,7 +604,7 @@ const notesHtml = model.data.notes ? marked.parse(model.data.notes) : null;
 
     loadLiveDump()
       .then((dump) => {
-        files = envFilesForModel(dump, config.clusters, config.checkpoints);
+        files = envFilesForModel(dump, tabClusters, config.checkpoints);
         active = 0;
         resetCopy();
         blockEl.classList.remove('am-hidden');

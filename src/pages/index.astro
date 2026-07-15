@@ -80,7 +80,10 @@ const families: FamilyGroup[] = models
       return {
         checkpointId: cp.id,
         cells,
-        dim: cells.every((x) => x.state === 'na'),
+        // Unlisted clusters don't count toward "someone supports this" —
+        // otherwise an unlisted-only checkpoint would surface its row (all
+        // visible cells hatched) for viewers who can't see that cluster.
+        dim: cells.every((x) => x.cluster.data.unlisted || x.state === 'na'),
       };
     });
     const supported = rows.filter((r) => !r.dim);
@@ -107,6 +110,7 @@ const clusterCards = clusters.map((c) => ({
   inst: c.data.institutionShort ?? c.data.institution.split('·')[0].trim(),
   gpus: c.data.gpu ?? '—',
   counts: perCluster[c.id],
+  unlisted: c.data.unlisted ?? false,
 }));
 
 const codeSnippet = `# In a Perlmutter job/session
@@ -136,7 +140,7 @@ with RootstockCalculator(
   {/* MOBILE: per-cluster cards stand in for the matrix below 720px. */}
   <section class="cluster-cards" aria-label="Clusters">
     {clusterCards.map((c) => (
-      <a class="cluster-card" href={url(`/clusters#${c.id}`)}>
+      <a class:list={["cluster-card", c.unlisted && "am-unlisted"]} href={url(`/clusters#${c.id}`)}>
         <span class="cc-arrow" aria-hidden="true">→</span>
         <div class="cc-name">{c.name}</div>
         <span class="cc-inst">{c.inst}</span>
@@ -203,7 +207,7 @@ with RootstockCalculator(
             <span class="am-th-slug-cp">checkpoint</span>
           </th>
           {clusters.map((c) => (
-            <th class="am-th-cluster">
+            <th class:list={["am-th-cluster", c.data.unlisted && "am-unlisted"]}>
               <a class="am-cluster-link" href={url(`/clusters#${c.id}`)}>{c.data.name}</a>
               <div class="mono am-th-cluster-gpu">{c.data.gpu ?? '—'}</div>
             </th>
@@ -237,7 +241,7 @@ with RootstockCalculator(
                 </td>
                 {r.cells.map(({ cluster, state }) => (
                   <td
-                    class="am-cell"
+                    class:list={["am-cell", cluster.data.unlisted && "am-unlisted"]}
                     data-rs-cell={`${cluster.id}:${r.checkpointId}`}
                     set:html={cellSvg(state, r.dim)}
                   />
@@ -616,6 +620,10 @@ with RootstockCalculator(
 
   // Re-derive visibility purely from live data. Whatever the build baked in
   // gets overwritten — that's the point. A stale build can't strand rows.
+  // Unlisted clusters (cells carry .am-unlisted) count toward row visibility
+  // only when the viewer has unlocked them (html.gotigers) — otherwise an
+  // unlisted-only checkpoint would surface an all-hatched row.
+  const gotigers = document.documentElement.classList.contains('gotigers');
   loadLiveDump()
     .then((dump) => {
       const familySupportedCount: Record<string, number> = {};
@@ -623,13 +631,17 @@ with RootstockCalculator(
       const rows = document.querySelectorAll<HTMLElement>('[data-rs-row]');
       rows.forEach((tr) => {
         const tdCells = tr.querySelectorAll<HTMLElement>('[data-rs-cell]');
-        const cellInfo: Array<{ cluster: string; state: CellState }> = [];
+        const cellInfo: Array<{ cluster: string; state: CellState; counted: boolean }> = [];
         tdCells.forEach((td) => {
           const [cluster, checkpoint] = td.dataset.rsCell!.split(':');
-          cellInfo.push({ cluster, state: cellStateFor(findVerification(dump, cluster, checkpoint)) });
+          cellInfo.push({
+            cluster,
+            state: cellStateFor(findVerification(dump, cluster, checkpoint)),
+            counted: gotigers || !td.classList.contains('am-unlisted'),
+          });
         });
         const states = cellInfo.map((x) => x.state);
-        const allNa = states.every((s) => s === 'na');
+        const allNa = cellInfo.every((x) => !x.counted || x.state === 'na');
         const famId = tr.dataset.rsFamilyId ?? '';
         familySupportedCount[famId] = (familySupportedCount[famId] ?? 0) + (allNa ? 0 : 1);
         tr.classList.toggle('am-hidden', allNa);

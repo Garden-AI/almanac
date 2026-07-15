@@ -32,6 +32,20 @@ const isCurrent = (href: string) => norm(href) === norm(path);
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="icon" type="image/png" sizes="64x64" href={url('/favicon.png')} />
     <link rel="apple-touch-icon" href={url('/apple-touch-icon.png')} />
+    <script is:inline>
+      // Unlisted-cluster unlock (see `unlisted` in content.config.ts).
+      // ?gotigers=true unlocks and persists; ?gotigers=false relocks. Runs
+      // pre-paint so unlocked rows never flash in and out.
+      (() => {
+        try {
+          const q = new URLSearchParams(location.search).get('gotigers');
+          if (q === 'true') localStorage.setItem('am-gotigers', '1');
+          else if (q === 'false') localStorage.removeItem('am-gotigers');
+          if (localStorage.getItem('am-gotigers'))
+            document.documentElement.classList.add('gotigers');
+        } catch {}
+      })();
+    </script>
     {rootstockUrl && <link rel="prefetch" href={rootstockUrl} as="fetch" crossorigin="anonymous" />}
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />

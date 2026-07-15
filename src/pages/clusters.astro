@@ -29,6 +29,7 @@ const entries = clusters.map((c) => {
   const cm = clusterModels(dump, c.id, index);
   return {
     id: c.id,
+    unlisted: c.data.unlisted ?? false,
     name: c.data.name,
     facility: c.data.institution,
     facilityShort: c.data.institutionShort ?? '',
@@ -51,7 +52,7 @@ const entries = clusters.map((c) => {
   </div>
 
   {entries.map((e) => (
-    <section class="cl" id={e.id} data-cl={e.id}>
+    <section class:list={["cl", e.unlisted && "am-unlisted"]} id={e.id} data-cl={e.id}>
       <div class="cl-head">
         <div class="cl-head-main">
           <h2 class="cl-name">{e.name}</h2>

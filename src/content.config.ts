@@ -123,6 +123,12 @@ const clusters = defineCollection({
     documentation: z.string().url().optional(),
     /** Short "Heads up" notes for the /clusters page. Usually empty. */
     gotchas: z.array(z.string()).optional(),
+    /** Rendered everywhere but hidden until the viewer unlocks unlisted
+     *  clusters with `?gotigers=true` (persisted in localStorage;
+     *  `?gotigers=false` relocks). For clusters that work with Rootstock but
+     *  aren't generally usable — restricted allocations, project-only
+     *  installs. */
+    unlisted: z.boolean().optional(),
   }),
 });
 
