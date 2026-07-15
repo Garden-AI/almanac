@@ -46,6 +46,13 @@ The site is statically built (GitHub Pages), but every page that renders Rootsto
 
 A footgun this rule exists to prevent: filtering rows or columns at build time based on Rootstock state. The live script can update the cells of a row that's in the DOM, but it can't bring back a row that was filtered out — so a stale build masks new verifications until the next deploy. Always render the row/column, give it `am-hidden` based on build-time data, and let the script toggle that class from live data.
 
+#### Unlisted clusters (the `?gotigers=true` unlock)
+
+A cluster entry with `"unlisted": true` (e.g. `della` — restricted allocations, project-only install) renders everywhere like any other cluster but its elements carry `am-unlisted`, hidden by CSS until the viewer visits any page with `?gotigers=true` (persisted in localStorage; `?gotigers=false` relocks; a pre-paint inline script in `Page.astro` stamps `.gotigers` on `<html>`). Two invariants when touching cluster-rendering code:
+
+- `am-unlisted` is orthogonal to `am-hidden` — build-time, both may apply; never merge them. `am-hidden` means "no live presence"; `am-unlisted` means "viewer hasn't unlocked".
+- Any "does anyone support this?" aggregation (row dimming on the index, `anyPresence` on model pages, env-file tab sets) must exclude unlisted clusters unless the unlock is active — otherwise an unlisted-only checkpoint leaks an all-hatched row or an empty-but-rendered table to regular viewers. Both build-time seeds (egg-off baseline) and live-refresh scripts (check `html.gotigers`) follow this.
+
 Pattern, in shorthand:
 
 ```astro
