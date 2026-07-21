@@ -1,0 +1,11 @@
+{
+  "name": "Frontier",
+  "institution": "Oak Ridge Leadership Computing Facility",
+  "institutionShort": "OLCF",
+  "gpu": "AMD MI250X",
+  "order": 5,
+  "documentation": "https://docs.olcf.ornl.gov/systems/frontier_user_guide.html",
+  "gotchas": [
+    "AMD GPUs: Rootstock envs here install ROCm builds of PyTorch (AMD devices still appear as device=\"cuda\"). CUDA-only acceleration paths, like cuEquivariance for MACE, are not used."
+  ]
+}

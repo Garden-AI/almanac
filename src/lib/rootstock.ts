@@ -17,7 +17,8 @@ export interface RootstockCheckpoint {
 }
 
 export interface RootstockEnvironment {
-  status: string;
+  /** Absent in schema_version ≥ 4 manifests. */
+  status?: string;
   built_at: string | null;
   source_hash: string;
   source: string;

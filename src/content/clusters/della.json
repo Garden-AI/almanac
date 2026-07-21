@@ -3,7 +3,7 @@
   "institution": "Princeton Research Computing",
   "institutionShort": "Princeton",
   "gpu": "NVIDIA A100 40GB",
-  "order": 5,
+  "order": 6,
   "documentation": "https://researchcomputing.princeton.edu/systems/della",
   "gotchas": [
     "Princeton allocations only; the Rootstock install is currently readable by rosengroup members, not cluster-wide."
