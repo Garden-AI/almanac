@@ -1,0 +1,286 @@
+---
+import Annex from '../../layouts/Annex.astro';
+import { url } from '../../lib/url';
+
+// Fig 1: three call-pattern timelines. Tick positions computed at build time.
+const TICK_X0 = 158, TICK_STEP = 6;
+const MD_TICKS = Array.from({ length: 90 }, (_, i) => TICK_X0 + i * TICK_STEP);
+const STAGES = [0, 1, 2].map((s) => {
+  const x = TICK_X0 + s * 186;
+  return {
+    load: x,
+    ticks: Array.from({ length: 20 }, (_, i) => x + 50 + i * TICK_STEP),
+  };
+});
+const PHONON_ROWS = Array.from({ length: 7 }, (_, i) => 222 + i * 14);
+---
+<Annex
+  title="The Callers"
+  piece="05"
+  eyebrow="Builder's Annex · 05 · Methods"
+  dek="One call has a cost profile. A method makes a million of them — in an order, at a size, with state carried between — and that pattern, more than the model, decides what serving costs."
+  prevHref="/annex/the-fine-tuning-problem"
+  prevLabel="The Fine-Tuning Problem"
+>
+  <p>
+    <a href={url('/annex/the-performance')}>Where the Time Goes</a> priced one call: neighbor
+    list, graph assembly, forward, backward. Nobody buys one call. The unit a user brings is a
+    method — molecular dynamics, a free-energy calculation, a phonon spectrum — and a method is a
+    policy for calling the potential: how many calls, at what size, in what order, and what
+    survives between them. Two methods can run the same model on the same GPU and present bills an
+    order of magnitude apart, because one pattern buries the serving stack's fixed costs under big
+    payloads and the other lays them bare.
+  </p>
+
+  <p>
+    Those fixed costs are easiest to see when the model is served out-of-process, which is
+    Rootstock's design: LAMMPS keeps the atoms, a worker in its own venv keeps the model, and a
+    socket carries positions one way and forces the other. The socket is not the problem. Measured against an
+    in-process call on an 864-atom system, the round trip costs about 4%. The real bill hides in
+    what surrounds the call.
+  </p>
+
+  <p>
+    The worker serves the model behind its ASE calculator, the generic
+    Python interface every family ships. That route pays full price on every call: it rebuilds the
+    model's neighbor graph from scratch, in Python, and copies positions host-to-device and forces
+    device-to-host. A native integration — the MACE–LAMMPS Kokkos path is the documented example —
+    keeps the arrays resident on the GPU and reuses its neighbor list across many steps, rebuilding
+    only when atoms have drifted far enough to invalidate it. (The forward pass itself is eager
+    PyTorch either way, hundreds of small kernel launches neither path avoids.) The two paths run
+    the same network. They differ in everything around it.
+  </p>
+
+  <p>
+    Those surrounding costs are fixed per call; the forward pass scales with atom count. At a few
+    hundred atoms the fixed cost
+    dominates and the served model runs several times slower than the hardware allows. At ten
+    thousand atoms the same fixed cost disappears under the forward pass. Nothing about the serving
+    changed; the payload did. So "what does serving cost?" has no answer at the model level. It is
+    a property of the caller: how many calls, how large each one, and what the method lets you keep
+    warm in between.
+  </p>
+
+  <h2>The baseline: molecular dynamics</h2>
+
+  <p>
+    Plain MD is one whole-system call per step, strictly sequential — each call consumes the forces
+    of the last — for 10⁵ to 10⁷ steps. A relaxation is the same shape, shorter: a few hundred calls
+    walking one structure downhill. This is the pattern everything else is measured against, and
+    its defining feature is what persists between calls. In a native integration, nearly
+    everything: the neighbor list carries a skin margin and survives many steps, the arrays never
+    leave the GPU, the process never restarts. The atoms barely move between calls, and the stack
+    is built to exploit that.
+  </p>
+
+  <p>
+    A served model keeps the process warm — the worker loads the model once and holds it — but the
+    protocol forgets everything else. Each step, the full cell and every position cross the socket;
+    Rootstock's protocol even re-sends the species list every cycle, because it resets to its
+    initial state after every force return. The calculator behind the socket treats each call as a
+    new configuration: new graph, new transfers. MD makes more calls than any method here except
+    the Monte Carlo pathology at the end. Whether you notice the multiplied tax is the payload question
+    again: at a few thousand atoms the forward pass hides the tax, at a few hundred it is most of
+    the bill.
+  </p>
+
+  <h2>Enhanced sampling changes the physics, not the call pattern</h2>
+
+  <p>
+    Metadynamics and umbrella sampling sound like they should cost more: they steer a simulation
+    toward rare events by adding forces the potential never produced. The canonical route is
+    PLUMED, and PLUMED is a post-force hook (the engines' native restraint fixes work the same
+    way). Each step, the engine computes forces exactly as in plain MD — one
+    whole-system call. Then PLUMED reads the positions, computes its collective variables (the
+    reaction progress boiled down to a few numbers), and adds a bias force into the force array
+    already sitting there. The potential is never consulted twice. However exotic the sampling, the
+    served model sees plain MD; the bias only decides where the trajectory goes.
+  </p>
+
+  <p>
+    The one thing enhanced sampling changes is multiplicity. Multi-walker metadynamics and
+    replica-exchange methods run tens of replicas at once, each an independent MD stream making its
+    own per-step calls. That is a capacity question, not a latency one, and for a served model it
+    is the good kind of demand: independent streams keep every worker busy.
+  </p>
+
+  <h2>Free energies: three mechanisms stack</h2>
+
+  <p>
+    calphy computes free energies by thermodynamic integration: run MD while gradually switching
+    the system's energy function — the Hamiltonian — between the potential you care about and a
+    reference whose free energy is known exactly, and integrate the work along the way. From the
+    serving side it is the method that finds every fixed cost at once.
+  </p>
+
+  <p>
+    <strong>It is a staged workflow.</strong> A calphy calculation is a sequence of separate
+    LAMMPS instances — equilibration and switching arrive as distinct runs, the system handed off
+    on disk between them. In-process, that costs a process launch. Served, every new instance spawns a new worker, and
+    the worker reloads the model: 30 to 60 seconds of stall at the top of each stage. The per-call
+    fixed cost has a workflow-scale sibling, the per-process fixed cost, and a method that respawns
+    its engine per stage pays it per stage. Long stages amortize the reload; a sweep of short
+    calculations — melting points bracketed across ten temperatures — pays it constantly.
+  </p>
+
+  <p>
+    <strong>λ-mixing enters two ways, one free and one doubled.</strong> The switching needs a
+    mixed Hamiltonian, part model and part reference, and where the mixing happens decides what it
+    costs. For a solid reference, <code>fix ti/spring</code> mixes after the call: the pair style
+    runs once, then the fix rescales the returned forces by (1−λ) and adds λ-weighted spring forces
+    pulling each atom toward its lattice site. Post-force, like PLUMED: one model evaluation per
+    step, zero extra serving cost. calphy's alchemical mode instead overlays two pair styles with
+    <code>pair_style hybrid/scaled</code>, and both are evaluated every step — switching between
+    two potentials means paying for two potentials. (Its temperature-scaling mode also goes through
+    <code>hybrid/scaled</code>, but scales a single potential by λ: still one evaluation.) Same λ
+    on the page; a factor of two apart on the wire.
+  </p>
+
+  <p>
+    <strong>Its loops live at small N.</strong> Free-energy runs use a few hundred to a few
+    thousand atoms — the physics converges there, so nobody pays for more. And calphy adds convergence machinery of its own: equilibration runs until pressure
+    averages settle to tolerance, which can add tens of thousands of steps before any switching
+    begins. Many sequential calls, smallest possible payload: precisely the regime where the fixed
+    per-call cost is the bill.
+  </p>
+
+  <p>
+    Stack the three and the bill writes itself: a few-hundred-atom call pays the full fixed tax —
+    graph rebuild, transfers, launch overhead — on a forward pass too small to hide any of it, tens
+    of thousands of times per stage, with a model reload between stages. The method does nothing
+    wrong; it makes the calls its physics needs. It makes them in the shape serving handles worst.
+  </p>
+
+  <h2>The rest of the zoo</h2>
+
+  <p>
+    <strong>Nudged elastic band.</strong> NEB finds a transition path by stringing k copies of the
+    system — images — between two end states and relaxing the string. Every optimization step needs
+    forces on all k images, but the images couple only through cheap spring terms computed from
+    their neighbors' current positions. Given those positions, the k model calls are independent:
+    sequential across iterations, batchable within one. LAMMPS runs each image on its own
+    partition; a served model can just as well fan the k calls across workers or batch them into
+    one forward pass.
+  </p>
+
+  <p>
+    <strong>Phonons.</strong> A phonon spectrum by finite displacement is the friendliest caller in
+    the zoo. phonopy generates a symmetry-reduced set of displaced supercells — the crystal tiled
+    out into a large cell, one atom nudged in each copy — a handful to a few hundred of them, at
+    hundreds to thousands of atoms apiece, and each needs exactly one static force calculation. No ordering, no state, payloads big enough for the forward pass to dominate:
+    embarrassingly parallel single points. If you designed a workload to flatter a served model,
+    it would look like this.
+  </p>
+
+  <p>
+    <strong>High-throughput screening.</strong> Relaxing ten thousand candidate structures is ten
+    thousand short sequential runs, each a few hundred calls at tens to hundreds of atoms —
+    individually, deep in fixed-cost territory. But the structures are independent, so the farm
+    batches across them: concatenate many small graphs into one forward pass per step, the batched
+    relaxation that torch-sim and FAIR-chem ship. Sequential within a structure, parallel across
+    the farm; the batch turns the smallest payloads into one large one.
+  </p>
+
+  <p>
+    <strong>Monte Carlo.</strong> The worst case. Each trial move displaces
+    or swaps one atom and asks for the energy change. A classical short-ranged potential answers
+    locally, recomputing a handful of pair terms; the move is nearly free, which is why MC sweeps
+    of thousands of trials per atom are routine. An MLIP's answer is also local in principle — the
+    change propagates only to the receptive field, a few cutoffs out — but a model served
+    whole-system-per-call cannot say so. The interface answers one question, the energy of
+    everything, so one single-atom trial costs one full call and a sweep of N trials costs N of
+    them. In-process MC hits the same wall — LAMMPS's own Monte Carlo fixes fall back to
+    whole-system energies for many-body potentials — but serving removes the last escape hatch: an
+    interface that recomputed only the affected patch would collapse the cost, and none offers one.
+  </p>
+
+  <h2>Six axes predict the bill</h2>
+
+  <p>
+    Every pattern above is a position along six axes, and the axes are checkable from a method's
+    documentation before anything runs:
+  </p>
+
+  <ul>
+    <li>
+      <strong>Calls per unit of science.</strong> A phonon spectrum is a few hundred calls; a free
+      energy is hundreds of thousands; a melting-point sweep, millions. This number multiplies
+      everything else.
+    </li>
+    <li>
+      <strong>Atoms per call.</strong> The payload that either hides the fixed per-call cost or
+      exposes it. Below a few hundred atoms, overhead is the workload.
+    </li>
+    <li>
+      <strong>Sequential or batchable.</strong> Does call n+1 need call n's output? MD does; phonon
+      displacements, NEB images within an iteration, and screening farms do not, and independent
+      calls are the only ones a server can aggregate.
+    </li>
+    <li>
+      <strong>What survives between calls.</strong> One warm process for a million steps, or a
+      model reload per stage? Staged workflows pay startup repeatedly; long trajectories pay it
+      once.
+    </li>
+    <li>
+      <strong>What each call must return.</strong> Energy only, forces, or forces plus the stress
+      on the cell. A Monte Carlo trial needs the energy alone — no backward pass, roughly half the
+      work — but a whole-system serving contract returns energy and forces regardless, so the
+      discount goes unclaimed. A barostat needs the stress, which not every serving interface
+      returns.
+    </li>
+    <li>
+      <strong>Where auxiliary forces enter.</strong> A post-force hook — PLUMED's bias,
+      <code>ti/spring</code>'s springs — costs zero model calls. An overlaid second potential is
+      evaluated every step. The distinction hides in one line of a LAMMPS input.
+    </li>
+  </ul>
+
+  <p>
+    (If you serve language models: sequential MD is autoregressive decoding, a phonon batch is
+    scoring a dataset of independent prompts, and each method sits somewhere between the two.)
+  </p>
+
+  <figure class="afig">
+    <div class="afig-frame">
+      <svg viewBox="0 0 720 356" role="img" aria-label="Three call-pattern timelines against wall time. Plain MD: one model load, then an unbroken run of sequential force calls. calphy: three stages, each beginning with a model reload block before its run of calls. Phonons: one load, then a stack of independent single-point calls running in parallel.">
+        <text x="700" y="28" class="t-xs t-lab" text-anchor="end">wall time → (not to scale)</text>
+        <line x1="120" y1="36" x2="700" y2="36" class="s-rule" stroke-width="1" />
+
+        <!-- lane: plain MD -->
+        <text x="108" y="90" class="t-s t-ink" text-anchor="end">plain MD</text>
+        <rect x="120" y="76" width="30" height="18" class="f-wash s-acc" stroke-width="1" stroke-dasharray="3 3" />
+        {MD_TICKS.map((x) => <line x1={x} y1={76} x2={x} y2={94} class="s-acc" stroke-width="1" />)}
+        <text x="120" y="116" class="t-xs t-lab">one process · each call fed by the last · state stays warm</text>
+
+        <!-- lane: calphy -->
+        <text x="108" y="162" class="t-s t-ink" text-anchor="end">calphy</text>
+        {STAGES.map((st) => (
+          <>
+            <rect x={st.load} y="148" width="42" height="18" class="f-wash s-acc" stroke-width="1" stroke-dasharray="3 3" />
+            {st.ticks.map((x) => <line x1={x} y1={148} x2={x} y2={166} class="s-acc" stroke-width="1" />)}
+          </>
+        ))}
+        <text x="120" y="188" class="t-xs t-lab">fresh LAMMPS instance per stage · model reloads each time · few-hundred-atom calls</text>
+
+        <!-- lane: phonons -->
+        <text x="108" y="252" class="t-s t-ink" text-anchor="end">phonons</text>
+        <rect x="120" y="222" width="30" height="94" class="f-wash s-acc" stroke-width="1" stroke-dasharray="3 3" />
+        {PHONON_ROWS.map((y) => <rect x={158} y={y} width="9" height="10" class="f-acc" />)}
+        <text x="120" y="338" class="t-xs t-lab">k independent single points · no ordering · batch or fan out</text>
+
+        <!-- legend -->
+        <rect x="450" y="222" width="14" height="12" class="f-wash s-acc" stroke-width="1" stroke-dasharray="3 3" />
+        <text x="472" y="232" class="t-xs t-lab">model load / reload</text>
+        <line x1="456" y1="248" x2="456" y2="260" class="s-acc" stroke-width="1.4" />
+        <text x="472" y="258" class="t-xs t-lab">one force call</text>
+      </svg>
+    </div>
+    <figcaption class="afig-cap"><b>Fig 1</b> Three callers against the same served model. Plain MD loads once and streams sequential calls forever; the per-call tax is its only serving cost, and payload size decides whether you notice. calphy re-pays the model load at every stage and makes its calls at small N, so both fixed costs surface at once. Phonon displacements have no ordering at all — the calls land as one batch, and a served model handles them as well as anything can.</figcaption>
+  </figure>
+
+  <p>
+    Before serving a method you have never heard of, read its call pattern along these six axes.
+    The answers say where the time will go before the first step runs. Where the Time Goes said
+    the model choice is the systems choice. So is the method choice.
+  </p>
+</Annex>

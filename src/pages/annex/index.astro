@@ -46,7 +46,7 @@ forces <span class="op">=</span> <span class="k">-∂</span>energy<span class="k
           The Almanac explains <em>what</em> these models are. This annex is for the people building
           around them: serving them, speeding them up, fine-tuning them. It assumes PyTorch,
           autograd, and a GPU, and not much chemistry. Transformer ideas get explained where they
-          come up. Four pieces, in reading order.
+          come up. Five pieces, in reading order.
         </p>
       </section>
 
@@ -91,6 +91,17 @@ forces <span class="op">=</span> <span class="k">-∂</span>energy<span class="k
           <p>
             Why fine-tuning an MLIP is its own problem: labels on a hidden baseline, second-order
             autograd that fights the fast path, and validation that is dynamical, not a number.
+          </p>
+          <span class="go">read →</span>
+        </a>
+
+        <a class="step" href={url('/annex/the-callers')}>
+          <span class="step-num">05 · know the caller</span>
+          <h2>The Callers</h2>
+          <p>
+            MD, enhanced sampling, free energies, phonons, Monte Carlo: each is a policy for
+            calling the model. How to read a method's call pattern and predict where a served
+            model pays.
           </p>
           <span class="go">read →</span>
         </a>
