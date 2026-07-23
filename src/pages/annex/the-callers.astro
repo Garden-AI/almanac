@@ -36,22 +36,12 @@ const PHONON_ROWS = Array.from({ length: 7 }, (_, i) => 222 + i * 14);
     Those fixed costs are easiest to see when the model is served out-of-process, which is
     Rootstock's design: LAMMPS keeps the atoms, a worker in its own venv keeps the model, and a
     socket carries positions one way and forces the other. The socket is not the problem. Measured against an
-    in-process call on an 864-atom system, the round trip costs about 4%. Then a real method
-    arrives.
+    in-process call on an 864-atom system, the round trip costs about 4%. The real bill hides in
+    what surrounds the call.
   </p>
 
   <p>
-    One run, from a day on Princeton's Della cluster — an anecdote, not a benchmark. Iron, bcc, 250
-    atoms, MatterSim-v1-5M on a slice of an A100, driven by calphy, a free-energy workflow,
-    through LAMMPS and Rootstock's pair style: 91 ms per MD step, with LAMMPS's own timing putting
-    99.98% of it in <code>Pair</code>, the round trip to the model. The same checkpoint wrapped
-    into LAMMPS's in-process ML-IAP interface moves the same system roughly five to ten times
-    faster. The socket's few percent cannot explain a factor of five, even granting that its share
-    grows as the system shrinks. Where did the rest go?
-  </p>
-
-  <p>
-    Into per-call fixed costs. The worker serves the model behind its ASE calculator, the generic
+    The worker serves the model behind its ASE calculator, the generic
     Python interface every family ships. That route pays full price on every call: it rebuilds the
     model's neighbor graph from scratch, in Python, and copies positions host-to-device and forces
     device-to-host. A native integration — the MACE–LAMMPS Kokkos path is the documented example —
@@ -62,8 +52,8 @@ const PHONON_ROWS = Array.from({ length: 7 }, (_, i) => 222 + i * 14);
   </p>
 
   <p>
-    Those surrounding costs are fixed per call; the forward pass scales with atom count. At 250
-    atoms the fixed cost
+    Those surrounding costs are fixed per call; the forward pass scales with atom count. At a few
+    hundred atoms the fixed cost
     dominates and the served model runs several times slower than the hardware allows. At ten
     thousand atoms the same fixed cost disappears under the forward pass. Nothing about the serving
     changed; the payload did. So "what does serving cost?" has no answer at the model level. It is
@@ -148,18 +138,17 @@ const PHONON_ROWS = Array.from({ length: 7 }, (_, i) => 222 + i * 14);
 
   <p>
     <strong>Its loops live at small N.</strong> Free-energy runs use a few hundred to a few
-    thousand atoms — 250 is an ordinary solid cell, and the physics converges there, so nobody pays
-    for more. And calphy adds convergence machinery of its own: equilibration runs until pressure
+    thousand atoms — the physics converges there, so nobody pays for more. And calphy adds convergence machinery of its own: equilibration runs until pressure
     averages settle to tolerance, which can add tens of thousands of steps before any switching
     begins. Many sequential calls, smallest possible payload: precisely the regime where the fixed
     per-call cost is the bill.
   </p>
 
   <p>
-    Now the 91 ms step is legible. A 250-atom call pays the full fixed tax — graph rebuild,
-    transfers, launch overhead — on a forward pass too small to hide any of it, tens of thousands
-    of times per stage, with a model reload between stages. The method did nothing wrong; it makes
-    the calls its physics needs. It makes them in the shape serving handles worst.
+    Stack the three and the bill writes itself: a few-hundred-atom call pays the full fixed tax —
+    graph rebuild, transfers, launch overhead — on a forward pass too small to hide any of it, tens
+    of thousands of times per stage, with a model reload between stages. The method does nothing
+    wrong; it makes the calls its physics needs. It makes them in the shape serving handles worst.
   </p>
 
   <h2>The rest of the zoo</h2>
@@ -271,7 +260,7 @@ const PHONON_ROWS = Array.from({ length: 7 }, (_, i) => 222 + i * 14);
             {st.ticks.map((x) => <line x1={x} y1={148} x2={x} y2={166} class="s-acc" stroke-width="1" />)}
           </>
         ))}
-        <text x="120" y="188" class="t-xs t-lab">fresh LAMMPS instance per stage · model reloads each time · 250-atom calls</text>
+        <text x="120" y="188" class="t-xs t-lab">fresh LAMMPS instance per stage · model reloads each time · few-hundred-atom calls</text>
 
         <!-- lane: phonons -->
         <text x="108" y="252" class="t-s t-ink" text-anchor="end">phonons</text>
