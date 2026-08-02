@@ -1,0 +1,12 @@
+{
+  "name": "GRACE",
+  "families": ["ace"],
+  "codeUrl": "https://github.com/ICAMS/grace-tensorpotential",
+  "huggingFaceId": "AMS-ICAMS-RUB/grace-foundation-models",
+  "paperRefs": ["grace"],
+  "checkpoints": [
+    { "id": "grace-2l-smax-omat-large" },
+    { "id": "grace-3l-omat-large-ft-am", "params": "42.1M" }
+  ],
+  "trainingData": ["omat24", "salex", "mptrj"]
+}

@@ -11,7 +11,9 @@
     { "id": "orb-v3-direct-20-omat" },
     { "id": "orb-v3-direct-20-mpa" },
     { "id": "orb-v3-direct-inf-omat" },
-    { "id": "orb-v3-direct-inf-mpa" }
+    { "id": "orb-v3-direct-inf-mpa" },
+    { "id": "orb-v3-conservative-omol" },
+    { "id": "orb-v3-direct-omol" }
   ],
   "trainingData": ["omat24", "mptrj", "salex"]
 }

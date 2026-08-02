@@ -213,7 +213,7 @@
           "corpus": "omat",
           "sizeM": 153.8,
           "numParams": 153769868,
-          "slug": "equiformer-v2",
+          "slug": null,
           "trainedOn": "OMat"
         },
         {
@@ -223,7 +223,7 @@
           "corpus": "omat",
           "sizeM": 153.8,
           "numParams": 153769868,
-          "slug": "equiformer-v2",
+          "slug": null,
           "trainedOn": "OMat + MPTrj + sAlex"
         },
         {
@@ -233,7 +233,7 @@
           "corpus": "mp",
           "sizeM": 31.2,
           "numParams": 31207434,
-          "slug": "equiformer-v2",
+          "slug": null,
           "trainedOn": "MPTrj"
         },
         {
@@ -243,7 +243,7 @@
           "corpus": "omat",
           "sizeM": 31.2,
           "numParams": 31207434,
-          "slug": "equiformer-v2",
+          "slug": null,
           "trainedOn": "OMat"
         },
         {
@@ -253,7 +253,7 @@
           "corpus": "omat",
           "sizeM": 31.2,
           "numParams": 31207434,
-          "slug": "equiformer-v2",
+          "slug": null,
           "trainedOn": "OMat + MPTrj + sAlex"
         },
         {
@@ -263,7 +263,7 @@
           "corpus": "omat",
           "sizeM": 86.6,
           "numParams": 86589068,
-          "slug": "equiformer-v2",
+          "slug": null,
           "trainedOn": "OMat"
         },
         {
@@ -273,7 +273,7 @@
           "corpus": "omat",
           "sizeM": 86.6,
           "numParams": 86589068,
-          "slug": "equiformer-v2",
+          "slug": null,
           "trainedOn": "OMat + MPTrj + sAlex"
         },
         {
@@ -283,7 +283,7 @@
           "corpus": "mp",
           "sizeM": 160.7,
           "numParams": 160673293,
-          "slug": "equiformer-v2",
+          "slug": null,
           "trainedOn": "MPTrj"
         },
         {
@@ -293,7 +293,7 @@
           "corpus": "mp",
           "sizeM": 34.3,
           "numParams": 34339083,
-          "slug": "equiformer-v2",
+          "slug": null,
           "trainedOn": "MPTrj"
         },
         {
@@ -303,7 +303,7 @@
           "corpus": "mp",
           "sizeM": 94.0,
           "numParams": 94033933,
-          "slug": "equiformer-v2",
+          "slug": null,
           "trainedOn": "MPTrj"
         }
       ],
@@ -1515,7 +1515,7 @@
           "corpus": "omat",
           "sizeM": 153.8,
           "numParams": 153769868,
-          "slug": "equiformer-v2",
+          "slug": null,
           "trainedOn": "OMat"
         },
         {
@@ -1525,7 +1525,7 @@
           "corpus": "omat",
           "sizeM": 153.8,
           "numParams": 153769868,
-          "slug": "equiformer-v2",
+          "slug": null,
           "trainedOn": "OMat + MPTrj + sAlex"
         },
         {
@@ -1535,7 +1535,7 @@
           "corpus": "mp",
           "sizeM": 31.2,
           "numParams": 31207434,
-          "slug": "equiformer-v2",
+          "slug": null,
           "trainedOn": "MPTrj"
         },
         {
@@ -1545,7 +1545,7 @@
           "corpus": "omat",
           "sizeM": 31.2,
           "numParams": 31207434,
-          "slug": "equiformer-v2",
+          "slug": null,
           "trainedOn": "OMat"
         },
         {
@@ -1555,7 +1555,7 @@
           "corpus": "omat",
           "sizeM": 31.2,
           "numParams": 31207434,
-          "slug": "equiformer-v2",
+          "slug": null,
           "trainedOn": "OMat + MPTrj + sAlex"
         },
         {
@@ -1565,7 +1565,7 @@
           "corpus": "omat",
           "sizeM": 86.6,
           "numParams": 86589068,
-          "slug": "equiformer-v2",
+          "slug": null,
           "trainedOn": "OMat"
         },
         {
@@ -1575,7 +1575,7 @@
           "corpus": "omat",
           "sizeM": 86.6,
           "numParams": 86589068,
-          "slug": "equiformer-v2",
+          "slug": null,
           "trainedOn": "OMat + MPTrj + sAlex"
         },
         {
@@ -1585,7 +1585,7 @@
           "corpus": "mp",
           "sizeM": 160.7,
           "numParams": 160673293,
-          "slug": "equiformer-v2",
+          "slug": null,
           "trainedOn": "MPTrj"
         },
         {
@@ -1595,7 +1595,7 @@
           "corpus": "mp",
           "sizeM": 34.3,
           "numParams": 34339083,
-          "slug": "equiformer-v2",
+          "slug": null,
           "trainedOn": "MPTrj"
         },
         {
@@ -1605,7 +1605,7 @@
           "corpus": "mp",
           "sizeM": 94.0,
           "numParams": 94033933,
-          "slug": "equiformer-v2",
+          "slug": null,
           "trainedOn": "MPTrj"
         }
       ],
@@ -2847,7 +2847,7 @@
           "corpus": "omat",
           "sizeM": 153.8,
           "numParams": 153769868,
-          "slug": "equiformer-v2",
+          "slug": null,
           "trainedOn": "OMat"
         },
         {
@@ -2857,7 +2857,7 @@
           "corpus": "omat",
           "sizeM": 153.8,
           "numParams": 153769868,
-          "slug": "equiformer-v2",
+          "slug": null,
           "trainedOn": "OMat + MPTrj + sAlex"
         },
         {
@@ -2867,7 +2867,7 @@
           "corpus": "mp",
           "sizeM": 31.2,
           "numParams": 31207434,
-          "slug": "equiformer-v2",
+          "slug": null,
           "trainedOn": "MPTrj"
         },
         {
@@ -2877,7 +2877,7 @@
           "corpus": "omat",
           "sizeM": 31.2,
           "numParams": 31207434,
-          "slug": "equiformer-v2",
+          "slug": null,
           "trainedOn": "OMat"
         },
         {
@@ -2887,7 +2887,7 @@
           "corpus": "omat",
           "sizeM": 31.2,
           "numParams": 31207434,
-          "slug": "equiformer-v2",
+          "slug": null,
           "trainedOn": "OMat + MPTrj + sAlex"
         },
         {
@@ -2897,7 +2897,7 @@
           "corpus": "omat",
           "sizeM": 86.6,
           "numParams": 86589068,
-          "slug": "equiformer-v2",
+          "slug": null,
           "trainedOn": "OMat"
         },
         {
@@ -2907,7 +2907,7 @@
           "corpus": "omat",
           "sizeM": 86.6,
           "numParams": 86589068,
-          "slug": "equiformer-v2",
+          "slug": null,
           "trainedOn": "OMat + MPTrj + sAlex"
         },
         {
@@ -2917,7 +2917,7 @@
           "corpus": "mp",
           "sizeM": 160.7,
           "numParams": 160673293,
-          "slug": "equiformer-v2",
+          "slug": null,
           "trainedOn": "MPTrj"
         },
         {
@@ -2927,7 +2927,7 @@
           "corpus": "mp",
           "sizeM": 34.3,
           "numParams": 34339083,
-          "slug": "equiformer-v2",
+          "slug": null,
           "trainedOn": "MPTrj"
         },
         {
@@ -2937,7 +2937,7 @@
           "corpus": "mp",
           "sizeM": 94.0,
           "numParams": 94033933,
-          "slug": "equiformer-v2",
+          "slug": null,
           "trainedOn": "MPTrj"
         }
       ],
@@ -4337,7 +4337,7 @@
           "corpus": "omat",
           "sizeM": 153.8,
           "numParams": 153769868,
-          "slug": "equiformer-v2",
+          "slug": null,
           "trainedOn": "OMat"
         },
         {
@@ -4347,7 +4347,7 @@
           "corpus": "omat",
           "sizeM": 153.8,
           "numParams": 153769868,
-          "slug": "equiformer-v2",
+          "slug": null,
           "trainedOn": "OMat + MPTrj + sAlex"
         },
         {
@@ -4357,7 +4357,7 @@
           "corpus": "mp",
           "sizeM": 31.2,
           "numParams": 31207434,
-          "slug": "equiformer-v2",
+          "slug": null,
           "trainedOn": "MPTrj"
         },
         {
@@ -4367,7 +4367,7 @@
           "corpus": "omat",
           "sizeM": 31.2,
           "numParams": 31207434,
-          "slug": "equiformer-v2",
+          "slug": null,
           "trainedOn": "OMat"
         },
         {
@@ -4377,7 +4377,7 @@
           "corpus": "omat",
           "sizeM": 31.2,
           "numParams": 31207434,
-          "slug": "equiformer-v2",
+          "slug": null,
           "trainedOn": "OMat + MPTrj + sAlex"
         },
         {
@@ -4387,7 +4387,7 @@
           "corpus": "omat",
           "sizeM": 86.6,
           "numParams": 86589068,
-          "slug": "equiformer-v2",
+          "slug": null,
           "trainedOn": "OMat"
         },
         {
@@ -4397,7 +4397,7 @@
           "corpus": "omat",
           "sizeM": 86.6,
           "numParams": 86589068,
-          "slug": "equiformer-v2",
+          "slug": null,
           "trainedOn": "OMat + MPTrj + sAlex"
         },
         {
@@ -4407,7 +4407,7 @@
           "corpus": "mp",
           "sizeM": 160.7,
           "numParams": 160673293,
-          "slug": "equiformer-v2",
+          "slug": null,
           "trainedOn": "MPTrj"
         },
         {
@@ -4417,7 +4417,7 @@
           "corpus": "mp",
           "sizeM": 34.3,
           "numParams": 34339083,
-          "slug": "equiformer-v2",
+          "slug": null,
           "trainedOn": "MPTrj"
         },
         {
@@ -4427,7 +4427,7 @@
           "corpus": "mp",
           "sizeM": 94.0,
           "numParams": 94033933,
-          "slug": "equiformer-v2",
+          "slug": null,
           "trainedOn": "MPTrj"
         }
       ],
