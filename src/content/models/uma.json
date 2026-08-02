@@ -11,15 +11,105 @@
   "checkpoints": [
     {
       "id": "uma-s-1p1",
-      "params": "150M"
+      "params": "150M",
+      "heads": {
+        "kwarg": "task",
+        "values": [
+          {
+            "id": "omat",
+            "dataset": "omat24"
+          },
+          {
+            "id": "omol",
+            "dataset": "omol25"
+          },
+          {
+            "id": "oc20",
+            "dataset": "oc20"
+          },
+          {
+            "id": "odac",
+            "dataset": "odac23"
+          },
+          {
+            "id": "omc",
+            "dataset": "omc25"
+          }
+        ],
+        "default": "omat"
+      },
+      "modelInputs": [
+        "charge",
+        "spin"
+      ]
     },
     {
       "id": "uma-s-1p2",
-      "params": "290M"
+      "params": "290M",
+      "heads": {
+        "kwarg": "task",
+        "values": [
+          {
+            "id": "omat",
+            "dataset": "omat24"
+          },
+          {
+            "id": "omol",
+            "dataset": "omol25"
+          },
+          {
+            "id": "oc20",
+            "dataset": "oc20"
+          },
+          {
+            "id": "odac",
+            "dataset": "odac23"
+          },
+          {
+            "id": "omc",
+            "dataset": "omc25"
+          }
+        ],
+        "default": "omat"
+      },
+      "modelInputs": [
+        "charge",
+        "spin"
+      ]
     },
     {
       "id": "uma-m-1p1",
-      "params": "1.4B"
+      "params": "1.4B",
+      "heads": {
+        "kwarg": "task",
+        "values": [
+          {
+            "id": "omat",
+            "dataset": "omat24"
+          },
+          {
+            "id": "omol",
+            "dataset": "omol25"
+          },
+          {
+            "id": "oc20",
+            "dataset": "oc20"
+          },
+          {
+            "id": "odac",
+            "dataset": "odac23"
+          },
+          {
+            "id": "omc",
+            "dataset": "omc25"
+          }
+        ],
+        "default": "omat"
+      },
+      "modelInputs": [
+        "charge",
+        "spin"
+      ]
     }
   ],
   "trainingData": [

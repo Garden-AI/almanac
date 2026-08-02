@@ -75,6 +75,99 @@ const anyPresence = allClusters.some(
   (c) => !c.data.unlisted && clusterHasPresence[c.id],
 );
 
+// "Running this model" — curated invocation facts (heads / model inputs /
+// license). These are catalog identity, not Rootstock state: build-time only,
+// no live refresh. Aggregated across checkpoints for the args table; the
+// checkpoint table above stays the per-checkpoint truth (heads rosters, ±).
+//
+// Two distinct mechanisms, per Rootstock's docs (docs/api.md):
+//  - heads are picked at construction: `setup_kwargs={"task": "omol"}`,
+//    forwarded to the env's setup();
+//  - model inputs (charge, spin, external_field, …) are per-calculation
+//    physics, set on `atoms.info` and forwarded with every calculation.
+const headsSpec = model.data.checkpoints.find((cp) => cp.heads)?.heads ?? null;
+const modelInputs = [...new Set(model.data.checkpoints.flatMap((cp) => cp.modelInputs ?? []))];
+const license = model.data.license ?? null;
+const hasRunningSection = Boolean(headsSpec || modelInputs.length > 0 || license);
+
+/** Example atoms.info lines for the known model-input keys. Unknown keys
+ *  fall back to a placeholder — curators extend this as new model families
+ *  need it. No defaults anywhere: what a model assumes when a key is unset
+ *  is the model's own behavior, not something Rootstock sets or knows. */
+const INPUT_EXAMPLES: Record<string, string> = {
+  charge: 'atoms.info["charge"] = -1',
+  spin: 'atoms.info["spin"] = 2',
+  external_field: 'atoms.info["external_field"] = [0, 0, 0.1]',
+};
+const listWithAnd = (xs: string[]): string =>
+  xs.length <= 1 ? (xs[0] ?? '') : `${xs.slice(0, -1).join(', ')} and ${xs[xs.length - 1]}`;
+
+// Heads table: each head resolved to the catalog dataset it was trained
+// against — head names track training corpora, so the dataset link is the
+// answer to "what is omol?". Gloss comes from the dataset's own record.
+const headRows = headsSpec
+  ? await Promise.all(
+      headsSpec.values.map(async (v) => {
+        const ds = v.dataset ? await getEntry(v.dataset) : null;
+        return {
+          id: v.id,
+          isDefault: v.id === headsSpec.default,
+          datasetId: ds?.id ?? null,
+          datasetName: ds?.data.name ?? null,
+          gloss: ds?.data.systemType ?? ds?.data.domain ?? null,
+        };
+      }),
+    )
+  : [];
+
+// Worked example: a cluster that has the model (build-time best effort), the
+// first checkpoint, and — when heads exist — the omol head if there is one,
+// so the model-input lines are physically coherent.
+const exampleCluster =
+  allClusters.find((c) => !c.data.unlisted && clusterHasPresence[c.id])?.id ??
+  allClusters.find((c) => !c.data.unlisted)?.id ?? 'perlmutter';
+const exampleCheckpoint = model.data.checkpoints[0];
+const exampleHead = headsSpec
+  ? (headsSpec.values.some((v) => v.id === 'omol') ? 'omol' : headsSpec.default ?? headsSpec.values[0].id)
+  : null;
+
+const makeSnippet = (head: string | null): string => {
+  const lines: string[] = [];
+  if (license?.nonCommercial) {
+    lines.push(
+      '# Academic license — acknowledge non-commercial',
+      '# use before running:',
+      '#   export NON_COMMERCIAL_USE=1',
+      '',
+    );
+  }
+  lines.push('from rootstock import RootstockCalculator', '');
+  if (modelInputs.length > 0) {
+    lines.push(`# this model accepts ${listWithAnd(modelInputs)}`);
+    for (const key of modelInputs) {
+      lines.push(INPUT_EXAMPLES[key] ?? `atoms.info["${key}"] = ...`);
+    }
+    lines.push('');
+  }
+  lines.push(
+    'with RootstockCalculator(',
+    `    cluster="${exampleCluster}",`,
+    `    checkpoint="${exampleCheckpoint.id}",`,
+    '    device="cuda",',
+  );
+  if (headsSpec && head) {
+    lines.push(`    setup_kwargs={"${headsSpec.kwarg}": "${head}"},  # select a head`);
+  }
+  lines.push(') as calc:', '    atoms.calc = calc', '    atoms.get_potential_energy()');
+  return lines.join('\n');
+};
+const runningSnippet = makeSnippet(exampleHead);
+// A matrix head link arrives as ?head=… — its one effect here is pre-filling
+// that head in the snippet (client-side re-render from this template).
+const runConfig = headsSpec
+  ? { template: makeSnippet('@@HEAD@@'), heads: headsSpec.values.map((v) => v.id) }
+  : null;
+
 // Environments section: the verbatim env file Rootstock installs for this
 // model, one tab per installed cluster (matrix order). Build-time seed only —
 // the client re-derives the tab set + file bodies from the live dump (env text
@@ -167,7 +260,7 @@ const notesHtml = model.data.notes ? marked.parse(model.data.notes) : null;
       </p>
     )}
 
-    {(paperLink || model.data.codeUrl || model.data.huggingFaceId || model.data.weightsUrl) && (
+    {(paperLink || model.data.codeUrl || model.data.huggingFaceId || model.data.weightsUrl || license) && (
       <div class="masthead-links">
         {paperLink && (
           <div class="masthead-link">
@@ -203,6 +296,18 @@ const notesHtml = model.data.notes ? marked.parse(model.data.notes) : null;
             </a>
           </div>
         ) : null}
+        {license && (
+          <div class="masthead-link">
+            <span class="sc">License</span>
+            <span>
+              {license.url ? (
+                <a class="ink-link" href={license.url} target="_blank" rel="noopener">{license.name}</a>
+              ) : (
+                license.name
+              )}
+            </span>
+          </div>
+        )}
       </div>
     )}
   </div>
@@ -231,7 +336,7 @@ const notesHtml = model.data.notes ? marked.parse(model.data.notes) : null;
         </thead>
         <tbody>
           {matrix.map(({ checkpoint, cells }) => (
-            <tr>
+            <tr id={checkpoint.id}>
               <td class="mono" style="font-size: var(--fs-sm);">{checkpoint.id}</td>
               <td style="text-align: right; font-variant-numeric: tabular-nums;">
                 {checkpoint.params ?? ''}
@@ -264,6 +369,68 @@ const notesHtml = model.data.notes ? marked.parse(model.data.notes) : null;
       No cluster has installed any checkpoint of this model yet.
     </p>
   </section>
+
+  {hasRunningSection && (
+    <section class="running-section">
+      <hr class="hairline" style="margin: 24px 0 0;" />
+      <div class="sc" style="font-size: var(--fs-sm); letter-spacing: var(--track-label); margin-top: 12px;">Running this model</div>
+      <div class:list={["running-grid", !headsSpec && !license?.nonCommercial && "is-solo"]}>
+        <div class="running-prose">
+          {headsSpec && (
+            <>
+              <p>
+                This model has task heads. You can select which output layer is active at inference time with
+                {' '}<code>setup_kwargs={'{'}"{headsSpec.kwarg}": "{headsSpec.default ?? headRows[0]?.id}"{'}'}</code>.
+              </p>
+              <table class="almanac running-args running-heads" id="heads">
+                <thead>
+                  <tr>
+                    <th>Task head</th>
+                    <th>Trained against</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {headRows.map((h) => (
+                    <tr>
+                      <td>
+                        <span class="mono">{h.id}</span>
+                        {h.isDefault && <span class="running-head-default it">default</span>}
+                      </td>
+                      <td>
+                        {h.datasetName ? (
+                          <>
+                            <a class="ink-link" href={url(`/datasets#${h.datasetId}`)}>{h.datasetName}</a>
+                            {h.gloss && <span style="color: var(--ink-2);"> — {h.gloss}</span>}
+                          </>
+                        ) : (
+                          '—'
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </>
+          )}
+          {license?.nonCommercial && (
+            <p>
+              {model.data.name} is licensed for academic use only. Set
+              {' '}<code>NON_COMMERCIAL_USE=1</code> in your job environment to acknowledge the
+              terms — Rootstock won't load the model without it.
+            </p>
+          )}
+        </div>
+        {/* No chrome bar: a filename here would suggest a file that exists in
+            the system, and only the env files below actually do. */}
+        <div class="am-env-block running-snippet">
+          <div class="am-env-body" data-run-snippet set:html={renderEnvBody(runningSnippet)} />
+        </div>
+      </div>
+      {runConfig && (
+        <script type="application/json" data-run-config set:html={jsonAttr(runConfig)}></script>
+      )}
+    </section>
+  )}
 
   <section class:list={["env-section", envFiles.length === 0 && "am-hidden"]} data-env-section>
     <hr class="hairline" style="margin: 24px 0 0;" />
@@ -359,6 +526,19 @@ const notesHtml = model.data.notes ? marked.parse(model.data.notes) : null;
                   <a class="ink-link" href={url(`/datasets#${d.id}`)}>{d.data.name}</a>
                 </>
               ))}
+            </dd>
+          </>
+        )}
+        {license && (
+          <>
+            <dt class="sc">License</dt>
+            <dd>
+              {license.url ? (
+                <a class="ink-link" href={license.url} target="_blank" rel="noopener">{license.name}</a>
+              ) : (
+                license.name
+              )}
+              {license.nonCommercial && <span style="color: var(--ink-2);"> — academic use only</span>}
             </dd>
           </>
         )}
@@ -465,6 +645,46 @@ const notesHtml = model.data.notes ? marked.parse(model.data.notes) : null;
     padding: 0 4px;
   }
   .notes-body a { color: var(--oxblood); text-decoration: underline; text-decoration-thickness: 0.5px; text-underline-offset: 2px; }
+
+  /* Running-this-model: prose + args table beside the worked snippet,
+     mirroring the index How-To's two-column shape. */
+  .running-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    column-gap: 32px;
+    align-items: start;
+    margin-top: 10px;
+  }
+  /* No heads, no license → nothing to say in prose; the snippet stands
+     alone at a readable measure instead of beside an empty column. */
+  .running-grid.is-solo { grid-template-columns: minmax(0, 1fr); max-width: 760px; }
+  .running-grid.is-solo .running-prose { display: none; }
+  .running-prose p {
+    margin: 0 0 10px;
+    font-size: var(--fs-md);
+    line-height: 1.55;
+    color: var(--ink);
+    max-width: 62ch;
+  }
+  .running-prose code {
+    font-family: var(--mono);
+    background: rgba(26,22,18,0.05);
+    padding: 0 4px;
+  }
+  .running-args { font-size: var(--fs-md); margin: 4px 0 16px; }
+  .running-args .mono { font-size: var(--fs-sm); }
+  .running-head-default {
+    margin-left: 8px;
+    font-size: var(--fs-xs);
+    color: var(--ink-3);
+  }
+  /* Top-align the snippet block with the prose column (env-block ships a
+     margin-top meant for the Environments section). */
+  .running-grid :global(.running-snippet) { margin-top: 0; }
+
+  @media (max-width: 860px) {
+    .running-grid { grid-template-columns: 1fr; row-gap: 14px; }
+  }
 
   @media (max-width: 720px) {
     .model-body { grid-template-columns: 1fr; }
@@ -623,4 +843,20 @@ const notesHtml = model.data.notes ? marked.parse(model.data.notes) : null;
       });
   }
   setupEnvSection();
+
+  // A matrix head link lands here as ?head=… — its single effect is
+  // pre-filling that head in the run snippet. No on-page picker UI.
+  function applyHeadFromUrl() {
+    const head = new URLSearchParams(location.search).get('head');
+    if (!head) return;
+    const cfgEl = document.querySelector('script[data-run-config]');
+    const body = document.querySelector<HTMLElement>('[data-run-snippet]');
+    if (!cfgEl || !body) return;
+    const cfg = JSON.parse(cfgEl.textContent ?? 'null') as
+      | { template: string; heads: string[] }
+      | null;
+    if (!cfg || !cfg.heads.includes(head)) return;
+    body.innerHTML = renderEnvBody(cfg.template.split('@@HEAD@@').join(head));
+  }
+  applyHeadFromUrl();
 </script>

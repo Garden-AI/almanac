@@ -1,13 +1,40 @@
 {
   "name": "MACE-POLAR-1",
-  "families": ["ace"],
+  "families": [
+    "ace"
+  ],
   "codeUrl": "https://github.com/ACEsuit/mace-foundations",
   "weightsUrl": "https://github.com/ACEsuit/mace-foundations/releases",
-  "paperRefs": ["mace-polar-1"],
-  "checkpoints": [
-    { "id": "mace-polar-1-s" },
-    { "id": "mace-polar-1-m" },
-    { "id": "mace-polar-1-l" }
+  "paperRefs": [
+    "mace-polar-1"
   ],
-  "trainingData": ["omol25"]
+  "checkpoints": [
+    {
+      "id": "mace-polar-1-s",
+      "modelInputs": [
+        "charge",
+        "spin",
+        "external_field"
+      ]
+    },
+    {
+      "id": "mace-polar-1-m",
+      "modelInputs": [
+        "charge",
+        "spin",
+        "external_field"
+      ]
+    },
+    {
+      "id": "mace-polar-1-l",
+      "modelInputs": [
+        "charge",
+        "spin",
+        "external_field"
+      ]
+    }
+  ],
+  "trainingData": [
+    "omol25"
+  ]
 }
