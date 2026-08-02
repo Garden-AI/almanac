@@ -87,8 +87,10 @@ const anyPresence = allClusters.some(
 //    physics, set on `atoms.info` and forwarded with every calculation.
 const headsSpec = model.data.checkpoints.find((cp) => cp.heads)?.heads ?? null;
 const modelInputs = [...new Set(model.data.checkpoints.flatMap((cp) => cp.modelInputs ?? []))];
-const license = model.data.license ?? null;
-const hasRunningSection = Boolean(headsSpec || modelInputs.length > 0 || license);
+// NOTE: `model.data.license` exists in the schema (and mace-off23 carries it)
+// but is deliberately NOT displayed anywhere yet — license presentation and
+// the NON_COMMERCIAL_USE enforcement story are being designed together in a
+// future pass. Don't resurrect display piecemeal.
 
 /** Example atoms.info lines for the known model-input keys. Unknown keys
  *  fall back to a placeholder — curators extend this as new model families
@@ -120,27 +122,37 @@ const headRows = headsSpec
     )
   : [];
 
-// Worked example: a cluster that has the model (build-time best effort), the
-// first checkpoint, and — when heads exist — the omol head if there is one,
-// so the model-input lines are physically coherent.
-const exampleCluster =
-  allClusters.find((c) => !c.data.unlisted && clusterHasPresence[c.id])?.id ??
-  allClusters.find((c) => !c.data.unlisted)?.id ?? 'perlmutter';
+// Worked example: generic cluster placeholder (naming one cluster misled —
+// readers took it as *the* cluster, or saw one where the model isn't
+// installed), the first checkpoint, and — when heads exist — the omol head
+// if there is one, so the model-input lines are physically coherent. The
+// "eg" cluster names are this model's own (build-time best effort), so the
+// examples are never clusters the model isn't on.
+const clusterVerified: Record<string, boolean> = {};
+for (const c of allClusters) {
+  clusterVerified[c.id] = matrix.some((row) =>
+    row.cells.some((cell) => cell.cluster.id === c.id && cell.state === 'verified'),
+  );
+}
+// Verified clusters first — an "eg" naming a lapsed cluster repeats the
+// original problem in miniature. Presence-only clusters back-fill, then a
+// generic pair if the model is nowhere at build time.
+const egClusters = allClusters
+  .filter((c) => !c.data.unlisted && clusterHasPresence[c.id])
+  .sort((a, b) => Number(clusterVerified[b.id]) - Number(clusterVerified[a.id]))
+  .slice(0, 2)
+  .map((c) => `"${c.id}"`);
+const egLine = egClusters.length > 0 ? egClusters.join(', ') : '"polaris", "perlmutter"';
 const exampleCheckpoint = model.data.checkpoints[0];
 const exampleHead = headsSpec
   ? (headsSpec.values.some((v) => v.id === 'omol') ? 'omol' : headsSpec.default ?? headsSpec.values[0].id)
   : null;
 
 const makeSnippet = (head: string | null): string => {
-  const lines: string[] = [];
-  if (license?.nonCommercial) {
-    lines.push(
-      '# Academic license — acknowledge non-commercial',
-      '# use before running:',
-      '#   export NON_COMMERCIAL_USE=1',
-      '',
-    );
-  }
+  // Opens with the on-cluster framing: `cluster=` otherwise reads like a
+  // cloud SDK's routing target, when it names the cluster you're already
+  // logged into — the biggest Rootstock misunderstanding.
+  const lines: string[] = ['# from a job or interactive session on a supported cluster:'];
   lines.push('from rootstock import RootstockCalculator', '');
   if (modelInputs.length > 0) {
     lines.push(`# this model accepts ${listWithAnd(modelInputs)}`);
@@ -151,14 +163,19 @@ const makeSnippet = (head: string | null): string => {
   }
   lines.push(
     'with RootstockCalculator(',
-    `    cluster="${exampleCluster}",`,
+    `    cluster=YOUR_CLUSTER_ID,  # eg, ${egLine}`,
     `    checkpoint="${exampleCheckpoint.id}",`,
     '    device="cuda",',
   );
   if (headsSpec && head) {
     lines.push(`    setup_kwargs={"${headsSpec.kwarg}": "${head}"},  # select a head`);
   }
-  lines.push(') as calc:', '    atoms.calc = calc', '    atoms.get_potential_energy()');
+  lines.push(
+    ') as calc:',
+    '    # model is now running in subprocess on compute node',
+    '    atoms.calc = calc',
+    '    atoms.get_potential_energy()',
+  );
   return lines.join('\n');
 };
 const runningSnippet = makeSnippet(exampleHead);
@@ -260,7 +277,7 @@ const notesHtml = model.data.notes ? marked.parse(model.data.notes) : null;
       </p>
     )}
 
-    {(paperLink || model.data.codeUrl || model.data.huggingFaceId || model.data.weightsUrl || license) && (
+    {(paperLink || model.data.codeUrl || model.data.huggingFaceId || model.data.weightsUrl) && (
       <div class="masthead-links">
         {paperLink && (
           <div class="masthead-link">
@@ -296,18 +313,6 @@ const notesHtml = model.data.notes ? marked.parse(model.data.notes) : null;
             </a>
           </div>
         ) : null}
-        {license && (
-          <div class="masthead-link">
-            <span class="sc">License</span>
-            <span>
-              {license.url ? (
-                <a class="ink-link" href={license.url} target="_blank" rel="noopener">{license.name}</a>
-              ) : (
-                license.name
-              )}
-            </span>
-          </div>
-        )}
       </div>
     )}
   </div>
@@ -370,11 +375,13 @@ const notesHtml = model.data.notes ? marked.parse(model.data.notes) : null;
     </p>
   </section>
 
-  {hasRunningSection && (
-    <section class="running-section">
-      <hr class="hairline" style="margin: 24px 0 0;" />
-      <div class="sc" style="font-size: var(--fs-sm); letter-spacing: var(--track-label); margin-top: 12px;">Running this model</div>
-      <div class:list={["running-grid", !headsSpec && !license?.nonCommercial && "is-solo"]}>
+  {/* Every model gets this section — the base snippet (cluster, checkpoint,
+      device) is the almanac's core promise; heads/license/inputs merely layer
+      onto it. A conditional section made its absence ambiguous. */}
+  <section class="running-section">
+    <hr class="hairline" style="margin: 24px 0 0;" />
+    <div class="sc" style="font-size: var(--fs-sm); letter-spacing: var(--track-label); margin-top: 12px;">Running this model</div>
+      <div class:list={["running-grid", !headsSpec && "is-solo"]}>
         <div class="running-prose">
           {headsSpec && (
             <>
@@ -412,13 +419,6 @@ const notesHtml = model.data.notes ? marked.parse(model.data.notes) : null;
               </table>
             </>
           )}
-          {license?.nonCommercial && (
-            <p>
-              {model.data.name} is licensed for academic use only. Set
-              {' '}<code>NON_COMMERCIAL_USE=1</code> in your job environment to acknowledge the
-              terms — Rootstock won't load the model without it.
-            </p>
-          )}
         </div>
         {/* No chrome bar: a filename here would suggest a file that exists in
             the system, and only the env files below actually do. */}
@@ -429,8 +429,7 @@ const notesHtml = model.data.notes ? marked.parse(model.data.notes) : null;
       {runConfig && (
         <script type="application/json" data-run-config set:html={jsonAttr(runConfig)}></script>
       )}
-    </section>
-  )}
+  </section>
 
   <section class:list={["env-section", envFiles.length === 0 && "am-hidden"]} data-env-section>
     <hr class="hairline" style="margin: 24px 0 0;" />
@@ -526,19 +525,6 @@ const notesHtml = model.data.notes ? marked.parse(model.data.notes) : null;
                   <a class="ink-link" href={url(`/datasets#${d.id}`)}>{d.data.name}</a>
                 </>
               ))}
-            </dd>
-          </>
-        )}
-        {license && (
-          <>
-            <dt class="sc">License</dt>
-            <dd>
-              {license.url ? (
-                <a class="ink-link" href={license.url} target="_blank" rel="noopener">{license.name}</a>
-              ) : (
-                license.name
-              )}
-              {license.nonCommercial && <span style="color: var(--ink-2);"> — academic use only</span>}
             </dd>
           </>
         )}
@@ -655,7 +641,7 @@ const notesHtml = model.data.notes ? marked.parse(model.data.notes) : null;
     align-items: start;
     margin-top: 10px;
   }
-  /* No heads, no license → nothing to say in prose; the snippet stands
+  /* No heads → nothing to say in prose; the snippet stands
      alone at a readable measure instead of beside an empty column. */
   .running-grid.is-solo { grid-template-columns: minmax(0, 1fr); max-width: 760px; }
   .running-grid.is-solo .running-prose { display: none; }
