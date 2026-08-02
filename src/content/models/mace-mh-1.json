@@ -11,12 +11,29 @@
       "heads": {
         "kwarg": "head",
         "values": [
-          { "id": "omat_pbe", "dataset": "omat24" },
-          { "id": "omol", "dataset": "omol25" },
-          { "id": "spice_wB97M", "dataset": "spice" },
-          { "id": "rgd1_b3lyp" },
-          { "id": "oc20_usemppbe", "dataset": "oc20" },
-          { "id": "matpes_r2scan", "dataset": "matpes" }
+          {
+            "id": "omat_pbe",
+            "dataset": "omat24"
+          },
+          {
+            "id": "mp_pbe_refit_add"
+          },
+          {
+            "id": "omol",
+            "dataset": "omol25"
+          },
+          {
+            "id": "spice_wB97M",
+            "dataset": "spice"
+          },
+          {
+            "id": "oc20_usemppbe",
+            "dataset": "oc20"
+          },
+          {
+            "id": "matpes_r2scan",
+            "dataset": "matpes"
+          }
         ],
         "default": "omat_pbe"
       }
