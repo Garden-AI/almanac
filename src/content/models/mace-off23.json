@@ -20,6 +20,7 @@
       "id": "mace-off23-large"
     }
   ],
+  "customCheckpoint": "mace:custom",
   "trainingData": [
     "spice"
   ],

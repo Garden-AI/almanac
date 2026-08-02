@@ -8,5 +8,6 @@
     { "id": "mattersim-v1-0-0-5m", "params": "5M" },
     { "id": "mattersim-v1-0-0-1m", "params": "1M" }
   ],
+  "customCheckpoint": "mattersim:custom",
   "trainingData": []
 }

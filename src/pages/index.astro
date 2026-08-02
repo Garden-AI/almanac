@@ -29,6 +29,10 @@ type FamilyRow = {
   dim: boolean;
   /** Head ids this checkpoint serves — folded into the row's search string. */
   heads: string[];
+  /** The family's `<env>:custom` pseudo-checkpoint (bring-your-own-weights).
+   *  Rendered once per family that curates it — models sharing an env share
+   *  the id, so cluster counts dedupe by checkpoint id. */
+  custom: boolean;
 };
 type FamilyGroup = {
   modelId: string;
@@ -50,25 +54,39 @@ for (const c of clusters) perCluster[c.id] = { verified: 0, lapsed: 0, na: 0 };
 // `hidden` is the build-time guess at "no cluster supports this"; the live
 // refresh re-derives it from current Rootstock state. This way the visible
 // table is always a function of *live* data, not whatever was true at build.
+// Custom pseudo-checkpoints are shared across the families one env hosts
+// (six MACE entries → one "mace:custom"), so the per-cluster tallies count
+// each checkpoint id once no matter how many family sections render it.
+const countedIds = new Set<string>();
+
 const families: FamilyGroup[] = models
   .map((m): FamilyGroup => {
-    const rows: FamilyRow[] = m.data.checkpoints.map((cp) => {
+    const rowFor = (checkpointId: string, heads: string[], custom: boolean): FamilyRow => {
       const cells = clusters.map((c) => {
-        const state: CellState = cellStateFor(findVerification(dump, c.id, cp.id));
+        const state: CellState = cellStateFor(findVerification(dump, c.id, checkpointId));
         return { cluster: c, state };
       });
       return {
-        checkpointId: cp.id,
+        checkpointId,
         cells,
         // Unlisted clusters don't count toward "someone supports this" —
         // otherwise an unlisted-only checkpoint would surface its row (all
         // visible cells hatched) for viewers who can't see that cluster.
         dim: cells.every((x) => x.cluster.data.unlisted || x.state === 'na'),
-        heads: (cp.heads?.values ?? []).map((v) => v.id),
+        heads,
+        custom,
       };
-    });
+    };
+    const rows: FamilyRow[] = m.data.checkpoints.map((cp) =>
+      rowFor(cp.id, (cp.heads?.values ?? []).map((v) => v.id), false),
+    );
+    if (m.data.customCheckpoint) {
+      rows.push(rowFor(m.data.customCheckpoint, [], true));
+    }
     const supported = rows.filter((r) => !r.dim);
     for (const r of supported) {
+      if (countedIds.has(r.checkpointId)) continue;
+      countedIds.add(r.checkpointId);
       for (const { cluster, state } of r.cells) {
         perCluster[cluster.id][state]++;
       }
@@ -227,10 +245,14 @@ with RootstockCalculator(
                 data-rs-row={r.checkpointId}
                 data-rs-family-id={fam.modelId}
                 data-am-family={fam.modelId}
-                data-am-search={`${fam.name} ${r.checkpointId} ${r.heads.join(' ')}`.toLowerCase()}
+                data-am-search={`${fam.name} ${r.checkpointId} ${r.heads.join(' ')}${r.custom ? ' custom your own fine-tune weights byoc' : ''}`.toLowerCase()}
               >
                 <td class="am-slug">
-                  <a class="am-slug-link" href={`${fam.href}#${r.checkpointId}`}>{r.checkpointId}</a>
+                  {/* Custom rows link to the model page with the run-snippet
+                      toggle pre-set (?custom, same pattern as ?head=). The id
+                      carries no gloss — `<env>:custom` is self-describing, and
+                      the model page's toggle is where it gets explained. */}
+                  <a class="am-slug-link" href={r.custom ? `${fam.href}?custom` : `${fam.href}#${r.checkpointId}`}>{r.checkpointId}</a>
                 </td>
                 {r.cells.map(({ cluster, state }) => (
                   <td
@@ -621,12 +643,19 @@ with RootstockCalculator(
     .then((dump) => {
       const familySupportedCount: Record<string, number> = {};
       const perCluster: Record<string, { verified: number; lapsed: number; na: number }> = {};
+      // Custom pseudo-checkpoints render one row per family sharing the env —
+      // count each checkpoint id once (mirrors the build-time seed).
+      const countedIds = new Set<string>();
       const rows = document.querySelectorAll<HTMLElement>('[data-rs-row]');
       rows.forEach((tr) => {
         const tdCells = tr.querySelectorAll<HTMLElement>('[data-rs-cell]');
         const cellInfo: Array<{ cluster: string; state: CellState; counted: boolean }> = [];
         tdCells.forEach((td) => {
-          const [cluster, checkpoint] = td.dataset.rsCell!.split(':');
+          // Split on the FIRST colon only — custom checkpoint ids contain one
+          // ("perlmutter:mace:custom" → "perlmutter" / "mace:custom").
+          const key = td.dataset.rsCell!;
+          const cluster = key.slice(0, key.indexOf(':'));
+          const checkpoint = key.slice(key.indexOf(':') + 1);
           cellInfo.push({
             cluster,
             state: cellStateFor(findVerification(dump, cluster, checkpoint)),
@@ -639,8 +668,12 @@ with RootstockCalculator(
         familySupportedCount[famId] = (familySupportedCount[famId] ?? 0) + (allNa ? 0 : 1);
         tr.classList.toggle('am-hidden', allNa);
         if (!allNa) {
-          for (const { cluster, state } of cellInfo) {
-            (perCluster[cluster] ??= { verified: 0, lapsed: 0, na: 0 })[state]++;
+          const cpId = tr.dataset.rsRow!;
+          if (!countedIds.has(cpId)) {
+            countedIds.add(cpId);
+            for (const { cluster, state } of cellInfo) {
+              (perCluster[cluster] ??= { verified: 0, lapsed: 0, na: 0 })[state]++;
+            }
           }
           tdCells.forEach((td, i) => { td.innerHTML = cellSvg(states[i]); });
         }

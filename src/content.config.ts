@@ -101,6 +101,14 @@ const models = defineCollection({
       )
       .min(1),
 
+    /** The hosting env's `<family>:custom` pseudo-checkpoint id (e.g.
+     *  "mace:custom") — run your own fine-tune by pairing it with `weights=`.
+     *  Curated when the env declares the entry + `setup_from_path` hook.
+     *  One id per env, so models sharing an env share the id (all MACE
+     *  releases → "mace:custom"); matrix/cluster counts dedupe by id.
+     *  Deliberately NOT a `checkpoints[]` entry: it names no weights. */
+    customCheckpoint: z.string().optional(),
+
     /** Plain list of dataset references — order follows the data. */
     trainingData: z.array(reference('datasets')).default([]),
 

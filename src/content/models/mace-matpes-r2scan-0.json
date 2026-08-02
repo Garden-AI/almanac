@@ -8,5 +8,6 @@
   "checkpoints": [
     { "id": "mace-matpes-r2scan-0" }
   ],
+  "customCheckpoint": "mace:custom",
   "trainingData": ["omat24", "matpes"]
 }

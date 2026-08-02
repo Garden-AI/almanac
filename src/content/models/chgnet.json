@@ -7,5 +7,6 @@
   "checkpoints": [
     { "id": "chgnet-default", "params": "0.4M" }
   ],
+  "customCheckpoint": "chgnet:custom",
   "trainingData": ["mptrj"]
 }
