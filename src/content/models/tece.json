@@ -1,0 +1,11 @@
+{
+  "name": "TECE",
+  "families": ["ace"],
+  "codeUrl": "https://github.com/xvzemin/tace",
+  "huggingFaceId": "xvzemin/tace-foundations",
+  "paperRefs": ["tece"],
+  "checkpoints": [
+    { "id": "tece-oam-rra-1.0", "params": "222M" }
+  ],
+  "trainingData": ["omat24", "salex", "mptrj"]
+}

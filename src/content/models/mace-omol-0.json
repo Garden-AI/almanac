@@ -1,0 +1,22 @@
+{
+  "name": "MACE-OMol-0",
+  "families": [
+    "ace"
+  ],
+  "releaseDate": "2025-07-01",
+  "codeUrl": "https://github.com/ACEsuit/mace-foundations",
+  "weightsUrl": "https://github.com/ACEsuit/mace-foundations/releases/tag/mace_omol_0",
+  "paperRefs": [],
+  "checkpoints": [
+    {
+      "id": "mace-omol-0-extra-large",
+      "modelInputs": [
+        "charge",
+        "spin"
+      ]
+    }
+  ],
+  "trainingData": [
+    "omol25"
+  ]
+}

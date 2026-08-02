@@ -1,13 +1,31 @@
 {
   "name": "MACE-OFF23",
-  "families": ["ace"],
+  "families": [
+    "ace"
+  ],
   "codeUrl": "https://github.com/ACEsuit/mace-off",
   "weightsUrl": "https://github.com/ACEsuit/mace-off/releases",
-  "paperRefs": ["mace-off23"],
-  "checkpoints": [
-    { "id": "mace-off23-small" },
-    { "id": "mace-off23-medium", "params": "1.4M" },
-    { "id": "mace-off23-large" }
+  "paperRefs": [
+    "mace-off23"
   ],
-  "trainingData": ["spice"]
+  "checkpoints": [
+    {
+      "id": "mace-off23-small"
+    },
+    {
+      "id": "mace-off23-medium",
+      "params": "1.4M"
+    },
+    {
+      "id": "mace-off23-large"
+    }
+  ],
+  "trainingData": [
+    "spice"
+  ],
+  "license": {
+    "name": "Academic Software License (ASL)",
+    "nonCommercial": true,
+    "url": "https://github.com/gabor1/ASL"
+  }
 }

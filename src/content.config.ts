@@ -73,12 +73,48 @@ const models = defineCollection({
         z.object({
           id: z.string(),
           params: z.string().optional(),
+          /** Selectable output heads, when one checkpoint serves several.
+           *  `kwarg` is the upstream-faithful setup() keyword ("task" for
+           *  UMA, "head" for MACE-MH1) — checkpoint ids never encode heads.
+           *  Head names track training corpora: `dataset` links each head to
+           *  the catalog dataset it was trained against. */
+          heads: z
+            .object({
+              kwarg: z.string(),
+              values: z
+                .array(
+                  z.object({
+                    id: z.string(),
+                    dataset: reference('datasets').optional(),
+                  }),
+                )
+                .min(2),
+              default: z.string().optional(),
+            })
+            .optional(),
+          /** Per-calculation model inputs the checkpoint reads from
+           *  `atoms.info` (e.g. "charge", "spin", "external_field").
+           *  These are calculate-time physics inputs, not setup() kwargs —
+           *  see Rootstock docs/api.md. Renders the ± mark. */
+          modelInputs: z.array(z.string()).optional(),
         }),
       )
       .min(1),
 
     /** Plain list of dataset references — order follows the data. */
     trainingData: z.array(reference('datasets')).default([]),
+
+    /** Weights license, model-level (a release ships under one license).
+     *  `nonCommercial: true` marks the academic-only case — renders the §
+     *  mark and the NON_COMMERCIAL_USE acknowledgment in run snippets.
+     *  Curated here on purpose; Rootstock enforces separately. */
+    license: z
+      .object({
+        name: z.string(),
+        nonCommercial: z.boolean().default(false),
+        url: z.string().url().optional(),
+      })
+      .optional(),
 
     /** Markdown. Free-text gotchas, operator caveats, deprecation/scope
      *  notes. NOT for performance commentary or "when to use"

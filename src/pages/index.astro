@@ -12,33 +12,7 @@ import {
 import { url } from '../lib/url';
 import { getSortedClusters } from '../lib/clusters';
 
-// Paper-and-ink syntax theme for the How-To snippet, colorway aligned with
-// the page tokens.
-const almanacCodeTheme = {
-  name: 'almanac',
-  type: 'light' as const,
-  bg: 'rgba(26,22,18,0.035)',
-  fg: '#1f1c18',
-  settings: [
-    { settings: { foreground: '#1f1c18', background: 'rgba(26,22,18,0.035)' } },
-    { scope: ['comment', 'comment.line', 'comment.block', 'punctuation.definition.comment'],
-      settings: { foreground: '#7a7268', fontStyle: 'italic' } },
-    { scope: ['keyword', 'keyword.control', 'keyword.operator.expression', 'storage.type', 'storage.modifier'],
-      settings: { foreground: '#7a1f1f' } },
-    { scope: ['string', 'string.quoted', 'string.quoted.single', 'string.quoted.double', 'punctuation.definition.string'],
-      settings: { foreground: '#5a1414' } },
-    { scope: ['constant.numeric', 'constant.language'],
-      settings: { foreground: '#5a1414' } },
-    { scope: ['entity.name.function', 'support.function', 'meta.function-call.generic'],
-      settings: { foreground: '#1f1c18', fontStyle: 'bold' } },
-    { scope: ['entity.name.class', 'support.class'],
-      settings: { foreground: '#1f1c18', fontStyle: 'bold' } },
-    { scope: ['variable.parameter.function-call', 'variable.parameter'],
-      settings: { foreground: '#4a4540' } },
-    { scope: ['punctuation', 'meta.brace', 'punctuation.separator'],
-      settings: { foreground: '#4a4540' } },
-  ],
-};
+import { almanacCodeTheme } from '../lib/code-theme';
 
 const clusters = await getSortedClusters();
 
@@ -53,12 +27,18 @@ type FamilyRow = {
   checkpointId: string;
   cells: Array<{ cluster: typeof clusters[number]; state: CellState }>;
   dim: boolean;
+  /** Head ids this checkpoint serves — folded into the row's search string. */
+  heads: string[];
 };
 type FamilyGroup = {
   modelId: string;
   name: string;
   href: string;
   count: number;
+  /** Union of head ids across the family's checkpoints, rendered once in the
+   *  family header (never repeated per checkpoint row). Each links to the
+   *  model page with that head preselected in the worked example. */
+  heads: string[];
   rows: FamilyRow[];
 };
 
@@ -84,6 +64,7 @@ const families: FamilyGroup[] = models
         // otherwise an unlisted-only checkpoint would surface its row (all
         // visible cells hatched) for viewers who can't see that cluster.
         dim: cells.every((x) => x.cluster.data.unlisted || x.state === 'na'),
+        heads: (cp.heads?.values ?? []).map((v) => v.id),
       };
     });
     const supported = rows.filter((r) => !r.dim);
@@ -97,6 +78,7 @@ const families: FamilyGroup[] = models
       name: m.data.name,
       href: url(`/model/${m.id}`),
       count: supported.length,
+      heads: [...new Set(rows.flatMap((r) => r.heads))],
       rows,
     };
   })
@@ -225,6 +207,17 @@ with RootstockCalculator(
               <td colspan={colSpan}>
                 <div class="am-fhead-inner">
                   <a class="am-fhead-name" href={fam.href}>{fam.name}</a>
+                  {fam.heads.length > 0 && (
+                    <span class="am-fhead-heads">
+                      <span class="sc am-heads-label">task heads</span>
+                      {fam.heads.map((h, i) => (
+                        <>
+                          {i > 0 && <span class="am-fhead-heads-sep">·</span>}
+                          <a class="mono am-head-link" href={`${fam.href}?head=${h}`}>{h}</a>
+                        </>
+                      ))}
+                    </span>
+                  )}
                 </div>
               </td>
             </tr>
@@ -234,7 +227,7 @@ with RootstockCalculator(
                 data-rs-row={r.checkpointId}
                 data-rs-family-id={fam.modelId}
                 data-am-family={fam.modelId}
-                data-am-search={`${fam.name} ${r.checkpointId}`.toLowerCase()}
+                data-am-search={`${fam.name} ${r.checkpointId} ${r.heads.join(' ')}`.toLowerCase()}
               >
                 <td class="am-slug">
                   <a class="am-slug-link" href={`${fam.href}#${r.checkpointId}`}>{r.checkpointId}</a>
@@ -446,7 +439,7 @@ with RootstockCalculator(
     display: flex;
     align-items: baseline;
     justify-content: flex-start;
-    gap: 16px;
+    gap: 5px 16px;
     flex-wrap: wrap;
   }
   /* The table's primary scan target: Source Serif semibold (not IM Fell SC),

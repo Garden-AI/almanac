@@ -1,11 +1,29 @@
 {
   "name": "AllScAIP",
-  "families": ["attention"],
-  "codeUrl": "https://github.com/facebookresearch/fairchem",
-  "paperRefs": ["allscaip"],
-  "checkpoints": [
-    { "id": "allscaip-md-conserving-all-omol" },
-    { "id": "allscaip-md-direct-all-omol" }
+  "families": [
+    "attention"
   ],
-  "trainingData": ["omol25"]
+  "codeUrl": "https://github.com/facebookresearch/fairchem",
+  "paperRefs": [
+    "allscaip"
+  ],
+  "checkpoints": [
+    {
+      "id": "allscaip-md-conserving-all-omol",
+      "modelInputs": [
+        "charge",
+        "spin"
+      ]
+    },
+    {
+      "id": "allscaip-md-direct-all-omol",
+      "modelInputs": [
+        "charge",
+        "spin"
+      ]
+    }
+  ],
+  "trainingData": [
+    "omol25"
+  ]
 }

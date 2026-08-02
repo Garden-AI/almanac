@@ -387,3 +387,43 @@ a.ink-link:hover { background: rgba(122, 31, 31, 0.06); }
    unlocked unlisted clusters (?gotigers=true; the pre-paint script in
    Page.astro sets .gotigers on <html>). */
 html:not(.gotigers) .am-unlisted { display: none !important; }
+
+/* ── Head rosters ───────────────────────────────────────────────────────
+   Multi-head models state their head roster once, in the matrix family
+   header, on its own line under the name — label + head names only, no
+   explainer (hover tooltips proved too easy to miss, and an inline gloss
+   read as cruft; the model page's #heads table is where heads are
+   explained). Never repeated per checkpoint row (one status row per
+   checkpoint; verification is per checkpoint, never per head). The
+   roster indents to the checkpoint-id column and sets the head names at
+   the ids' size — the heads read as vocabulary of that column. Each head
+   links to the model page with ?head=…, whose only effect there is
+   pre-filling that head in the run snippet; hover-reveal underline, per
+   the matrix's calm-at-rest link convention. */
+.am-fhead-heads {
+  flex-basis: 100%;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-left: 4px;
+}
+.am-heads-label {
+  font-size: var(--fs-sm);
+  letter-spacing: var(--track-label);
+  color: var(--ink-3);
+  margin-right: 4px;
+}
+.am-head-link {
+  font-family: var(--mono);
+  font-size: var(--fs-xs);
+  color: var(--ink-2);
+  text-decoration: none;
+  border-bottom: 0.5px solid transparent;
+  transition: color .12s, border-color .12s;
+}
+.am-head-link:hover {
+  color: var(--oxblood);
+  border-bottom-color: var(--oxblood);
+}
+.am-fhead-heads-sep { color: var(--ink-3); font-size: var(--fs-xs); }
