@@ -23,6 +23,7 @@
       ]
     }
   ],
+  "customCheckpoint": "allscaip:custom",
   "trainingData": [
     "omol25"
   ]

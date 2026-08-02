@@ -39,6 +39,7 @@
       }
     }
   ],
+  "customCheckpoint": "mace:custom",
   "trainingData": [
     "omat24",
     "omol25",

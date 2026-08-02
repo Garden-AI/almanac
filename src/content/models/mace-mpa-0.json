@@ -8,5 +8,6 @@
   "checkpoints": [
     { "id": "mace-mpa-0-medium", "params": "9.06M" }
   ],
+  "customCheckpoint": "mace:custom",
   "trainingData": ["mptrj", "salex"]
 }

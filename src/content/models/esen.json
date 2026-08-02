@@ -57,6 +57,7 @@
       ]
     }
   ],
+  "customCheckpoint": "esen:custom",
   "trainingData": [
     "omol25",
     "mptrj",

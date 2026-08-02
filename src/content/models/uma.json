@@ -112,6 +112,7 @@
       ]
     }
   ],
+  "customCheckpoint": "uma:custom",
   "trainingData": [
     "omol25",
     "oc20",

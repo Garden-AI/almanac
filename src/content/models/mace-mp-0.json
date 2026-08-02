@@ -9,5 +9,6 @@
     { "id": "mace-mp-0-medium", "params": "4.7M" },
     { "id": "mace-mp-0-large", "params": "5.7M" }
   ],
+  "customCheckpoint": "mace:custom",
   "trainingData": ["mptrj"]
 }

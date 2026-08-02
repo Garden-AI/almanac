@@ -63,10 +63,31 @@ const matrix = model.data.checkpoints.map((cp) => ({
   }),
 }));
 
+// The env's bring-your-own-weights pseudo-checkpoint, when curated. It gets
+// a row in the table and a snippet toggle, both governed by the same
+// live-presence rules as everything else: invisible until Rootstock reports
+// the id, no special-casing beyond the shared-across-models dedupe.
+const customId = model.data.customCheckpoint ?? null;
+const checkpointIds = model.data.checkpoints.map((cp) => cp.id);
+/** Every id this page tracks presence for — shipped checkpoints + custom. */
+const presenceIds = customId ? [...checkpointIds, customId] : checkpointIds;
+
+const customCells = customId
+  ? allClusters.map((c) => ({
+      cluster: c,
+      state: cellStateFor(findVerification(dump, c.id, customId)) as CellState,
+    }))
+  : [];
+// Same unlock rule as everywhere: unlisted clusters don't make the custom
+// row (or its toggle) visible for regular viewers.
+const customRowPresent = customCells.some(
+  (cell) => !cell.cluster.data.unlisted && cell.state !== 'na',
+);
+
 const clusterHasPresence: Record<string, boolean> = {};
 for (const c of allClusters) {
-  clusterHasPresence[c.id] = model.data.checkpoints.some(
-    (cp) => findVerification(dump, c.id, cp.id) !== null,
+  clusterHasPresence[c.id] = presenceIds.some(
+    (id) => findVerification(dump, c.id, id) !== null,
   );
 }
 // Unlisted clusters don't count toward "anyone has this" — the egg-off
@@ -148,7 +169,7 @@ const exampleHead = headsSpec
   ? (headsSpec.values.some((v) => v.id === 'omol') ? 'omol' : headsSpec.default ?? headsSpec.values[0].id)
   : null;
 
-const makeSnippet = (head: string | null): string => {
+const makeSnippet = (head: string | null, custom = false): string => {
   // Opens with the on-cluster framing: `cluster=` otherwise reads like a
   // cloud SDK's routing target, when it names the cluster you're already
   // logged into — the biggest Rootstock misunderstanding.
@@ -164,9 +185,19 @@ const makeSnippet = (head: string | null): string => {
   lines.push(
     'with RootstockCalculator(',
     `    cluster=YOUR_CLUSTER_ID,  # eg, ${egLine}`,
-    `    checkpoint="${exampleCheckpoint.id}",`,
-    '    device="cuda",',
   );
+  if (custom) {
+    // The custom variant runs the user's own fine-tune: the `:custom` id
+    // selects the env, `weights=` names their file (a first-class kwarg,
+    // not a setup_kwarg — see Rootstock docs/api.md).
+    lines.push(
+      `    checkpoint="${customId}",`,
+      '    weights=YOUR_WEIGHTS_PATH,  # must be visible from the compute nodes',
+    );
+  } else {
+    lines.push(`    checkpoint="${exampleCheckpoint.id}",`);
+  }
+  lines.push('    device="cuda",');
   if (headsSpec && head) {
     lines.push(`    setup_kwargs={"${headsSpec.kwarg}": "${head}"},  # select a head`);
   }
@@ -179,10 +210,16 @@ const makeSnippet = (head: string | null): string => {
   return lines.join('\n');
 };
 const runningSnippet = makeSnippet(exampleHead);
-// A matrix head link arrives as ?head=… — its one effect here is pre-filling
-// that head in the snippet (client-side re-render from this template).
-const runConfig = headsSpec
-  ? { template: makeSnippet('@@HEAD@@'), heads: headsSpec.values.map((v) => v.id) }
+// The snippet re-renders client-side from these templates: ?head=… pre-fills
+// a head (no on-page picker UI), and the shipped/custom toggle — or a
+// ?custom link from the matrix — swaps in the bring-your-own-weights variant.
+const runConfig = (headsSpec || customId)
+  ? {
+      template: makeSnippet(headsSpec ? '@@HEAD@@' : null),
+      customTemplate: customId ? makeSnippet(headsSpec ? '@@HEAD@@' : null, true) : null,
+      heads: headsSpec ? headsSpec.values.map((v) => v.id) : [],
+      defaultHead: exampleHead,
+    }
   : null;
 
 // Environments section: the verbatim env file Rootstock installs for this
@@ -191,14 +228,15 @@ const runConfig = headsSpec
 // is live, per the build-vs-live rule in CLAUDE.md). `envConfig` gives the
 // client what it needs to recompute against live data (cluster order + the
 // model's checkpoint ids).
-const checkpointIds = model.data.checkpoints.map((cp) => cp.id);
 // Env-file tabs: the build seed excludes unlisted clusters (egg-off baseline);
 // the client re-derives the tab set from `envConfig`, filtering by the
 // viewer's unlock state — so unlocked viewers gain those tabs on live refresh.
+// `presenceIds` (not just shipped checkpoints) so a cluster reporting only
+// the custom pseudo-checkpoint still surfaces its env file.
 const envFiles = envFilesForModel(
   dump,
   allClusters.filter((c) => !c.data.unlisted).map((c) => ({ id: c.id, name: c.data.name })),
-  checkpointIds,
+  presenceIds,
 );
 const envConfig = {
   clusters: allClusters.map((c) => ({
@@ -206,7 +244,7 @@ const envConfig = {
     name: c.data.name,
     unlisted: c.data.unlisted ?? false,
   })),
-  checkpoints: checkpointIds,
+  checkpoints: presenceIds,
 };
 // JSON embedded in <script type="application/json"> — neutralize any `<` so a
 // stray `</script>` in env source can't close the tag early.
@@ -357,6 +395,24 @@ const notesHtml = model.data.notes ? marked.parse(model.data.notes) : null;
               ))}
             </tr>
           ))}
+          {/* Bring-your-own-weights row: same live cell machinery, but the
+              whole row hides when no (visible) cluster reports the id —
+              unlike shipped rows, which always render. */}
+          {customId && (
+            <tr class:list={[!customRowPresent && "am-hidden"]} data-rs-custom-row>
+              <td class="mono" style="font-size: var(--fs-sm);">{customId}</td>
+              <td></td>
+              {customCells.map((cell) => (
+                <td
+                  class:list={["am-mx-col", !clusterHasPresence[cell.cluster.id] && "am-hidden", cell.cluster.data.unlisted && "am-unlisted"]}
+                  style="text-align: center;"
+                  data-rs-col={cell.cluster.id}
+                  data-rs-cell={`${cell.cluster.id}:${customId}`}
+                  set:html={statusGlyph(cell.state)}
+                />
+              ))}
+            </tr>
+          )}
         </tbody>
       </table>
     </div>
@@ -420,10 +476,20 @@ const notesHtml = model.data.notes ? marked.parse(model.data.notes) : null;
             </>
           )}
         </div>
-        {/* No chrome bar: a filename here would suggest a file that exists in
-            the system, and only the env files below actually do. */}
-        <div class="am-env-block running-snippet">
-          <div class="am-env-body" data-run-snippet set:html={renderEnvBody(runningSnippet)} />
+        <div class="running-snippet-col">
+          {/* Shipped/custom toggle — only when the env's custom entry is
+              live-present somewhere visible (same rule as the table row). */}
+          {customId && (
+            <div class:list={["am-env-tabs", "run-toggle", !customRowPresent && "am-hidden"]} data-run-toggle>
+              <button type="button" class="am-env-tab is-active" data-run-mode="shipped">pre-staged checkpoint</button>
+              <button type="button" class="am-env-tab" data-run-mode="custom">custom checkpoint</button>
+            </div>
+          )}
+          {/* No chrome bar: a filename here would suggest a file that exists in
+              the system, and only the env files below actually do. */}
+          <div class="am-env-block running-snippet">
+            <div class="am-env-body" data-run-snippet set:html={renderEnvBody(runningSnippet)} />
+          </div>
         </div>
       </div>
       {runConfig && (
@@ -667,6 +733,10 @@ const notesHtml = model.data.notes ? marked.parse(model.data.notes) : null;
   /* Top-align the snippet block with the prose column (env-block ships a
      margin-top meant for the Environments section). */
   .running-grid :global(.running-snippet) { margin-top: 0; }
+  .running-snippet-col { min-width: 0; }
+  .running-snippet-col :global(.run-toggle) { margin-top: 0; }
+  /* When the toggle is visible, give the snippet room below its tab rule. */
+  .running-snippet-col :global(.run-toggle:not(.am-hidden) + .running-snippet) { margin-top: 12px; }
 
   @media (max-width: 860px) {
     .running-grid { grid-template-columns: 1fr; row-gap: 14px; }
@@ -703,12 +773,26 @@ const notesHtml = model.data.notes ? marked.parse(model.data.notes) : null;
   loadLiveDump()
     .then((dump) => {
       const clusterHasPresence: Record<string, boolean> = {};
+      let customPresent = false;
       document.querySelectorAll<HTMLElement>('[data-rs-cell]').forEach((td) => {
-        const [cluster, checkpoint] = td.dataset.rsCell!.split(':');
+        // Split on the FIRST colon only — custom checkpoint ids contain one
+        // ("perlmutter:mace:custom" → "perlmutter" / "mace:custom").
+        const key = td.dataset.rsCell!;
+        const cluster = key.slice(0, key.indexOf(':'));
+        const checkpoint = key.slice(key.indexOf(':') + 1);
         const state = cellStateFor(findVerification(dump, cluster, checkpoint));
         td.innerHTML = statusGlyph(state);
-        if (state !== 'na') clusterHasPresence[cluster] = true;
+        if (state !== 'na') {
+          clusterHasPresence[cluster] = true;
+          if (td.closest('[data-rs-custom-row]') && counted(cluster)) customPresent = true;
+        }
       });
+      // The custom row (and the snippet toggle) shows iff some visible
+      // cluster currently reports the custom id — same rule as build time.
+      document.querySelectorAll<HTMLElement>('[data-rs-custom-row]').forEach((tr) => {
+        tr.classList.toggle('am-hidden', !customPresent);
+      });
+      runSnippet.setCustomAvailable(customPresent);
       // Toggle column visibility based on live presence (re-derived per page
       // load so a stale build doesn't drop a cluster that's since come up).
       document.querySelectorAll<HTMLElement>('[data-rs-col]').forEach((el) => {
@@ -830,19 +914,58 @@ const notesHtml = model.data.notes ? marked.parse(model.data.notes) : null;
   }
   setupEnvSection();
 
-  // A matrix head link lands here as ?head=… — its single effect is
-  // pre-filling that head in the run snippet. No on-page picker UI.
-  function applyHeadFromUrl() {
-    const head = new URLSearchParams(location.search).get('head');
-    if (!head) return;
+  // ── Run snippet: template re-renders ─────────────────────────────────
+  // Two client-side inputs re-render the snippet from its templates: a
+  // matrix head link (?head=…) pre-fills that head, and the shipped/custom
+  // toggle — or a matrix ?custom link — swaps in the bring-your-own-weights
+  // variant. The toggle's visibility follows live custom-id presence (see
+  // setCustomAvailable, driven by the refresh above).
+  function setupRunSnippet() {
+    const noop = { setCustomAvailable: (_present: boolean) => {} };
     const cfgEl = document.querySelector('script[data-run-config]');
     const body = document.querySelector<HTMLElement>('[data-run-snippet]');
-    if (!cfgEl || !body) return;
-    const cfg = JSON.parse(cfgEl.textContent ?? 'null') as
-      | { template: string; heads: string[] }
-      | null;
-    if (!cfg || !cfg.heads.includes(head)) return;
-    body.innerHTML = renderEnvBody(cfg.template.split('@@HEAD@@').join(head));
+    if (!cfgEl || !body) return noop;
+    const cfg = JSON.parse(cfgEl.textContent ?? 'null') as {
+      template: string;
+      customTemplate: string | null;
+      heads: string[];
+      defaultHead: string | null;
+    } | null;
+    if (!cfg) return noop;
+
+    const toggle = document.querySelector<HTMLElement>('[data-run-toggle]');
+    const params = new URLSearchParams(location.search);
+    const urlHead = params.get('head');
+    const head = urlHead && cfg.heads.includes(urlHead) ? urlHead : cfg.defaultHead;
+    let mode: 'shipped' | 'custom' =
+      params.has('custom') && cfg.customTemplate ? 'custom' : 'shipped';
+
+    const render = () => {
+      const tpl = mode === 'custom' && cfg.customTemplate ? cfg.customTemplate : cfg.template;
+      body.innerHTML = renderEnvBody(head ? tpl.split('@@HEAD@@').join(head) : tpl);
+      toggle?.querySelectorAll<HTMLElement>('[data-run-mode]').forEach((btn) => {
+        btn.classList.toggle('is-active', btn.dataset.runMode === mode);
+      });
+    };
+
+    toggle?.querySelectorAll<HTMLElement>('[data-run-mode]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        mode = btn.dataset.runMode === 'custom' ? 'custom' : 'shipped';
+        render();
+      });
+    });
+
+    render();
+
+    return {
+      setCustomAvailable(present: boolean) {
+        toggle?.classList.toggle('am-hidden', !present);
+        if (!present && mode === 'custom') {
+          mode = 'shipped';
+          render();
+        }
+      },
+    };
   }
-  applyHeadFromUrl();
+  const runSnippet = setupRunSnippet();
 </script>
