@@ -1,11 +1,26 @@
 {
   "name": "TECE",
-  "families": ["ace"],
+  "families": [
+    "ace"
+  ],
   "codeUrl": "https://github.com/xvzemin/tace",
   "huggingFaceId": "xvzemin/tace-foundations",
-  "paperRefs": ["tece"],
-  "checkpoints": [
-    { "id": "tece-oam-rra-1.0", "params": "222M" }
+  "paperRefs": [
+    "tece"
   ],
-  "trainingData": ["omat24", "salex", "mptrj"]
+  "checkpoints": [
+    {
+      "id": "tece-oam-rra-1.0",
+      "params": "222M"
+    }
+  ],
+  "trainingData": [
+    "omat24",
+    "salex",
+    "mptrj"
+  ],
+  "license": {
+    "name": "CC-BY-4.0",
+    "url": "https://huggingface.co/xvzemin/tace-foundations"
+  }
 }

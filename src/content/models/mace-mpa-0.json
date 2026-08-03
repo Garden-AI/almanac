@@ -1,13 +1,27 @@
 {
   "name": "MACE-MPA-0",
-  "families": ["ace"],
+  "families": [
+    "ace"
+  ],
   "releaseDate": "2024-12-17",
   "codeUrl": "https://github.com/ACEsuit/mace-foundations",
   "huggingFaceId": "mace-foundations/mace-mpa-0",
-  "paperRefs": ["mace-mp-0"],
+  "paperRefs": [
+    "mace-mp-0"
+  ],
   "checkpoints": [
-    { "id": "mace-mpa-0-medium", "params": "9.06M" }
+    {
+      "id": "mace-mpa-0-medium",
+      "params": "9.06M"
+    }
   ],
   "customCheckpoint": "mace:custom",
-  "trainingData": ["mptrj", "salex"]
+  "trainingData": [
+    "mptrj",
+    "salex"
+  ],
+  "license": {
+    "name": "MIT",
+    "url": "https://github.com/ACEsuit/mace-foundations/blob/main/LICENSE"
+  }
 }

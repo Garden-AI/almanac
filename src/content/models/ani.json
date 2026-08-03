@@ -1,13 +1,29 @@
 {
   "name": "ANI",
-  "families": ["fixed-descriptor"],
+  "families": [
+    "fixed-descriptor"
+  ],
   "codeUrl": "https://github.com/aiqm/torchani",
   "weightsUrl": "https://github.com/aiqm/torchani/tree/main/torchani/resources",
-  "paperRefs": ["ani"],
-  "checkpoints": [
-    { "id": "ani-2x" },
-    { "id": "ani-1ccx" },
-    { "id": "ani-1x" }
+  "paperRefs": [
+    "ani"
   ],
-  "trainingData": ["ani1x"]
+  "checkpoints": [
+    {
+      "id": "ani-2x"
+    },
+    {
+      "id": "ani-1ccx"
+    },
+    {
+      "id": "ani-1x"
+    }
+  ],
+  "trainingData": [
+    "ani1x"
+  ],
+  "license": {
+    "name": "MIT",
+    "url": "https://github.com/aiqm/ani-model-zoo/blob/master/LICENSE"
+  }
 }

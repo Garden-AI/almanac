@@ -1,8 +1,22 @@
 {
   "name": "TorchMD-Net",
-  "families": ["equivariant"],
+  "families": [
+    "equivariant"
+  ],
   "codeUrl": "https://github.com/torchmd/torchmd-net",
-  "paperRefs": ["torchmdnet"],
-  "checkpoints": [{ "id": "torchmdnet-et-oc20" }],
-  "trainingData": ["oc20"]
+  "paperRefs": [
+    "torchmdnet"
+  ],
+  "checkpoints": [
+    {
+      "id": "torchmdnet-et-oc20"
+    }
+  ],
+  "trainingData": [
+    "oc20"
+  ],
+  "license": {
+    "name": "MIT",
+    "url": "https://github.com/torchmd/torchmd-net/blob/main/LICENSE"
+  }
 }

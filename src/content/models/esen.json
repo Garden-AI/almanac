@@ -63,5 +63,9 @@
     "mptrj",
     "omat24",
     "salex"
-  ]
+  ],
+  "license": {
+    "name": "Meta OMat24 / FAIR Chemistry License",
+    "url": "https://huggingface.co/facebook/OMAT24"
+  }
 }

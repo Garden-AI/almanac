@@ -19,5 +19,10 @@
   "customCheckpoint": "mace:custom",
   "trainingData": [
     "omol25"
-  ]
+  ],
+  "license": {
+    "name": "Academic Software License (ASL)",
+    "nonCommercial": true,
+    "url": "https://github.com/gabor1/ASL"
+  }
 }
