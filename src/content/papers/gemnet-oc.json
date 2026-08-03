@@ -1,0 +1,17 @@
+{
+  "doi": "10.48550/arXiv.2204.02782",
+  "source": "fetched",
+  "title": "GemNet-OC: Developing Graph Neural Networks for Large and Diverse Molecular Simulation Datasets",
+  "authors": [
+    "Gasteiger, Johannes",
+    "Shuaibi, Muhammed",
+    "Sriram, Anuroop",
+    "Günnemann, Stephan",
+    "Ulissi, Zachary",
+    "Zitnick, C. Lawrence",
+    "Das, Abhishek"
+  ],
+  "published": "2022-01-01",
+  "venue": "arXiv",
+  "url": "https://arxiv.org/abs/2204.02782"
+}
