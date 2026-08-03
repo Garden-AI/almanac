@@ -1,12 +1,25 @@
 {
   "name": "CHGNet",
-  "families": ["mpnn"],
+  "families": [
+    "mpnn"
+  ],
   "codeUrl": "https://github.com/CederGroupHub/chgnet",
   "weightsUrl": "https://github.com/CederGroupHub/chgnet/tree/main/chgnet/pretrained",
-  "paperRefs": ["chgnet"],
+  "paperRefs": [
+    "chgnet"
+  ],
   "checkpoints": [
-    { "id": "chgnet-default", "params": "0.4M" }
+    {
+      "id": "chgnet-default",
+      "params": "0.4M"
+    }
   ],
   "customCheckpoint": "chgnet:custom",
-  "trainingData": ["mptrj"]
+  "trainingData": [
+    "mptrj"
+  ],
+  "license": {
+    "name": "BSD-3-Clause",
+    "url": "https://github.com/CederGroupHub/chgnet/blob/main/LICENSE"
+  }
 }

@@ -1,13 +1,27 @@
 {
   "name": "MatterSim",
-  "families": ["mpnn"],
+  "families": [
+    "mpnn"
+  ],
   "codeUrl": "https://github.com/microsoft/mattersim",
   "weightsUrl": "https://github.com/microsoft/mattersim/tree/main/pretrained_models",
-  "paperRefs": ["mattersim"],
+  "paperRefs": [
+    "mattersim"
+  ],
   "checkpoints": [
-    { "id": "mattersim-v1-0-0-5m", "params": "5M" },
-    { "id": "mattersim-v1-0-0-1m", "params": "1M" }
+    {
+      "id": "mattersim-v1-0-0-5m",
+      "params": "5M"
+    },
+    {
+      "id": "mattersim-v1-0-0-1m",
+      "params": "1M"
+    }
   ],
   "customCheckpoint": "mattersim:custom",
-  "trainingData": []
+  "trainingData": [],
+  "license": {
+    "name": "MIT",
+    "url": "https://github.com/microsoft/mattersim/blob/main/LICENSE.txt"
+  }
 }

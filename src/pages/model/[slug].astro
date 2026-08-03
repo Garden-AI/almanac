@@ -108,10 +108,6 @@ const anyPresence = allClusters.some(
 //    physics, set on `atoms.info` and forwarded with every calculation.
 const headsSpec = model.data.checkpoints.find((cp) => cp.heads)?.heads ?? null;
 const modelInputs = [...new Set(model.data.checkpoints.flatMap((cp) => cp.modelInputs ?? []))];
-// NOTE: `model.data.license` exists in the schema (and mace-off23 carries it)
-// but is deliberately NOT displayed anywhere yet — license presentation and
-// the NON_COMMERCIAL_USE enforcement story are being designed together in a
-// future pass. Don't resurrect display piecemeal.
 
 /** Example atoms.info lines for the known model-input keys. Unknown keys
  *  fall back to a placeholder — curators extend this as new model families
@@ -278,7 +274,6 @@ const paperDomainLabel = (u: string): string => {
   try {
     const h = new URL(u).hostname.replace(/^www\./, '');
     if (h.includes('arxiv.org')) return 'arXiv';
-    if (h.includes('doi.org')) return 'DOI';
     return h;
   } catch {
     return 'Paper';
@@ -287,10 +282,13 @@ const paperDomainLabel = (u: string): string => {
 
 const paperLink = (() => {
   // Masthead Paper link: prefer the first paper's URL/DOI, else nothing.
+  // When a DOI exists, the DOI string itself is the label (mono — it's an
+  // identifier, not prose); a generic "DOI" label said nothing.
   const p = papers.find((p) => p?.data.url || p?.data.doi);
   if (!p) return null;
-  const href = p.data.doi ? `https://doi.org/${p.data.doi}` : p.data.url!;
-  return { href, label: paperDomainLabel(href) };
+  if (p.data.doi)
+    return { href: `https://doi.org/${p.data.doi}`, label: p.data.doi, mono: true };
+  return { href: p.data.url!, label: paperDomainLabel(p.data.url!), mono: false };
 })();
 
 const composeCitation = (data: { authors?: string[]; title?: string; venue?: string; published?: string; citation?: string }): string => {
@@ -315,12 +313,14 @@ const notesHtml = model.data.notes ? marked.parse(model.data.notes) : null;
       </p>
     )}
 
-    {(paperLink || model.data.codeUrl || model.data.huggingFaceId || model.data.weightsUrl) && (
+    {(paperLink || model.data.codeUrl || model.data.huggingFaceId || model.data.weightsUrl || model.data.license) && (
       <div class="masthead-links">
         {paperLink && (
           <div class="masthead-link">
             <span class="sc">Paper</span>
-            <a class="ink-link" href={paperLink.href} target="_blank" rel="noopener">
+            <a class:list={["ink-link", paperLink.mono && "mono"]}
+               style={paperLink.mono ? 'font-size: var(--fs-md);' : undefined}
+               href={paperLink.href} target="_blank" rel="noopener">
               {paperLink.label} <span style="color: var(--ink-3);">↗</span>
             </a>
           </div>
@@ -351,6 +351,18 @@ const notesHtml = model.data.notes ? marked.parse(model.data.notes) : null;
             </a>
           </div>
         ) : null}
+        {model.data.license && (
+          <div class="masthead-link">
+            <span class="sc">License</span>
+            {model.data.license.url ? (
+              <a class="ink-link" href={model.data.license.url} target="_blank" rel="noopener">
+                {model.data.license.name} <span style="color: var(--ink-3);">↗</span>
+              </a>
+            ) : (
+              <span>{model.data.license.name}</span>
+            )}
+          </div>
+        )}
       </div>
     )}
   </div>

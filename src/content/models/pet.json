@@ -1,12 +1,32 @@
 {
   "name": "PET",
-  "families": ["learned-symmetry"],
+  "families": [
+    "learned-symmetry"
+  ],
   "codeUrl": "https://github.com/lab-cosmo/upet",
   "huggingFaceId": "lab-cosmo/upet",
-  "paperRefs": ["pet", "pet-unconstrained"],
-  "checkpoints": [
-    { "id": "pet-oam-xl", "params": "730M" },
-    { "id": "pet-omatpes-l", "params": "255M" }
+  "paperRefs": [
+    "pet",
+    "pet-unconstrained"
   ],
-  "trainingData": ["omat24", "salex", "mptrj", "matpes"]
+  "checkpoints": [
+    {
+      "id": "pet-oam-xl",
+      "params": "730M"
+    },
+    {
+      "id": "pet-omatpes-l",
+      "params": "255M"
+    }
+  ],
+  "trainingData": [
+    "omat24",
+    "salex",
+    "mptrj",
+    "matpes"
+  ],
+  "license": {
+    "name": "BSD-3-Clause",
+    "url": "https://github.com/lab-cosmo/upet/blob/main/LICENSE"
+  }
 }

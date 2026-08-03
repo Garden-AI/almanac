@@ -4,7 +4,9 @@
     "ace"
   ],
   "codeUrl": "https://github.com/ACEsuit/mace-foundations",
-  "paperRefs": [],
+  "paperRefs": [
+    "mace-mh-1"
+  ],
   "checkpoints": [
     {
       "id": "mace-mh-1",
@@ -46,5 +48,10 @@
     "spice",
     "oc20",
     "matpes"
-  ]
+  ],
+  "license": {
+    "name": "Academic Software License (ASL)",
+    "nonCommercial": true,
+    "url": "https://github.com/gabor1/ASL"
+  }
 }

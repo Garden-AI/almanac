@@ -26,5 +26,9 @@
   "customCheckpoint": "allscaip:custom",
   "trainingData": [
     "omol25"
-  ]
+  ],
+  "license": {
+    "name": "FAIR Chemistry License v1",
+    "url": "https://huggingface.co/facebook/AllScAIP"
+  }
 }

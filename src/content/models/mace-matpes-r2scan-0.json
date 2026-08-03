@@ -1,13 +1,27 @@
 {
   "name": "MACE-MATPES-r2SCAN-0",
-  "families": ["ace"],
+  "families": [
+    "ace"
+  ],
   "releaseDate": "2025-03-25",
   "codeUrl": "https://github.com/ACEsuit/mace-foundations",
   "weightsUrl": "https://github.com/ACEsuit/mace-foundations/releases/tag/mace_matpes_0",
-  "paperRefs": ["mace-mp-0"],
+  "paperRefs": [
+    "mace-mp-0"
+  ],
   "checkpoints": [
-    { "id": "mace-matpes-r2scan-0" }
+    {
+      "id": "mace-matpes-r2scan-0"
+    }
   ],
   "customCheckpoint": "mace:custom",
-  "trainingData": ["omat24", "matpes"]
+  "trainingData": [
+    "omat24",
+    "matpes"
+  ],
+  "license": {
+    "name": "Academic Software License (ASL)",
+    "nonCommercial": true,
+    "url": "https://github.com/gabor1/ASL"
+  }
 }

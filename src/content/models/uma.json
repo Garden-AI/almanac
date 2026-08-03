@@ -119,5 +119,9 @@
     "omat24",
     "odac23",
     "omc25"
-  ]
+  ],
+  "license": {
+    "name": "FAIR Chemistry License v1",
+    "url": "https://huggingface.co/facebook/UMA"
+  }
 }
