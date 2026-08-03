@@ -209,6 +209,7 @@ with RootstockCalculator(
           {clusters.map((c) => (
             <th class:list={["am-th-cluster", c.data.unlisted && "am-unlisted"]}>
               <a class="am-cluster-link" href={url(`/clusters#${c.id}`)}>{c.data.name}</a>
+              <span class="am-th-cluster-fac">· {c.data.institutionShort ?? c.data.institution}</span>
               <div class="mono am-th-cluster-gpu">{c.data.gpu ?? '—'}</div>
             </th>
           ))}
@@ -405,6 +406,16 @@ with RootstockCalculator(
     transition: color .12s, border-color .12s;
   }
   .am-cluster-link:hover { color: var(--oxblood); border-bottom-color: var(--oxblood); }
+  /* Facility acronym after the name — same size as the name (IM Fell is
+     illegible below --fs-base), demoted by color instead. */
+  .am-th-cluster-fac {
+    font-family: var(--smallcaps);
+    font-size: var(--fs-base);
+    letter-spacing: var(--track-label);
+    text-transform: lowercase;
+    color: var(--ink-3);
+    font-weight: 400;
+  }
   .am-th-cluster-gpu { font-size: var(--fs-micro); color: var(--ink-3); margin-top: 3px; letter-spacing: 0.02em; font-weight: 400; }
   .am-th-slug { text-align: left; vertical-align: bottom; }
   .am-th-slug-fam { display: block; font-size: var(--fs-base); letter-spacing: var(--track-label); text-transform: lowercase; }
