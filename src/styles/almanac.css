@@ -203,10 +203,15 @@ table.almanac tbody tr:last-child td { border-bottom: 1.5px solid var(--ink); }
   border-bottom-color: var(--oxblood);
 }
 
+/* Footer: two labeled sections side by side, mirroring the model page's
+   references | specifications split (hairline rule on the right column). */
 .site-foot {
   border-top: 0.5px solid var(--rule);
   padding-top: 16px;
   margin-top: 40px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
+  column-gap: 32px;
 }
 .site-foot p {
   font-size: var(--fs-sm);
@@ -214,6 +219,23 @@ table.almanac tbody tr:last-child td { border-bottom: 1.5px solid var(--ink); }
   color: var(--ink-3);
   margin: 0;
   max-width: 76ch;
+}
+.site-foot-label {
+  font-size: var(--fs-sm);
+  margin-bottom: 8px;
+}
+.site-foot-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: var(--fs-sm);
+  line-height: 1.5;
+  color: var(--ink-3);
+}
+.site-foot-list li + li { margin-top: 4px; }
+.site-foot-support {
+  border-left: 0.5px solid var(--rule);
+  padding-left: 32px;
 }
 
 @media (max-width: 720px) {
@@ -229,7 +251,13 @@ table.almanac tbody tr:last-child td { border-bottom: 1.5px solid var(--ink); }
     gap: 2px 14px;
     margin-left: 0;
   }
-  .site-foot { margin-top: 28px; padding-top: 12px; }
+  .site-foot {
+    margin-top: 28px;
+    padding-top: 12px;
+    grid-template-columns: 1fr;
+    row-gap: 16px;
+  }
+  .site-foot-support { border-left: 0; padding-left: 0; }
 }
 
 a.ink-link {

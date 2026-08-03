@@ -220,7 +220,7 @@ export function envFilesForModel(
 /** Provenance caption under the env listing — shared by the build seed and
  *  the client tab-switch/live-refresh paint. */
 export function envCaption(f: { clusterName: string; builtAt: string | null }): string {
-  return `Shown verbatim — Rootstock installs this file unmodified. ${f.clusterName} · built ${(f.builtAt ?? '').slice(0, 10)}.`;
+  return `Built on ${f.clusterName}: ${(f.builtAt ?? '').slice(0, 10)}`;
 }
 
 function escEnv(s: string): string {
