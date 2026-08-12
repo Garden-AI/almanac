@@ -8,6 +8,7 @@ interface Props {
 
 const { title } = Astro.props;
 const rootstockUrl = import.meta.env.PUBLIC_ROOTSTOCK_URL;
+const hasNotice = Astro.slots.has('notice');
 
 const homeHref = url('/');
 const leekSrc = url('/old_timey_leek.png');
@@ -56,7 +57,7 @@ const isCurrent = (href: string) => norm(href) === norm(path);
   </head>
   <body>
     <article class="page">
-      <header class="site-head">
+      <header class:list={["site-head", hasNotice && "site-head--with-notice"]}>
         <a class="home-link site-head-mark" href={homeHref} aria-label={`${wordmark} — home`}>
           <img class="home-leek" src={leekSrc} alt="" width="102" height="160" />
           <span class="home-wordmark">{wordmark}</span>
@@ -67,6 +68,11 @@ const isCurrent = (href: string) => norm(href) === norm(path);
           ))}
         </nav>
       </header>
+      {hasNotice && (
+        <div class="site-notices" aria-label="Site notices">
+          <slot name="notice" />
+        </div>
+      )}
       <slot />
       <footer class="site-foot">
         <section>

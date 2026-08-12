@@ -36,6 +36,7 @@ const entries = clusters.map((c) => {
     docsUrl: c.data.documentation ?? null,
     gpu: c.data.gpu ?? '—',
     gotchas: c.data.gotchas ?? [],
+    groupAccess: c.data.groupAccess ?? null,
     modelCount: cm.modelCount,
     modelsHtml: renderClusterModelsHtml(cm, modelHref),
   };
@@ -62,6 +63,7 @@ const entries = clusters.map((c) => {
         </div>
         <div class="cl-head-meta">
           <span class="cl-gpu">verified on {e.gpu}</span>
+          {e.groupAccess && <span class="cl-setup-flag">additional setup required</span>}
           {e.docsUrl && (
             <a class="cl-docs" href={e.docsUrl} target="_blank" rel="noopener">
               Cluster docs <span class="cl-docs-arrow">↗</span>
@@ -80,6 +82,20 @@ const entries = clusters.map((c) => {
       </button>
 
       <div class="cl-detail">
+
+        {e.groupAccess && (
+          <div class="cl-access">
+            <div class="sc cl-access-label">ALCF access</div>
+            <p>
+              {e.name} requires one additional configuration step. To be added to the system group,
+              {' '}<a
+                class="ink-link"
+                href={`mailto:${e.groupAccess.requestEmail}?subject=${encodeURIComponent(e.groupAccess.subject)}`}
+              >send an access request</a> to {e.groupAccess.requestEmail} with the subject
+              {' '}<span class="cl-access-subject">{e.groupAccess.subject}</span>.
+            </p>
+          </div>
+        )}
 
         {e.gotchas.length > 0 && (
           <div class="cl-heads">
@@ -131,6 +147,13 @@ const entries = clusters.map((c) => {
     font-size: var(--fs-base);
     color: var(--ink-2);
     white-space: nowrap;
+  }
+  .cl-setup-flag {
+    font-family: var(--smallcaps);
+    font-size: var(--fs-sm);
+    letter-spacing: var(--track-label);
+    text-transform: lowercase;
+    color: var(--ink-2);
   }
   .cl-name {
     font-size: var(--fs-h2);
@@ -192,6 +215,31 @@ const entries = clusters.map((c) => {
   .cl.is-open .cl-detail { display: block; }
   .cl.is-open .cl-chev { transform: rotate(90deg); }
 
+  .cl-access {
+    display: grid;
+    grid-template-columns: 112px minmax(0, 1fr);
+    gap: 10px 20px;
+    margin-top: 18px;
+    padding: 12px 0;
+    border-top: 0.5px solid var(--rule);
+    border-bottom: 0.5px solid var(--rule-soft);
+  }
+  .cl-access-label {
+    font-size: var(--fs-md);
+    color: var(--ink);
+  }
+  .cl-access p {
+    max-width: 70ch;
+    margin: 0;
+    font-size: var(--fs-base);
+    line-height: 1.5;
+    color: var(--ink-2);
+  }
+  .cl-access-subject {
+    font-weight: 600;
+    color: var(--ink);
+  }
+
   .cl-heads {
     margin-top: 18px;
     padding-left: 14px;
@@ -208,6 +256,14 @@ const entries = clusters.map((c) => {
     font-size: var(--fs-base);
     line-height: 1.45;
     color: var(--ink-2);
+  }
+
+  @media (max-width: 560px) {
+    .cl-head-meta {
+      align-items: flex-start;
+      text-align: left;
+    }
+    .cl-access { grid-template-columns: 1fr; }
   }
 </style>
 

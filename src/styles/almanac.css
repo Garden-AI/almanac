@@ -151,6 +151,13 @@ table.almanac tbody tr:last-child td { border-bottom: 1.5px solid var(--ink); }
   margin-bottom: 22px;
   flex-wrap: wrap;
 }
+.site-head.site-head--with-notice { margin-bottom: 0; }
+.site-notices {
+  padding: 10px 12px;
+  margin-bottom: 22px;
+  border-bottom: 0.5px solid var(--rule);
+  background: var(--paper-2);
+}
 .site-head-mark {
   display: inline-flex;
   align-items: center;
@@ -245,6 +252,7 @@ table.almanac tbody tr:last-child td { border-bottom: 1.5px solid var(--ink); }
     gap: 10px 16px;
   }
   .site-head .home-wordmark { display: none; } /* leek only on phones */
+  .site-notices { margin-bottom: 18px; padding: 9px 10px; }
   .site-head-nav {
     font-size: var(--fs-xs);
     letter-spacing: 0.10em;
