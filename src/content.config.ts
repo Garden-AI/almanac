@@ -167,6 +167,15 @@ const clusters = defineCollection({
     documentation: z.string().url().optional(),
     /** Short "Heads up" notes for the /clusters page. Usually empty. */
     gotchas: z.array(z.string()).optional(),
+    /** Extra account or group enrollment needed before Rootstock can run.
+     *  The collapsed cluster row carries a quiet flag; the expanded row owns
+     *  the complete request instructions and pre-addressed email link. */
+    groupAccess: z
+      .object({
+        requestEmail: z.string().email(),
+        subject: z.string(),
+      })
+      .optional(),
     /** Rendered everywhere but hidden until the viewer unlocks unlisted
      *  clusters with `?gotigers=true` (persisted in localStorage;
      *  `?gotigers=false` relocks). For clusters that work with Rootstock but

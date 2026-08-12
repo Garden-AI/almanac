@@ -128,6 +128,12 @@ with RootstockCalculator(
     print(atoms.get_potential_energy())`;
 ---
 <Page title="Garden's Almanac of Matter Models — 2026 Edition">
+  <aside slot="notice" class="alcf-flag" aria-label="ALCF access note">
+    <span class="sc alcf-flag-label">ALCF users</span>
+    <span class="alcf-flag-copy">Polaris and Sophia require an additional access step.</span>
+    <a class="ink-link alcf-flag-link" href={url('/clusters#polaris')}>View instructions&nbsp;→</a>
+  </aside>
+
   <section class="landing-title">
     <h1>Model availability by cluster</h1>
     <p class="page-dek">
@@ -300,6 +306,24 @@ with RootstockCalculator(
      weight/size as the Models / Clusters titles. The publication name lives in
      the masthead now, so the index no longer carries its own display title. */
   .landing-title { margin-top: 8px; }
+  .alcf-flag {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 3px 16px;
+    font-size: var(--fs-base);
+    line-height: 1.4;
+    color: var(--ink-2);
+  }
+  .alcf-flag-label {
+    font-size: var(--fs-base);
+    color: var(--ink);
+  }
+  .alcf-flag-copy { color: var(--ink); }
+  .alcf-flag-link {
+    margin-left: auto;
+    white-space: nowrap;
+  }
 
   /* Always-visible legend: glyph + small-caps label + a plain-language gloss,
      so a reader gets each state's meaning at a glance (no disclosure). */
@@ -604,6 +628,7 @@ with RootstockCalculator(
   .cluster-card:hover .cc-name { color: var(--oxblood); }
 
   @media (max-width: 720px) {
+    .alcf-flag-link { margin-left: 0; }
     .am-wrap { display: none; }
     .cluster-cards { display: block; }
     .howto-grid { grid-template-columns: 1fr; gap: 16px; }

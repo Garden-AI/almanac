@@ -5,5 +5,9 @@
   "gpu": "NVIDIA A100 40GB",
   "order": 2,
   "documentation": "https://docs.alcf.anl.gov/sophia/",
-  "gotchas": []
+  "gotchas": [],
+  "groupAccess": {
+    "requestEmail": "blaiszik@uchicago.edu",
+    "subject": "Almanac ALCF: <ALCF user account name>"
+  }
 }
