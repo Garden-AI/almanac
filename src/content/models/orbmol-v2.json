@@ -1,30 +1,27 @@
 {
-  "name": "Orb-v2",
+  "name": "OrbMol-v2",
   "families": [
     "learned-symmetry"
   ],
+  "releaseDate": "2026-05-23",
   "codeUrl": "https://github.com/orbital-materials/orb-models",
+  "huggingFaceId": "Orbital-Materials/orbmol-v2",
   "paperRefs": [
-    "orb-v2"
+    "orbmol-v2",
+    "orb-v3"
   ],
   "checkpoints": [
     {
-      "id": "orb-v2",
-      "params": "25M"
-    },
-    {
-      "id": "orb-d3-v2",
-      "params": "25M"
-    },
-    {
-      "id": "orb-mptraj-only-v2",
-      "params": "25M"
+      "id": "orbmol-v2",
+      "modelInputs": [
+        "charge",
+        "spin"
+      ]
     }
   ],
-  "customCheckpoint": "orb-v2:custom",
+  "customCheckpoint": "orbmol:custom",
   "trainingData": [
-    "mptrj",
-    "salex"
+    "omol25"
   ],
   "license": {
     "name": "Apache-2.0",
