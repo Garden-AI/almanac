@@ -35,14 +35,9 @@
     },
     {
       "id": "orb-v3-direct-inf-mpa"
-    },
-    {
-      "id": "orb-v3-conservative-omol"
-    },
-    {
-      "id": "orb-v3-direct-omol"
     }
   ],
+  "customCheckpoint": "orb-v3:custom",
   "trainingData": [
     "omat24",
     "mptrj",
