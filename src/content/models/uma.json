@@ -21,7 +21,11 @@
           },
           {
             "id": "omol",
-            "dataset": "omol25"
+            "dataset": "omol25",
+            "modelInputs": [
+              "charge",
+              "spin"
+            ]
           },
           {
             "id": "oc20",
@@ -35,16 +39,11 @@
             "id": "omc",
             "dataset": "omc25"
           }
-        ],
-        "default": "omat"
-      },
-      "modelInputs": [
-        "charge",
-        "spin"
-      ]
+        ]
+      }
     },
     {
-      "id": "uma-s-1p2",
+      "id": "uma-s-1p2p1",
       "params": "290M",
       "heads": {
         "kwarg": "task",
@@ -55,7 +54,11 @@
           },
           {
             "id": "omol",
-            "dataset": "omol25"
+            "dataset": "omol25",
+            "modelInputs": [
+              "charge",
+              "spin"
+            ]
           },
           {
             "id": "oc20",
@@ -69,13 +72,8 @@
             "id": "omc",
             "dataset": "omc25"
           }
-        ],
-        "default": "omat"
-      },
-      "modelInputs": [
-        "charge",
-        "spin"
-      ]
+        ]
+      }
     },
     {
       "id": "uma-m-1p1",
@@ -89,7 +87,11 @@
           },
           {
             "id": "omol",
-            "dataset": "omol25"
+            "dataset": "omol25",
+            "modelInputs": [
+              "charge",
+              "spin"
+            ]
           },
           {
             "id": "oc20",
@@ -103,13 +105,8 @@
             "id": "omc",
             "dataset": "omc25"
           }
-        ],
-        "default": "omat"
-      },
-      "modelInputs": [
-        "charge",
-        "spin"
-      ]
+        ]
+      }
     }
   ],
   "customCheckpoint": "uma:custom",

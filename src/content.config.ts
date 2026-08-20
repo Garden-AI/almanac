@@ -77,7 +77,9 @@ const models = defineCollection({
            *  `kwarg` is the upstream-faithful setup() keyword ("task" for
            *  UMA, "head" for MACE-MH1) — checkpoint ids never encode heads.
            *  Head names track training corpora: `dataset` links each head to
-           *  the catalog dataset it was trained against. */
+           *  the catalog dataset it was trained against. There is no default
+           *  head: Rootstock requires an explicit selection and errors
+           *  without one, and the almanac curates none either. */
           heads: z
             .object({
               kwarg: z.string(),
@@ -86,16 +88,20 @@ const models = defineCollection({
                   z.object({
                     id: z.string(),
                     dataset: reference('datasets').optional(),
+                    /** Model inputs only this head reads (e.g. UMA's charge/
+                     *  spin apply under the omol head alone). Checkpoint-level
+                     *  `modelInputs` remains for inputs every head accepts. */
+                    modelInputs: z.array(z.string()).optional(),
                   }),
                 )
                 .min(2),
-              default: z.string().optional(),
             })
             .optional(),
           /** Per-calculation model inputs the checkpoint reads from
-           *  `atoms.info` (e.g. "charge", "spin", "external_field").
-           *  These are calculate-time physics inputs, not setup() kwargs —
-           *  see Rootstock docs/api.md. Renders the ± mark. */
+           *  `atoms.info` (e.g. "charge", "spin", "external_field"),
+           *  regardless of head. These are calculate-time physics inputs,
+           *  not setup() kwargs — see Rootstock docs/api.md. Surface only
+           *  in the run snippet. */
           modelInputs: z.array(z.string()).optional(),
         }),
       )

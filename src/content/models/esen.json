@@ -10,27 +10,15 @@
   "checkpoints": [
     {
       "id": "esen-30m-mptrj",
-      "params": "30M",
-      "modelInputs": [
-        "charge",
-        "spin"
-      ]
+      "params": "30M"
     },
     {
       "id": "esen-30m-oam",
-      "params": "30M",
-      "modelInputs": [
-        "charge",
-        "spin"
-      ]
+      "params": "30M"
     },
     {
       "id": "esen-30m-omat",
-      "params": "30M",
-      "modelInputs": [
-        "charge",
-        "spin"
-      ]
+      "params": "30M"
     },
     {
       "id": "esen-md-direct-all-omol",
