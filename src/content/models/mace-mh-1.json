@@ -36,8 +36,7 @@
             "id": "matpes_r2scan",
             "dataset": "matpes"
           }
-        ],
-        "default": "omat_pbe"
+        ]
       }
     }
   ],

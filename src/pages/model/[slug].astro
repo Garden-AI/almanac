@@ -98,16 +98,27 @@ const anyPresence = allClusters.some(
 
 // "Running this model" — curated invocation facts (heads / model inputs /
 // license). These are catalog identity, not Rootstock state: build-time only,
-// no live refresh. Aggregated across checkpoints for the args table; the
-// checkpoint table above stays the per-checkpoint truth (heads rosters, ±).
+// no live refresh.
 //
 // Two distinct mechanisms, per Rootstock's docs (docs/api.md):
 //  - heads are picked at construction: `setup_kwargs={"task": "omol"}`,
-//    forwarded to the env's setup();
+//    forwarded to the env's setup(). Selection is mandatory — there is no
+//    default head, and the calculator errors when none is given.
 //  - model inputs (charge, spin, external_field, …) are per-calculation
 //    physics, set on `atoms.info` and forwarded with every calculation.
+//    They can be head-scoped (UMA's charge/spin apply only under omol) and
+//    vary per checkpoint (eSEN's materials checkpoints take nothing, its
+//    OMol checkpoints take charge/spin) — the snippet's input lines follow
+//    the selected head and its own example checkpoint, never a union.
 const headsSpec = model.data.checkpoints.find((cp) => cp.heads)?.heads ?? null;
-const modelInputs = [...new Set(model.data.checkpoints.flatMap((cp) => cp.modelInputs ?? []))];
+// Head-scoped inputs, aggregated across checkpoints by head id.
+const headInputs: Record<string, string[]> = {};
+for (const cp of model.data.checkpoints) {
+  for (const v of cp.heads?.values ?? []) {
+    if (!v.modelInputs?.length) continue;
+    headInputs[v.id] = [...new Set([...(headInputs[v.id] ?? []), ...v.modelInputs])];
+  }
+}
 
 /** Example atoms.info lines for the known model-input keys. Unknown keys
  *  fall back to a placeholder — curators extend this as new model families
@@ -130,7 +141,6 @@ const headRows = headsSpec
         const ds = v.dataset ? await getEntry(v.dataset) : null;
         return {
           id: v.id,
-          isDefault: v.id === headsSpec.default,
           datasetId: ds?.id ?? null,
           datasetName: ds?.data.name ?? null,
           gloss: ds?.data.systemType ?? ds?.data.domain ?? null,
@@ -141,10 +151,11 @@ const headRows = headsSpec
 
 // Worked example: generic cluster placeholder (naming one cluster misled —
 // readers took it as *the* cluster, or saw one where the model isn't
-// installed), the first checkpoint, and — when heads exist — the omol head
-// if there is one, so the model-input lines are physically coherent. The
-// "eg" cluster names are this model's own (build-time best effort), so the
-// examples are never clusters the model isn't on.
+// installed), a checkpoint and — when heads exist — a head each preferring
+// one that carries curated model inputs, so the example shows the input
+// lines beside a checkpoint/head that actually reads them. The "eg" cluster
+// names are this model's own (build-time best effort), so the examples are
+// never clusters the model isn't on.
 const clusterVerified: Record<string, boolean> = {};
 for (const c of allClusters) {
   clusterVerified[c.id] = matrix.some((row) =>
@@ -160,9 +171,15 @@ const egClusters = allClusters
   .slice(0, 2)
   .map((c) => `"${c.id}"`);
 const egLine = egClusters.length > 0 ? egClusters.join(', ') : '"polaris", "perlmutter"';
-const exampleCheckpoint = model.data.checkpoints[0];
+const exampleCheckpoint =
+  model.data.checkpoints.find((cp) => (cp.modelInputs ?? []).length > 0) ??
+  model.data.checkpoints[0];
+// The snippet states only what its own example checkpoint accepts — a union
+// across checkpoints would show atoms.info keys the shown checkpoint ignores
+// (the model reads them silently as no-ops; worse than an error).
+const modelInputs = exampleCheckpoint.modelInputs ?? [];
 const exampleHead = headsSpec
-  ? (headsSpec.values.some((v) => v.id === 'omol') ? 'omol' : headsSpec.default ?? headsSpec.values[0].id)
+  ? (headsSpec.values.find((v) => (headInputs[v.id] ?? []).length > 0)?.id ?? headsSpec.values[0].id)
   : null;
 
 const makeSnippet = (head: string | null, custom = false): string => {
@@ -171,9 +188,18 @@ const makeSnippet = (head: string | null, custom = false): string => {
   // logged into — the biggest Rootstock misunderstanding.
   const lines: string[] = ['# from a job or interactive session on a supported cluster:'];
   lines.push('from rootstock import RootstockCalculator', '');
-  if (modelInputs.length > 0) {
-    lines.push(`# this model accepts ${listWithAnd(modelInputs)}`);
-    for (const key of modelInputs) {
+  // Input lines follow the selected head: a head-scoped input (UMA's
+  // charge/spin, omol-only) renders only in that head's snippet, so no
+  // snippet ever shows atoms.info keys the active head would ignore.
+  const scoped = head ? headInputs[head] ?? [] : [];
+  const inputs = [...new Set([...modelInputs, ...scoped])];
+  if (inputs.length > 0) {
+    lines.push(
+      scoped.length > 0
+        ? `# the ${head} head accepts ${listWithAnd(inputs)}`
+        : `# this checkpoint accepts ${listWithAnd(inputs)}`,
+    );
+    for (const key of inputs) {
       lines.push(INPUT_EXAMPLES[key] ?? `atoms.info["${key}"] = ...`);
     }
     lines.push('');
@@ -195,7 +221,7 @@ const makeSnippet = (head: string | null, custom = false): string => {
   }
   lines.push('    device="cuda",');
   if (headsSpec && head) {
-    lines.push(`    setup_kwargs={"${headsSpec.kwarg}": "${head}"},  # select a head`);
+    lines.push(`    setup_kwargs={"${headsSpec.kwarg}": "${head}"},  # required: select a task head`);
   }
   lines.push(
     ') as calc:',
@@ -206,15 +232,21 @@ const makeSnippet = (head: string | null, custom = false): string => {
   return lines.join('\n');
 };
 const runningSnippet = makeSnippet(exampleHead);
-// The snippet re-renders client-side from these templates: ?head=… pre-fills
-// a head (no on-page picker UI), and the shipped/custom toggle — or a
-// ?custom link from the matrix — swaps in the bring-your-own-weights variant.
+// The snippet re-renders client-side from these precomputed variants:
+// ?head=… pre-fills a head (no on-page picker UI), and the shipped/custom
+// toggle — or a ?custom link from the matrix — swaps in the
+// bring-your-own-weights variant. Whole variants per head (keyed '' for the
+// headless case), not an id-substitution template — the input block varies
+// structurally by head, so string substitution can't re-render it.
+const variantKeys = headsSpec ? headsSpec.values.map((v) => v.id) : [''];
 const runConfig = (headsSpec || customId)
   ? {
-      template: makeSnippet(headsSpec ? '@@HEAD@@' : null),
-      customTemplate: customId ? makeSnippet(headsSpec ? '@@HEAD@@' : null, true) : null,
+      shipped: Object.fromEntries(variantKeys.map((h) => [h, makeSnippet(h || null)])),
+      custom: customId
+        ? Object.fromEntries(variantKeys.map((h) => [h, makeSnippet(h || null, true)]))
+        : null,
       heads: headsSpec ? headsSpec.values.map((v) => v.id) : [],
-      defaultHead: exampleHead,
+      initialHead: exampleHead,
     }
   : null;
 
@@ -454,8 +486,9 @@ const notesHtml = model.data.notes ? marked.parse(model.data.notes) : null;
           {headsSpec && (
             <>
               <p>
-                This model has task heads. You can select which output layer is active at inference time with
-                {' '}<code>setup_kwargs={'{'}"{headsSpec.kwarg}": "{headsSpec.default ?? headRows[0]?.id}"{'}'}</code>.
+                This model has task heads. Select which output layer is active at inference time with
+                {' '}<code>setup_kwargs={'{'}"{headsSpec.kwarg}": "{exampleHead}"{'}'}</code> —
+                there is no default, and the calculator raises an error if no head is given.
               </p>
               <table class="almanac running-args running-heads" id="heads">
                 <thead>
@@ -469,7 +502,6 @@ const notesHtml = model.data.notes ? marked.parse(model.data.notes) : null;
                     <tr>
                       <td>
                         <span class="mono">{h.id}</span>
-                        {h.isDefault && <span class="running-head-default it">default</span>}
                       </td>
                       <td>
                         {h.datasetName ? (
@@ -737,11 +769,6 @@ const notesHtml = model.data.notes ? marked.parse(model.data.notes) : null;
   }
   .running-args { font-size: var(--fs-md); margin: 4px 0 16px; }
   .running-args .mono { font-size: var(--fs-sm); }
-  .running-head-default {
-    margin-left: 8px;
-    font-size: var(--fs-xs);
-    color: var(--ink-3);
-  }
   /* Top-align the snippet block with the prose column (env-block ships a
      margin-top meant for the Environments section). */
   .running-grid :global(.running-snippet) { margin-top: 0; }
@@ -926,8 +953,8 @@ const notesHtml = model.data.notes ? marked.parse(model.data.notes) : null;
   }
   setupEnvSection();
 
-  // ── Run snippet: template re-renders ─────────────────────────────────
-  // Two client-side inputs re-render the snippet from its templates: a
+  // ── Run snippet: variant re-renders ──────────────────────────────────
+  // Two client-side inputs swap in a precomputed snippet variant: a
   // matrix head link (?head=…) pre-fills that head, and the shipped/custom
   // toggle — or a matrix ?custom link — swaps in the bring-your-own-weights
   // variant. The toggle's visibility follows live custom-id presence (see
@@ -938,23 +965,23 @@ const notesHtml = model.data.notes ? marked.parse(model.data.notes) : null;
     const body = document.querySelector<HTMLElement>('[data-run-snippet]');
     if (!cfgEl || !body) return noop;
     const cfg = JSON.parse(cfgEl.textContent ?? 'null') as {
-      template: string;
-      customTemplate: string | null;
+      shipped: Record<string, string>;
+      custom: Record<string, string> | null;
       heads: string[];
-      defaultHead: string | null;
+      initialHead: string | null;
     } | null;
     if (!cfg) return noop;
 
     const toggle = document.querySelector<HTMLElement>('[data-run-toggle]');
     const params = new URLSearchParams(location.search);
     const urlHead = params.get('head');
-    const head = urlHead && cfg.heads.includes(urlHead) ? urlHead : cfg.defaultHead;
+    const head = urlHead && cfg.heads.includes(urlHead) ? urlHead : cfg.initialHead;
     let mode: 'shipped' | 'custom' =
-      params.has('custom') && cfg.customTemplate ? 'custom' : 'shipped';
+      params.has('custom') && cfg.custom ? 'custom' : 'shipped';
 
     const render = () => {
-      const tpl = mode === 'custom' && cfg.customTemplate ? cfg.customTemplate : cfg.template;
-      body.innerHTML = renderEnvBody(head ? tpl.split('@@HEAD@@').join(head) : tpl);
+      const variants = mode === 'custom' && cfg.custom ? cfg.custom : cfg.shipped;
+      body.innerHTML = renderEnvBody(variants[head ?? ''] ?? '');
       toggle?.querySelectorAll<HTMLElement>('[data-run-mode]').forEach((btn) => {
         btn.classList.toggle('is-active', btn.dataset.runMode === mode);
       });
